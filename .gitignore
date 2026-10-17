@@ -1,0 +1,35 @@
+node_modules/
+dist/
+.eac/
+artifacts/
+runtime/
+*.log
+vendor/*/node_modules/
+vendor/*/.git/
+release/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+
+# Large optional media is distributed as a separate Release asset.
+public/media/
+vendor/mg-styles-15/videos/
+vendor/mg-styles-15/**/*.ttf
+vendor/mg-styles-15/**/*.flac
+vendor/mg-styles-15/**/*.wav
+vendor/mg-styles-15/**/*.ply
+vendor/mg-styles-15/**/*.hdr
+vendor/mg-styles-15/assets/**/*.png
+vendor/mg-styles-15/assets/**/*.jpg
+vendor/mg-styles-15/demos/**/*.png
+vendor/mg-styles-15/demos/**/*.jpg
+vendor/motion-promo-film/templates/lib/motion.js
+vendor/motion-promo-film/templates/film-template-plus.html
+
+# Content without an upstream redistribution grant.
+vendor/open-design/templates/prompts/image/profile-avatar-seedream-high-fashion-dreamy-portrait.json
+vendor/open-design/templates/prompts/image-assets/profile-avatar-seedream-high-fashion-dreamy-portrait.jpg
+vendor/open-design/templates/prompts/image/social-media-post-seedream-squishcraft-kids-clay-ad.json
+vendor/open-design/templates/prompts/image-assets/social-media-post-seedream-squishcraft-kids-clay-ad.jpg

@@ -1,0 +1,54 @@
+{
+  "name": "eac-design-world",
+  "version": "0.1.0",
+  "description": "EAC design world: autonomous video production for DeepSeek Harness",
+  "type": "module",
+  "main": "./plugin/host.mjs",
+  "exports": {
+    ".": "./plugin/host.mjs",
+    "./client": "./plugin/client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./package.json": "./package.json"
+  },
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "dev": "node src/server.mjs --dev",
+    "start": "node src/server.mjs",
+    "build": "vite build",
+    "test": "node --test tests/*.test.mjs",
+    "mcp": "node src/mcp.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.2",
+    "d3": "^7.9.0",
+    "lucide-react": "^0.468.0",
+    "opentype.js": "^2.0.0",
+    "playwright": "^1.56.1",
+    "pptxgenjs": "^4.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "simplex-noise": "^4.0.3",
+    "three": "^0.186.1",
+    "topojson-client": "^3.1.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "vite": "^6.1.0"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-sidebar-right"
+      ]
+    }
+  }
+}

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>EAC design world / Real Capture Launch</title>
+<style>
+:root{--paper:#f2f5f1;--ink:#132b27;--muted:#61706a;--teal:#167d70;--coral:#ed7359;--line:#d4ded7}
+*{box-sizing:border-box}
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:var(--paper);font-family:"Microsoft YaHei","Segoe UI",sans-serif;color:var(--ink)}
+#stage{position:absolute;inset:0;overflow:hidden}
+#rule{position:absolute;left:76px;right:76px;top:76px;height:1px;background:var(--line)}
+.eyebrow{font:18px "Segoe UI",sans-serif;color:var(--muted)}
+#brandline{position:absolute;top:100px;left:84px;display:flex;gap:16px;align-items:center;font-size:22px;font-weight:600}
+#brandline img{width:42px;height:42px}
+#edition{position:absolute;right:84px;top:110px;color:var(--muted);font:16px Consolas,monospace}
+#intro,#outro{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.wordmark{font:700 116px "Segoe UI",sans-serif;line-height:1.08}
+.wordmark span{font-weight:400;color:var(--teal)}
+.tagline{font-size:34px;margin-top:30px;color:var(--muted)}
+.large-mark{width:110px;height:110px;margin-bottom:35px;border-radius:8px}
+#underline{height:8px;width:110px;background:var(--coral);margin-top:34px}
+#window{position:absolute;left:480px;top:188px;width:1360px;height:804px;transform-origin:center;overflow:hidden;border:1px solid #c2cfc6;border-radius:8px;background:#fff;box-shadow:0 34px 85px #18372b20}
+.window-top{height:39px;border-bottom:1px solid #e1e7df;display:flex;align-items:center;gap:7px;padding:0 15px;background:#f9fbf8}
+.dot{width:8px;height:8px;border-radius:50%;background:#cbd6cb}
+.window-top span:last-child{margin-left:auto;color:#7b867e;font:11px Consolas,monospace}
+#media{height:765px;position:relative;overflow:hidden}
+#media img,#media video{position:absolute;width:1360px;height:765px;object-fit:cover;display:block}
+#copy{position:absolute;top:310px;left:86px;width:420px}
+#number{font:16px Consolas,monospace;color:var(--teal);padding-bottom:22px;display:flex;align-items:center;gap:14px}
+#number:after{content:"";width:68px;height:2px;background:var(--coral)}
+#headline{font-size:68px;font-weight:700;line-height:1.22;margin:0;max-width:420px}
+#detail{font-size:23px;line-height:1.8;color:var(--muted);margin-top:28px;max-width:350px}
+#chip{font:14px Consolas,monospace;color:var(--teal);margin-top:34px}
+#footer{position:absolute;bottom:37px;left:84px;right:84px;display:flex;align-items:center;gap:18px;font:13px Consolas,monospace;color:var(--muted)}
+#progress{position:absolute;bottom:0;height:4px;background:var(--teal);left:0}
+#cursor{position:absolute;width:22px;height:22px;border:3px solid var(--teal);border-radius:50%;background:#fff9;box-shadow:0 0 0 8px #167d7015;pointer-events:none}
+#outro .wordmark{font-size:104px}
+#outro .tagline{font-size:42px;color:var(--ink)}
+#outro .eyebrow{margin-top:38px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="rule"></div>
+  <div id="brandline"><img src="brand.png" alt=""><span>EAC design world</span></div>
+  <div id="edition">REAL CAPTURE / LOCAL PRODUCTION</div>
+  <div id="window">
+    <div class="window-top"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span>EAC DESIGN WORLD / WORKSPACE</span></div>
+    <div id="media"><video id="recording" src="capture.mp4" muted playsinline preload="auto"></video><img id="still" src="studio.png" alt="真实工作台"></div>
+  </div>
+  <div id="copy"><div id="number"></div><h1 id="headline"></h1><div id="detail"></div><div id="chip"></div></div>
+  <div id="cursor"></div>
+  <div id="intro"><img class="large-mark" src="brand.png" alt=""><div class="wordmark">EAC <span>design world</span></div><div class="tagline">从第一份素材，到下一支作品。</div><div id="underline"></div></div>
+  <div id="outro"><img class="large-mark" src="brand.png" alt=""><div class="wordmark">EAC <span>design world</span></div><div class="tagline">创作，自成世界。</div><div class="eyebrow">DeepSeek Harness · 视频制作工作室</div></div>
+  <div id="footer"><span>01 / EAC STUDIO</span><span style="margin-left:auto">CAPTURE · EDIT · VOICE · MUSIC</span></div>
+  <div id="progress"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const clamp=x=>Math.max(0,Math.min(1,x));
+const ease=x=>1-Math.pow(1-clamp(x),4);
+const mix=(a,b,t)=>a+(b-a)*t;
+const sections=[
+  {start:3.6,end:8.4,no:'01 / REAL CAPTURE',title:'从真实操作<br>开始。',detail:'让产品自己出镜。<br>录制每一个交互与结果。',chip:'真实网页录制 / 源素材保留',image:'studio.png',side:'left',video:0},
+  {start:8.4,end:13.2,no:'02 / VISUAL LANGUAGE',title:'17 种<br>视觉语言。',detail:'MG 动效与产品舞台，<br>在同一处选择。',chip:'15 MG STYLES + 2 MOTION RECIPES',image:'templates.png',side:'right'},
+  {start:13.2,end:18,no:'03 / SOUND & PICTURE',title:'让画面<br>与声音合拍。',detail:'镜头、旁白、原创配乐，<br>共享同一份制作节奏。',chip:'节拍编排 / 本地配音 / 原创音乐',image:'workflow.png',side:'left'},
+  {start:18,end:21.6,no:'04 / YOUR NEXT CUT',title:'AI 剪辑，<br>持续精修。',detail:'保留真实素材与时间线，<br>逐轮审片，继续打磨。',chip:'AI EDITING / REVIEW & REFINE',image:'outputs.png',side:'right'}
+];
+let previousImage='';
+async function seekVideo(time){
+  const video=$('recording');
+  if(video.readyState<1)await new Promise((resolve,reject)=>{video.onloadedmetadata=resolve;video.onerror=()=>reject(new Error('真实录制素材无法加载'));});
+  const target=Math.min(Math.max(0,time),Math.max(0,video.duration-.06));
+  if(Math.abs(video.currentTime-target)<.008)return;
+  await new Promise((resolve,reject)=>{
+    const timer=setTimeout(()=>reject(new Error('视频 seek 超时')),8000);
+    video.addEventListener('seeked',()=>{clearTimeout(timer);resolve();},{once:true});
+    video.currentTime=target;
+  });
+}
+window.__FPS=30;window.__DUR=24;
+window.__seek=async function(t){
+  t=Math.max(0,Math.min(24,t));
+  $('progress').style.width=(t/24*1920)+'px';
+  const introOpacity=1-ease((t-3.1)/.5);
+  $('intro').style.opacity=introOpacity;
+  $('intro').style.transform='translateY('+mix(26,0,ease(t/.8))+'px) scale('+mix(.97,1,ease(t/1.2))+')';
+  const outro=ease((t-21.4)/.6)*(1-clamp((t-23.7)/.3));
+  $('outro').style.opacity=outro;
+  $('outro').style.transform='translateY('+mix(24,0,ease((t-21.5)/.8))+'px)';
+  const active=sections.find(s=>t>=s.start&&t<s.end);
+  const upcoming=active||sections[0];
+  const local=t-upcoming.start;
+  const entrance=ease(local/.65);
+  const exit=1-ease((t-upcoming.end+.38)/.38);
+  const visible=active?Math.min(entrance,exit):0;
+  const right=upcoming.side==='right';
+  const wx=right?72:490;
+  $('window').style.opacity=visible;
+  $('window').style.transform='translate('+(wx-480+Math.sin(t*.4)*7)+'px,'+mix(24,0,entrance)+'px) scale('+mix(.97,1,entrance)+')';
+  $('copy').style.left=(right?1480:86)+'px';
+  $('copy').style.width=(right?350:420)+'px';
+  $('copy').style.opacity=visible;
+  $('copy').style.transform='translateY('+mix(30,0,ease((local-.12)/.55))+'px)';
+  $('number').textContent=upcoming.no;
+  $('headline').innerHTML=upcoming.title;
+  $('headline').style.fontSize=(right?'60':'68')+'px';
+  $('detail').innerHTML=upcoming.detail;
+  $('chip').textContent=upcoming.chip;
+  const videoOn=Boolean(active&&upcoming.video!==undefined);
+  $('recording').style.opacity=videoOn?1:0;
+  $('still').style.opacity=videoOn?0:1;
+  if(previousImage!==upcoming.image){$('still').src=upcoming.image;previousImage=upcoming.image;await $('still').decode();}
+  if(videoOn)await seekVideo(upcoming.video+Math.max(0,local)*.8);
+  const pointerVisible=Boolean(active&&local>1&&local<upcoming.end-upcoming.start-.3);
+  $('cursor').style.opacity=pointerVisible?visible:0;
+  const px=wx+(right?1040:780)+Math.sin(local*1.1)*50,py=410+Math.sin(local*.7)*45;
+  $('cursor').style.transform='translate('+px+'px,'+py+'px) scale('+mix(.8,1,ease(local-.8))+')';
+  $('brandline').style.opacity=active?1:.65;
+};
+(async()=>{
+  await document.fonts.ready;
+  await Promise.all([...document.images].map(img=>img.decode().catch(()=>{})));
+  await window.__seek(0);
+  window.__ready=true;
+})();
+</script>
+</body>
+</html>
