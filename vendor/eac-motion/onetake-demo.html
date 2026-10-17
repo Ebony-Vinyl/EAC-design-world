@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EAC · Continuous motion study</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#eeeade}
+canvas{width:100%;height:100%;object-fit:contain;display:block}
+#error{position:fixed;inset:0;display:none;place-content:center;padding:40px;color:#342c21;font:22px Georgia,serif}
+</style>
+</head>
+<body>
+<canvas id="film" width="1920" height="1080" aria-label="Continuous motion study: a dot carries through type and an orbital composition"></canvas>
+<div id="error" role="alert"></div>
+<script src="/vendor/onetake/lib/motion.js"></script>
+<script>
+(() => {
+  const canvas = document.getElementById('film'), ctx = canvas.getContext('2d');
+  if (!window.OM) {
+    const error = document.getElementById('error');
+    error.textContent = 'Onetake is not imported. Run the local motion library importer first.';
+    error.style.display = 'grid';
+    return;
+  }
+  const W = 1920, H = 1080, DUR = 8;
+  const colors = { paper: '#eeeade', ink: '#292c24', green: '#49634c', orange: '#c8613e', line: '#d5d1c4' };
+  const keys = [{ t: 0, x: 960, y: 540, zoom: 1 }, { t: 2.4, x: 960, y: 540, zoom: 1 },
+    { t: 4.1, x: 2420, y: 540, zoom: 1.1 }, { t: 6.2, x: 2420, y: 540, zoom: 1.1 },
+    { t: 7.6, x: 960, y: 540, zoom: 1 }];
+  const hand = [{ t: 0, x: 126, y: 172 }, { t: 1.4, x: 1380, y: 700 },
+    { t: 2.4, x: 1380, y: 700 }, { t: 4.1, x: 2440, y: 500 },
+    { t: 6.2, x: 2440, y: 500 }, { t: 7.6, x: 1380, y: 700 }, { t: 8, x: 1380, y: 700 }];
+  const text = (value, x, y, size, family = 'Georgia', color = colors.ink) => {
+    ctx.fillStyle = color; ctx.font = `${size}px ${family}`; ctx.fillText(value, x, y);
+  };
+  window.__meta = { dur: DUR, fps: 30, w: W, h: H };
+  window.__seek = t => {
+    t = Math.max(0, Math.min(DUR, Number(t) || 0));
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = colors.paper; ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    ctx.setTransform(...OM.view(OM.camera(t, keys), { W, H }));
+    ctx.strokeStyle = colors.line; ctx.lineWidth = 1;
+    for (let x = 100; x < 3500; x += 120) {
+      ctx.beginPath(); ctx.moveTo(x, 220); ctx.lineTo(x, 860); ctx.stroke();
+    }
+    ctx.fillStyle = colors.paper; ctx.fillRect(138, 270, 1400, 510);
+    text('EAC  /  MOTION STUDIES', 144, 180, 21, 'monospace');
+    text('01 — A thought, carried forward.', 144, 862, 24, 'Georgia', colors.green);
+    ['Make room', 'for motion.'].forEach((line, index) => {
+      const pose = OM.wordRise(t, 0.16 + index * 0.18, { dist: 95, omega: 12, zeta: 0.74 });
+      ctx.save(); ctx.globalAlpha = pose.op;
+      ctx.translate(150, 470 + index * 172 + pose.y); ctx.scale(pose.s, pose.s);
+      text(line, 0, 0, 164, 'Georgia', index ? colors.green : colors.ink);
+      ctx.restore();
+    });
+    const reveal = OM.tween(t, 0.8, 1.7, OM.ease.cubicOut);
+    ctx.strokeStyle = colors.orange; ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.moveTo(156, 704); ctx.lineTo(156 + reveal * 1130, 704); ctx.stroke();
+    ctx.save(); ctx.translate(2440, 500);
+    for (let i = 0; i < 5; i++) {
+      const pose = OM.popIn(t, 3.3 + i * 0.12, { rise: 80, s0: 0.5, ds: 0.5, omega: 10 });
+      ctx.save(); ctx.globalAlpha = pose.op; ctx.translate(0, pose.dy); ctx.scale(pose.s, pose.s);
+      ctx.rotate(i * Math.PI / 5 + Math.sin(t * 0.7) * 0.08);
+      ctx.strokeStyle = i % 2 ? colors.orange : colors.green; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.ellipse(0, 0, 330, 90, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    }
+    ctx.restore();
+    text('One continuous idea.', 2090, 850, 51);
+    text('SPRING  /  CARRY  /  CAMERA', 2094, 902, 17, 'monospace', colors.green);
+    const [x, y] = OM.spline(hand, t);
+    ctx.fillStyle = colors.orange; ctx.beginPath(); ctx.arc(x, y, 23, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    text('EAC DESIGN WORLD', 144, 1004, 18, 'monospace');
+    text('MOTION LIBRARY STUDY  ·  ONETAKE', 1320, 1004, 16, 'monospace', colors.green);
+    window.__lastTime = t;
+  };
+  document.fonts.ready.then(() => {
+    window.__seek(Number(new URLSearchParams(location.search).get('t')) || 0);
+    window.__ready = true;
+    if (!window.__odMotionRender && !new URLSearchParams(location.search).has('t')) {
+      let start;
+      const play = now => { start ??= now; window.__seek(((now - start) / 1000) % DUR); requestAnimationFrame(play); };
+      requestAnimationFrame(play);
+    }
+  });
+})();
+</script>
+</body>
+</html>

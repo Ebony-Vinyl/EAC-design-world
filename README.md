@@ -21,7 +21,7 @@ DeepSeek Harness 的本地视频制作与设计工作室
 
 EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 提供原生创作模式、模板选择和右侧作品画布，同时拥有可独立运行的本地工作台。视频录制、配音、配乐、字幕、编码与检查产生真实文件；网站、幻灯片、SVG 和文档保留源文件及版本历史。
 
-当前版本为 **v0.1.0 开发预览版**。Windows 上的录屏、语音、转录和渲染流程已执行测试；其他平台的桌面录制与本地语音未实现。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
+当前版本为 **v0.3.0 开发预览版**。本版包含独立的插件维护导航、签名更新与回滚、编辑草稿恢复和预览安全修复，详见 [发布说明](docs/release-v0.3.0.md)。Windows 上的录屏、语音、转录和渲染流程已执行测试；其他平台的桌面录制与本地语音未实现。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
 
 <p align="center"><img src="docs/assets/templates.png" alt="EAC design world 两行模板推荐与真实页面封面" width="960" /><br /><sub>按创作类型推荐模板，保留真实封面与可移除的选择标签。</sub></p>
 
@@ -41,9 +41,10 @@ EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-
 | 编排实际镜头 | 多轨时间线，调整开始时间、素材入点、时长、音量和轨道；带修订号保存 |
 | 处理语音与字幕 | 本地语音转录、去停顿初稿、SRT、时间线字幕与 ASS 烧录；转录需自行准备本地模型 |
 | 完成声音与编码 | Windows SAPI 旁白、本地确定性器乐、源音轨混音、H.264 输出与技术检查 |
-| 制作图形动效 | 原有 `renderAt(t)` / `__seek(t)`、CSS 动画和 GSAP 时间线的确定性驱动与抽帧审查 |
+| 制作图形动效 | `renderAt(t)` / `__seek(t)`、CSS 动画和 GSAP 时间线的确定性驱动与抽帧审查；可选接入 Motion Web 交互案例和 Onetake 函数库 |
 | 创建网站和演示稿 | HTML、SVG、Markdown 编辑、隔离预览、不可变修订与源文件下载 |
 | 检查与导出作品 | Harness 原生右侧作品画布、HTML 幻灯片分页、PDF / PNG / PPTX 整页图像导出 |
+| 维护插件 | 顶部导航中的独立维护中心：运行/安装版本、签名更新、本地更新、备份回滚、宿主热重载、公告与已读记录 |
 
 ### 设计内容库
 
@@ -61,20 +62,32 @@ EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-
 
 <p align="center"><img src="docs/assets/design-systems.png" alt="设计体系的真实色板、字体与令牌" width="960" /></p>
 
+### 可选动效来源：Motion Web / Onetake
+
+支持从已取得的本地仓库导入 [motion-web](https://github.com/feitangyuan/motion-web) 的 7 个交互案例及制作指南，以及 [onetake](https://github.com/feitangyuan/onetake) 的 OM 动效函数库与制作指南。模板统一进入搜索、源码读取和隔离预览；Onetake 示例可逐帧导出，Motion Web 实时页面可录制为视频。
+
+```powershell
+npm run motion:import -- --motion-web "D:\Sources\motion-web" --onetake "D:\Sources\onetake" --noncommercial
+npm run motion:verify
+```
+
+两者保留各自非商业许可，不进入公共 Git 或 Release 包；商业使用需相应授权。已取得授权的用途用 `--licensed` 记录。详见 [接入、使用与验证说明](docs/motion-libraries.md)。
+
 ## 下载与安装
 
 从 [Releases](https://github.com/Ebony-Vinyl/EAC-design-world/releases) 下载同一版本的文件：
 
 | 文件 | 用途 |
 | --- | --- |
-| `eac-design-world-v0.1.0-plugin.zip` | 插件源码、预构建 Web UI、模板源码、设计体系、封面、安装脚本及许可说明；不包含 Node 依赖 |
-| `eac-design-world-v0.1.0-media.zip` | 可选大媒体包：MG 原始预览视频、字体、渲染素材及工作台 65 秒宣传片 |
-| `SHA256SUMS.txt` | 两个压缩包的 SHA-256 校验值 |
+| `eac-design-world-v0.3.0-plugin.zip` | 插件源码、预构建 Web UI、模板源码、设计体系、封面、安装脚本及许可说明；不包含 Node 依赖 |
+| `eac-design-world-v0.3.0-media.zip` | 可选大媒体包：MG 原始预览视频、字体、渲染素材及宣传片素材 |
+| `eac-design-world-v0.3.0-update.zip` | 维护中心使用的签名本地更新包，解压后选择其中 `manifest.json` |
+| `SHA256SUMS.txt` | 发布产物的 SHA-256 校验值 |
 | GitHub 自动生成的 Source code | 与仓库提交对应的源码快照，不含预构建 `dist` 和可选大媒体 |
 
 两个 ZIP 使用相同的 `eac-design-world/` 根目录。先解压插件包，再将媒体包合并解压到同一位置。保留原目录结构，不要把所有文件平铺到一个目录。
 
-> 媒体包不含 FFmpeg、Node、Python、Whisper 模型或 `node_modules`，也不再分发 Alibaba PuHuiTi 3 / Alimama ShuHeiTi 字体文件（需从官方来源自行获取）。未安装媒体包时，一些经典动效渲染素材和固定宣传片预览不可用，设计库及设计编辑仍可使用。
+> 媒体包不含 FFmpeg、Node、Python、Whisper 模型或 `node_modules`，也不再分发 Alibaba PuHuiTi 3 / Alimama ShuHeiTi 字体文件（需从官方来源自行获取）。未安装媒体包时，一些经典动效渲染素材不可用，设计库及设计编辑仍可使用。工作台预览优先展示当前项目成片，没有成片时展示所选模板。
 
 ### 环境要求
 
@@ -184,6 +197,7 @@ Harness 对话 / 设置 / 原生右侧画布
 - [OpenDesign 融合与能力边界](docs/open-design-integration.md)
 - [字体来源与安装](docs/fonts.md)
 - [AI 制作工作流](docs/harness-ai-workflow.md)
+- [插件更新、热重载与公告维护](docs/maintenance.md)
 - [第三方许可与来源](THIRD_PARTY_NOTICES.md)
 
 ### 当前边界

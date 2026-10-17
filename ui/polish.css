@@ -1,0 +1,119 @@
+/* Shared interaction rhythm across the studio, library and embedded views. */
+:root {
+  --ease-out: cubic-bezier(.2, .7, .2, 1);
+  --muted: #727e78;
+  --line: #e0e6e3;
+}
+
+button, a, input, textarea, select { touch-action: manipulation; }
+button:focus-visible, a:focus-visible, [tabindex="0"]:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+}
+
+.app-topnav {
+  background: #fffffff5;
+  box-shadow: 0 1px 0 #243a3010;
+  backdrop-filter: blur(14px);
+}
+.brand strong { color: #263a35; }
+.page-heading h1 { color: #263a35; font-weight: 600; }
+.page-heading p { font-size: 12px; line-height: 1.7; color: #74817b; }
+.eyebrow, .brand small, .harness-label, .dw-attribution-source, .specimen-top { letter-spacing: 0; }
+.heading-dot { color: #d47a65; }
+.button, .icon-button, .topnav-item, .dw-tabs button, .dw-device-bar button,
+.filter-tabs button, .library-select, .library-pagination button {
+  transition: background-color 160ms ease, border-color 160ms ease,
+    color 160ms ease, box-shadow 160ms ease, transform 160ms var(--ease-out);
+}
+.button.primary { box-shadow: 0 2px 3px #175b4514; }
+.button.primary:hover:not(:disabled) { box-shadow: 0 3px 8px #175b4524; }
+.button:active:not(:disabled), .icon-button:active:not(:disabled),
+.library-select:active:not(:disabled) { transform: translateY(1px); }
+.button:disabled { box-shadow: none; }
+input, textarea, select {
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 3px #227b700c; }
+.preview-stage { border: 1px solid #183e2d18; box-shadow: 0 6px 22px #20392a0a; }
+.brief-panel { border-color: #dce5df; }
+.section-title h2 { font-size: 12px; color: #53665b; }
+.section-title .count { font-size: 10px; }
+.studio-tabs button { font-size: 12px; }
+.project-form label, .project-form input, .project-form textarea,
+.project-form select, .project-form legend { font-size: 12px; }
+.brief-panel .project-form textarea { min-height: 120px; line-height: 1.8; }
+.preview-footer { font-size: 11px; }
+.preview-footer > .mono { font-size: 10px; }
+.preview-section .segmented button { font-size: 11px; min-height: 26px; }
+.library-cover-action { display: inline-flex; align-items: center; gap: 5px; }
+.mini-template > span { font-size: 11px; gap: 6px; text-align: left; }
+.mini-template > span > svg { flex-shrink: 0; }
+.mini-template > div { transition: border-color 160ms ease, box-shadow 160ms ease; }
+.mini-template:hover > div { border-color: #92b2a3; box-shadow: 0 3px 12px #174b3012; }
+.library-card-cover, .dw-template-thumb, .dw-system-cover { isolation: isolate; }
+.library-card-cover { border-radius: 8px; }
+.library-card-cover:focus-visible, .dw-template-thumb:focus-visible,
+.dw-system-cover:focus-visible { outline-offset: 3px; }
+.library-card-cover img, .dw-template-thumb img { transition: transform 240ms var(--ease-out); }
+.library-card-cover:hover img, .dw-template-thumb:hover img { transform: scale(1.025); }
+.library-card.selected .library-card-cover { box-shadow: 0 0 0 2px var(--teal); }
+.library-card-cover:focus-visible .library-cover-action,
+.dw-system-cover:focus-visible > span { opacity: 1; }
+.library-select { min-width: 32px; min-height: 32px; }
+.library-selected { animation: selection-in 180ms var(--ease-out) both; }
+.library-results-bar > span { font-variant-numeric: tabular-nums; }
+.library-picker-scroll { scrollbar-gutter: stable; overscroll-behavior: contain; }
+.library-no-results button { margin-top: 8px; }
+.dw-system-card:hover { transform: none; }
+.dw-system-card { transition: border-color 160ms ease, box-shadow 160ms ease; }
+.dw-device-bar button { min-width: 32px; min-height: 30px; }
+.dw-editor-toolbar { min-height: 36px; }
+.dw-editor-main[aria-busy="true"] .dw-code { opacity: .6; }
+.dw-code { tab-size: 2; caret-color: var(--teal); }
+.dw-history-row button { min-height: 32px; }
+.dw-history-row button:disabled { opacity: .55; }
+.dw-draft-status { display: flex; align-items: center; gap: 6px; min-height: 18px; color: #8a6b43; font-size: 11px; }
+.modal-backdrop { animation: backdrop-in 160ms ease both; overscroll-behavior: contain; }
+.dialog {
+  animation: dialog-in 220ms var(--ease-out) both;
+  border: 1px solid #dce5df;
+  box-shadow: 0 24px 80px #112b3329, 0 4px 16px #112b3310;
+}
+.dialog:focus { outline: none; }
+.dialog-header { background: #fcfdfc; }
+.toast { animation: toast-in 220ms var(--ease-out) both; max-width: min(480px, calc(100vw - 32px)); }
+.toast > span { min-width: 0; overflow-wrap: anywhere; }
+.page-footer { font-size: 10px; color: #7e8a80; }
+@keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dialog-in { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes toast-in { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
+@keyframes selection-in { from { opacity: 0; scale: .75; } to { opacity: 1; scale: 1; } }
+@media (hover: none) {
+  .library-cover-action, .dw-system-cover > span { opacity: 1; }
+}
+@media (max-width: 680px) {
+  .app-topnav { backdrop-filter: none; }
+  .topnav-item { min-height: 38px; }
+  .page-heading p { font-size: 11px; max-width: 44ch; }
+  .page-heading { align-items: flex-start; }
+  .heading-actions { flex-shrink: 0; }
+  .brief-panel { padding-top: 18px; }
+  .studio-tabs > div { gap: 14px; }
+  .studio-tabs button { font-size: 11px; gap: 5px; }
+  .studio-tabs .studio-format { display: none; }
+  .dw-library-toolbar .search-input { width: 100%; }
+  .library-pagination { gap: 8px; flex-wrap: wrap; }
+  .library-pagination > span { font-size: 10px; }
+  .dialog { max-height: calc(100dvh - 24px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .library-card:hover, .library-card:focus-within,
+  .library-card:hover .library-cover, .dw-template-thumb:hover img { transform: none; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

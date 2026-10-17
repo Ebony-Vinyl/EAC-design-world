@@ -3,12 +3,15 @@ import { createReadStream, existsSync } from 'node:fs';
 import { readFile, stat, realpath } from 'node:fs/promises';
 import { resolve, join, extname, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { ROOT } from './catalog.mjs';
+import { ROOT, getTemplates } from './catalog.mjs';
 import { createEngine } from './engine.mjs';
 import { designArtifactKinds } from './design-store.mjs';
+import { VERSION } from './version.mjs';
+import { createMaintenance } from './maintenance.mjs';
+import { RELEASE_PUBLIC_KEY } from './maintenance-key.mjs';
 
 const mime = {
-  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
+  '.html': 'text/html; charset=utf-8', '.htm': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.mp4': 'video/mp4',
@@ -25,12 +28,13 @@ const inside = (root, path) => {
 // Preview runs saved/imported HTML/SVG in an opaque origin: sandbox WITHOUT allow-same-origin,
 // so scripts cannot read cookies, storage, or reach the EAC API with shared privileges. Subresource
 // loads are limited to the server's own loopback origin (so source-ready HTML still finds its local
-// assets); connect-src stays 'none' and form/base actions stay blocked.
-function previewCsp(kind, origin) {
+// assets); connect-src and forms stay blocked. Only an optional template project can
+// resolve a base URL on the current local server origin.
+function previewCsp(kind, origin, assetBase = "'none'") {
   const local = `http://127.0.0.1:* http://localhost:*${origin ? ` ${origin}` : ''}`;
   if (kind === 'svg') return `sandbox; default-src 'none'; style-src 'unsafe-inline' ${local}; img-src data: blob: ${local}; font-src data: ${local}`;
   if (kind === 'markdown') return "sandbox; default-src 'none'; style-src 'unsafe-inline'";
-  return `sandbox allow-scripts allow-downloads; default-src 'none'; script-src 'unsafe-inline' ${local}; style-src 'unsafe-inline' ${local}; img-src data: blob: ${local}; font-src data: ${local}; media-src data: blob: ${local}; connect-src 'none'; base-uri 'none'; form-action 'none'`;
+  return `sandbox allow-scripts allow-downloads; default-src 'none'; script-src 'unsafe-inline' ${local}; style-src 'unsafe-inline' ${local}; img-src data: blob: ${local}; font-src data: ${local}; media-src data: blob: ${local}; connect-src 'none'; base-uri ${assetBase}; form-action 'none'`;
 }
 // The composer controls live inside the Harness dsh-app context and must reach this one
 // endpoint across origins. Only this route relaxes CORS, and only for trusted origins.
@@ -76,14 +80,14 @@ async function serveUntrusted(request, response, file, kind, origin) {
   if (request.method === 'HEAD') { response.end(); return; }
   createReadStream(file).pipe(response);
 }
-async function serveArtifact(request, response, file, { preview, origin }) {
+async function serveArtifact(request, response, file, { preview, origin, assetBase }) {
   const info = await stat(file.path).catch(() => null);
   if (!info?.isFile()) { response.writeHead(404); response.end(); return; }
   const extension = extname(file.path).toLowerCase();
   const type = mime[extension] || 'application/octet-stream';
   const headers = { 'content-type': type, 'content-length': info.size, 'x-content-type-options': 'nosniff' };
   if (preview) {
-    headers['content-security-policy'] = previewCsp(file.kind, origin);
+    headers['content-security-policy'] = previewCsp(file.kind, origin, assetBase);
     headers['cache-control'] = 'no-store';
   } else {
     const fallback = file.name.replace(/[^A-Za-z0-9._-]+/g, '_');
@@ -113,8 +117,9 @@ async function serveFile(request, response, file) {
   }
 }
 
-export async function startServer({ engine: suppliedEngine, port = Number(process.env.EAC_PORT || 4173), dev = false } = {}) {
+export async function startServer({ engine: suppliedEngine, port = Number(process.env.EAC_PORT || 4173), dev = false, maintenanceOptions = {} } = {}) {
   const engine = suppliedEngine || await createEngine();
+  const maintenance = createMaintenance({ engine, manifestPublicKey: RELEASE_PUBLIC_KEY, ...maintenanceOptions });
   const vite = dev ? await (await import('vite')).createServer({ root: ROOT, server: { middlewareMode: true }, appType: 'spa' }) : null;
   let origin;
   const server = http.createServer(async (request, response) => {
@@ -129,7 +134,17 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
         if (requestOrigin && !loopback(requestOrigin) && !(composerRoute && trustedOrigin(requestOrigin))) {
           return json(response, 403, { error: '跨来源请求被拒绝' });
         }
-        if (url.pathname === '/api/health') return json(response, 200, { ok: true, name: 'EAC design world', version: '0.1.0' });
+        if (url.pathname === '/api/health') return json(response, 200, { ok: true, name: 'EAC design world', version: VERSION, instanceId: maintenance.status().instanceId });
+        if (url.pathname === '/api/maintenance' && request.method === 'GET') return json(response, 200, maintenance.status());
+        if (url.pathname.startsWith('/api/maintenance/') && ['POST', 'PUT'].includes(request.method)) {
+          const input = await body(request);
+          const action = url.pathname.slice('/api/maintenance/'.length);
+          if (action === 'settings' && request.method === 'PUT') return json(response, 200, await maintenance.settingsUpdate(input));
+          if (action === 'announcements/refresh') return json(response, 200, await maintenance.refreshAnnouncements());
+          if (action === 'announcements/ack') return json(response, 200, await maintenance.acknowledge(input.ids));
+          if (['check', 'apply', 'local', 'reload', 'rollback'].includes(action)) return json(response, 202, maintenance.start(action, input));
+          return json(response, 404, { error: '维护接口不存在' });
+        }
         if (composerRoute) {
           cors(response, request);
           if (request.method === 'OPTIONS') { response.writeHead(204); response.end(); return; }
@@ -162,7 +177,12 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
           const revision = url.searchParams.get('revision') ?? undefined;
           if (action === 'content') return json(response, 200, await engine.designStore.readContent(id, revision ? Number(revision) : undefined));
           const file = engine.designStore.fileFor(id, revision ? Number(revision) : undefined);
-          if (action === 'preview') return await serveArtifact(request, response, file, { preview: true, origin });
+          if (action === 'preview') {
+            const project = engine.designStore.project(file.projectId);
+            const template = getTemplates().find(item => item.id === project.templateId && ['motion-web', 'onetake'].includes(item.source));
+            const assetBase = template ? origin : undefined;
+            return await serveArtifact(request, response, file, { preview: true, origin, assetBase });
+          }
           return await serveArtifact(request, response, file, { preview: false });
         }
         const toolMatch = /^\/api\/tools\/([A-Za-z_][A-Za-z0-9_]*)$/.exec(url.pathname);
@@ -176,6 +196,10 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
         if (url.pathname === '/api/files' && ['GET', 'HEAD'].includes(request.method)) {
           const path = url.searchParams.get('path') || '';
           if (!await engine.canServeFile(path)) return json(response, 403, { error: '文件不属于已导入素材或输出目录' });
+          const extension = extname(path).toLowerCase();
+          if (['.html', '.htm', '.svg'].includes(extension)) {
+            return await serveUntrusted(request, response, resolve(path), extension === '.svg' ? 'svg' : 'html', origin);
+          }
           return await serveFile(request, response, resolve(path));
         }
         if (url.pathname === '/api/projects' && request.method === 'POST') return json(response, 201, await engine.handle('project_create', await body(request)));
@@ -204,7 +228,8 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
         // templates keep the same-origin access they need for __seek and stay unscoped.
         const openDesign = inside(join(vendor, 'open-design'), path);
         const extension = extname(path).toLowerCase();
-        const untrusted = openDesign && ['.html', '.htm', '.svg'].includes(extension);
+        const optionalMotion = ['motion-web', 'onetake', 'eac-motion'].some(name => inside(join(vendor, name), path));
+        const untrusted = (openDesign || optionalMotion) && ['.html', '.htm', '.svg'].includes(extension);
         if (untrusted) return await serveUntrusted(request, response, path, extension === '.svg' ? 'svg' : 'html', origin);
         return await serveFile(request, response, path);
       }
@@ -218,12 +243,20 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
       return json(response, error.code === 'ENOENT' ? 404 : 400, { error: error.message });
     }
   });
-  await new Promise((accept, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', accept); });
+  try {
+    await new Promise((accept, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', accept); });
+  } catch (error) {
+    await maintenance.close();
+    await vite?.close();
+    if (!suppliedEngine) await engine.close();
+    throw error;
+  }
   const actualPort = server.address().port;
   origin = `http://127.0.0.1:${actualPort}`;
   return {
-    port: actualPort, url: origin, engine,
+    port: actualPort, url: origin, engine, maintenance,
     async close() {
+      await maintenance.close();
       await new Promise((done) => { server.close(done); server.closeAllConnections(); });
       await vite?.close();
       if (!suppliedEngine) await engine.close();

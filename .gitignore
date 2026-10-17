@@ -28,6 +28,10 @@ vendor/mg-styles-15/demos/**/*.jpg
 vendor/motion-promo-film/templates/lib/motion.js
 vendor/motion-promo-film/templates/film-template-plus.html
 
+# Optional noncommercial motion sources are imported locally, never redistributed.
+vendor/motion-web/
+vendor/onetake/
+
 # Content without an upstream redistribution grant.
 vendor/open-design/templates/prompts/image/profile-avatar-seedream-high-fashion-dreamy-portrait.json
 vendor/open-design/templates/prompts/image-assets/profile-avatar-seedream-high-fashion-dreamy-portrait.jpg

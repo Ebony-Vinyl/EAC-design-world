@@ -23,6 +23,36 @@ by its own `POLYFORM-NOTE.md`. It and its optional plus-template consumer are ex
 from this public repository and Release packages. EAC's default classic entry uses the
 base template. The retained note documents the excluded component's original terms.
 
+## Optional Motion Web and Onetake sources
+
+- Motion Web: https://github.com/feitangyuan/motion-web, tested revision
+  `5f4e40f1253e11e28850d08dce28b9b7e4320115`, CC BY-NC 4.0.
+- Onetake: https://github.com/feitangyuan/onetake, tested revision
+  `415758128aa45cc54340df40d8109363447f582e`, PolyForm Noncommercial 1.0.0,
+  copyright Patrick (github.com/feitangyuan).
+
+These are optional, user-provisioned local sources. `scripts/import-motion-libraries.mjs`
+requires an explicit noncommercial-use or separately-licensed-use acknowledgement,
+preserves upstream LICENSE files, and records revision and content digest in each
+local `EAC-PROVENANCE.json`. `vendor/motion-web/` and `vendor/onetake/` are excluded
+from public Git and Release archives. EAC's AGPL license does not relicense them;
+commercial use requires the applicable upstream authorization.
+
+`vendor/eac-motion/onetake-demo.html` is an original EAC composition, under this
+project's AGPL license. It loads the optional OM library at runtime; no upstream
+film is copied into that demo. Upstream Python tools are retained as optional
+reference material, not silently installed or executed by EAC.
+
+## Plugin maintenance implementation
+
+The update, announcement feed and hot-reload modules are adapted from
+[Ebony-Vinyl/dsh-our-free-model](https://github.com/Ebony-Vinyl/dsh-our-free-model),
+revision `0b712bcbb887ae101cae5fdf935b0845761a1421`, MIT, copyright (c) 2026
+Ebony-Vinyl. The full license is retained at `vendor/dsh-our-free-model/LICENSE`.
+Adaptations use EAC's own package identity, signature key, API paths, protected
+user-data directories and Harness entry point. No upstream private credentials or
+release signing keys are copied.
+
 ## Font distribution
 
 Alibaba PuHuiTi 3 and Alimama ShuHeiTi font binaries are not redistributed in

@@ -51,6 +51,8 @@ try {
       if (action.type === 'click') await page.locator(action.selector).click();
       else if (action.type === 'fill') await page.locator(action.selector).fill(action.text);
       else if (action.type === 'wait') await wait(action.ms ?? 1000);
+      else if (action.type === 'move') await page.mouse.move(action.x, action.y, { steps: action.steps ?? 1 });
+      else if (action.type === 'wheel') await page.mouse.wheel(action.deltaX ?? 0, action.deltaY ?? 600);
       else if (action.selector) await page.locator(action.selector).evaluate((element, delta) => element.scrollBy(0, delta), action.deltaY ?? 600);
       else await page.evaluate((delta) => window.scrollBy(0, delta), action.deltaY ?? 600);
     }

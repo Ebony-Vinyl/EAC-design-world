@@ -9,6 +9,7 @@ import { ROOT, resolveTemplate } from './catalog.mjs';
 import { chromium } from 'playwright';
 
 const within = (root, file) => { const rel = relative(root, file); return !rel.startsWith('..') && !isAbsolute(rel); };
+const motionAssetRoots = ['vendor/onetake/lib', 'vendor/motion-web', 'vendor/eac-motion'];
 const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.glb': 'model/gltf-binary', '.mp4': 'video/mp4' };
 
 async function assetServer(root, entry) {
@@ -18,9 +19,11 @@ async function assetServer(root, entry) {
       let file;
       if (pathname === '/__film.html') file = entry;
       else if (pathname.startsWith('/node_modules/')) file = resolve(ROOT, `.${pathname}`);
+      else if (motionAssetRoots.some(directory => pathname.startsWith(`/${directory}/`))) file = resolve(ROOT, `.${pathname}`);
       else file = resolve(root, `.${pathname}`);
       const resolved = await realpath(file);
-      if (resolved !== entry && !within(root, resolved) && !within(join(ROOT, 'node_modules'), resolved)) throw new Error('Path outside template');
+      if (resolved !== entry && !within(root, resolved) && !within(join(ROOT, 'node_modules'), resolved)
+        && !motionAssetRoots.some(directory => within(join(ROOT, directory), resolved))) throw new Error('Path outside template');
       if (!(await stat(resolved)).isFile()) throw new Error('Not a file');
       res.writeHead(200, { 'content-type': types[extname(resolved)] || 'application/octet-stream' });
       createReadStream(resolved).pipe(res);
@@ -42,7 +45,11 @@ export async function renderTemplate({ templateId, htmlPath, outputPath, duratio
   outputPath = resolve(outputPath);
   if (extname(outputPath).toLowerCase() !== '.mp4') throw new Error('模板输出必须是 MP4 文件');
   const template = await resolveTemplate(templateId);
+  if (template.previewMode === 'interactive' && htmlPath && resolve(ROOT, htmlPath) === resolve(ROOT, template.entry)) {
+    throw new Error(`模板 ${template.id} 是原始实时交互页面；请用 record-browser 录制，或将定制合成另存为支持 __seek(t) 的 htmlPath`);
+  }
   if (!htmlPath && !template.entry) throw new Error(`模板 ${template.id} 只有提示词或示例，没有可渲染的源文件；请提交 htmlPath 或改用其它模板`);
+  if (!htmlPath && template.previewMode === 'interactive') throw new Error(`模板 ${template.id} 是实时交互页面；请用 record-browser 录制实际操作，或先定制为支持 __seek(t) 的 htmlPath 再逐帧渲染`);
   if (!htmlPath && template.renderable === false) throw new Error(`模板 ${template.id} 的运行时依赖不可用（${template.status}），不能直接渲染；请补全依赖或提交定制 htmlPath`);
   const source = resolve(ROOT, htmlPath || template.entry);
   const sourceRoot = htmlPath ? dirname(source) : template.source === 'mg-styles-15' ? join(ROOT, 'vendor/mg-styles-15') : dirname(source);
@@ -112,8 +119,8 @@ export async function renderTemplate({ templateId, htmlPath, outputPath, duratio
           .map((node) => Number(node.getAttribute('data-duration'))).filter((value) => Number.isFinite(value) && value > 0);
         const declared = [...timelineDurations, ...dataDurations];
         return {
-          fps: window.DEMO?.fps || window.__FPS,
-          duration: window.DEMO?.duration || window.__DUR,
+          fps: window.DEMO?.fps || window.__FPS || window.__meta?.fps,
+          duration: window.DEMO?.duration || window.__DUR || window.__meta?.dur,
           hasTimelines: timelineList.length > 0,
           maxDeclared: declared.length ? Math.max(...declared) : undefined,
         };

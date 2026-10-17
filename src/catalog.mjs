@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { motionTemplates } from './motion-libraries.mjs';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -49,8 +50,12 @@ export const templates = [
   }
 ];
 
+export function getTemplates() {
+  return [...templates, ...motionTemplates()];
+}
+
 export function getTemplate(id) {
-  const template = templates.find((item) => item.id === id);
+  const template = getTemplates().find((item) => item.id === id);
   if (!template) throw new Error(`Unknown template: ${id}`);
   return { ...template, available: existsSync(resolve(ROOT, template.entry)) };
 }
@@ -122,8 +127,8 @@ export function libraryCatalogEntry(item) {
 // Resolve a template ID across the built-in catalog and the OpenDesign library.
 export async function resolveTemplate(id) {
   if (!id) throw new Error('请提供模板 ID');
-  const local = templates.find((item) => item.id === id);
-  if (local) return { ...local, available: existsSync(resolve(ROOT, local.entry)), renderable: true };
+  const local = getTemplates().find((item) => item.id === id);
+  if (local) return { ...local, available: existsSync(resolve(ROOT, local.entry)), renderable: local.renderable !== false };
   // Only OpenDesign IDs (od- prefix) consult the library; unknown local IDs fail fast without
   // importing the content module, so a missing module never masks an unknown-template error.
   if (!id.startsWith('od-')) throw new Error(`Unknown template: ${id}`);

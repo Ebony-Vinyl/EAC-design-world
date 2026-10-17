@@ -1,8 +1,14 @@
 import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
 import net from 'node:net';
+import { VERSION } from '../src/version.mjs';
+import { selfReload } from '../src/maintenance-reload.mjs';
+import { pathToFileURL } from 'node:url';
+import { ROOT } from '../src/catalog.mjs';
 import { designContextFor } from '../src/engine.mjs';
+import { toLosslessJson } from '../src/lossless-json.mjs';
 
 export const name = 'eac-design-world';
+export const version = VERSION;
 export const inject = ['tools', 'systemPrompt'];
 
 const reads = new Set(['status', 'project_get', 'job_status', 'template_read', 'library_read', 'library_list', 'library', 'design_state', 'composer_get']);
@@ -83,13 +89,25 @@ export function createToolRegistrations(engine, definitions) {
       isConcurrencySafe: () => reads.has(engineName),
       async execute(args, execution) {
         execution?.signal?.throwIfAborted();
-        const result = validate(args);
-        if (!result.valid) {
-          const error = new TypeError(`Invalid EAC tool arguments: ${result.errorMessage}`);
+        const validation = validate(args);
+        if (!validation.valid) {
+          const error = new TypeError(`Invalid EAC tool arguments: ${validation.errorMessage}`);
           error.code = 'INVALID_ARGS';
           throw error;
         }
-        return engine.handle(engineName, args);
+        // The Harness host requires every tool result to be lossless JSON. Engine
+        // results can carry optional fields left as `undefined` (which JSON would
+        // silently drop) and, in principle, other non-JSON leaves; normalize here,
+        // at the single host boundary, without swallowing genuine engine errors.
+        const result = await engine.handle(engineName, args);
+        try {
+          return toLosslessJson(result);
+        } catch (error) {
+          if (error?.code !== 'EAC_LOSSLESS_JSON') throw error;
+          const failure = new Error(`EAC tool ${engineName} returned invalid output: ${error.message}`);
+          failure.code = 'EAC_INVALID_OUTPUT';
+          throw failure;
+        }
       },
     };
   });
@@ -121,8 +139,9 @@ export function activate(ctx, config = {}, dependencies = {}) {
     disposed = true;
     return closing ??= Promise.resolve(startup).catch(() => {}).then(release);
   };
-  // Install disposal before awaiting resources so removal during startup cannot leak them.
-  ctx.on('dispose', close);
+  // Register teardown before asynchronous startup so unloading cannot leak its server.
+  if (typeof ctx.effect === 'function') ctx.effect(() => close);
+  else ctx.on('dispose', close);
   startup = (async () => {
     try {
       const { createEngine } = dependencies.createEngine ? dependencies : await import('../src/engine.mjs');
@@ -140,6 +159,11 @@ export function activate(ctx, config = {}, dependencies = {}) {
         const health = await response.json();
         if (!response.ok || health.ok !== true || health.name !== 'EAC design world'
           || typeof health.version !== 'string') throw error;
+        if (health.version !== VERSION) {
+          const stale = new Error(`EAC 服务仍运行 ${health.version}，当前插件源码为 ${VERSION}。请先在旧服务所属进程停止服务，再重新加载插件；不能把旧接口当成新插件继续使用。`);
+          stale.code = 'EAC_STALE_RUNTIME';
+          throw stale;
+        }
         existing = true;
       }
       if (disposed) return;
@@ -148,7 +172,12 @@ export function activate(ctx, config = {}, dependencies = {}) {
       } else {
         engine = await createEngine(config.dataDir ? { dataDir: config.dataDir } : {});
         if (disposed) return;
-        server = await startServer({ engine, port, dev: config.dev ?? false });
+        const loader = typeof ctx.get === 'function' ? ctx.get('loader') : ctx.loader;
+        const reloadAvailable = Boolean(loader && ctx.registry && ctx.fiber?.runtime?.callback);
+        const maintenanceOptions = reloadAvailable ? { mode: 'harness', runningVersion: VERSION, reload: ({ expectedVersion } = {}) => selfReload(ctx, {
+          packageUrl: `${pathToFileURL(ROOT).href}/`, entryUrl: new URL('./host.mjs', import.meta.url).href, expectedVersion,
+        }) } : undefined;
+        server = await startServer({ engine, port, dev: config.dev ?? false, ...(maintenanceOptions ? { maintenanceOptions } : {}) });
       }
       if (disposed) return;
       for (const definition of createToolRegistrations(engine, toolDefinitions)) {

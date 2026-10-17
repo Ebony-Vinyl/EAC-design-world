@@ -5,7 +5,8 @@ import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { Store } from './store.mjs';
 import { DesignStore } from './design-store.mjs';
-import { ROOT, templates, getTemplate, resolveTemplate, loadLibrary, libraryCatalogEntry, workflowRecipes } from './catalog.mjs';
+import { ROOT, getTemplates, resolveTemplate, loadLibrary, libraryCatalogEntry, workflowRecipes } from './catalog.mjs';
+import { motionSkills, readMotionLibraryItem } from './motion-libraries.mjs';
 import { productionInstructions } from './tools.mjs';
 
 const jobTypes = new Set(['record-browser', 'record-desktop', 'analyze', 'beats', 'transcribe', 'rough-cut', 'captions', 'voice', 'compose', 'render', 'render-template', 'produce']);
@@ -50,6 +51,7 @@ export async function createEngine({ dataDir } = {}) {
   let pumping = false;
   let scheduled = false;
   let closed = false;
+  let maintenanceMode = false;
   let pumpTask = Promise.resolve();
   let media;
   const getMedia = async () => media ||= await import('./media/index.mjs');
@@ -376,17 +378,18 @@ export async function createEngine({ dataDir } = {}) {
       librarySkills, libraryPrompts, libraryAtoms, libraryScenarios } = await loadLibrary();
     const odTemplates = openDesignTemplates.map(libraryCatalogEntry);
     return {
-      templates: [...templates.map(item => ({ ...item, kind: 'motion' })), ...odTemplates],
-      designSystems, creationModes, skills: librarySkills, prompts: libraryPrompts,
+      templates: [...getTemplates().map(item => ({ ...item, kind: 'motion' })), ...odTemplates],
+      designSystems, creationModes, skills: [...librarySkills, ...motionSkills()], prompts: libraryPrompts,
       atoms: libraryAtoms, scenarios: libraryScenarios, stats: libraryStats,
       provenance: libraryProvenance,
     };
   }
   const engine = {
     store, designStore, capabilities, library,
+    setMaintenanceMode(value) { maintenanceMode = value; },
     async state() {
       const { composer, ...state } = store.snapshot();
-      return { ...state, templates, recipes: workflowRecipes, capabilities: await capabilities() };
+      return { ...state, templates: getTemplates(), recipes: workflowRecipes, capabilities: await capabilities() };
     },
     async settingsUpdate(input) {
       const allowed = ['outputRoot', 'ttsVoice', 'quality'];
@@ -445,6 +448,7 @@ export async function createEngine({ dataDir } = {}) {
           }, args.revision);
         }
         case 'job_submit': {
+          if (typeof maintenanceMode === 'function' ? maintenanceMode() : maintenanceMode) throw new Error('插件正在更新或重载，完成维护后才能提交制作任务');
           store.project(args.projectId);
           if (!jobTypes.has(args.type)) throw new Error('未知任务类型');
           if (store.state.jobs.filter((j) => ['queued', 'running'].includes(j.status)).length >= 30) throw new Error('任务队列已满');
@@ -482,11 +486,22 @@ export async function createEngine({ dataDir } = {}) {
           const all = Object.values(collections).flat();
           const pool = args.kind && collections[args.kind] ? collections[args.kind] : args.kind ? all.filter(item => item.kind === args.kind) : all;
           const query = String(args.query || '').toLowerCase();
-          const filtered = pool.filter(item => `${item.id} ${item.name || item.title} ${item.description} ${(item.tags || []).join(' ')}`.toLowerCase().includes(query));
+          const filtered = pool.filter(item => `${item.id} ${item.name || item.title} ${item.source || ''} ${item.description} ${(item.tags || []).join(' ')}`.toLowerCase().includes(query));
           const limit = Number.isInteger(args.limit) ? Math.max(1, Math.min(200, args.limit)) : 50;
-          return { total: filtered.length, items: filtered.slice(0, limit).map(item => ({ id: item.id, name: item.name || item.title, kind: item.kind || 'motion', description: item.description, runtime: item.status || item.runtime, license: item.license, renderable: item.renderable, requirements: item.requirements })) };
+          return { total: filtered.length, items: filtered.slice(0, limit).map(item => ({ id: item.id, name: item.name || item.title, kind: item.kind || 'motion', description: item.description, runtime: item.status || item.runtime, license: item.license, source: item.source, renderable: item.renderable ?? null, requirements: item.requirements ?? [] })) };
         }
         case 'library_read': {
+          const motionItem = await readMotionLibraryItem({ kind: args.kind, id: args.id, includeEntry: args.source === true, resource: args.resource });
+          if (motionItem) return motionItem;
+          if (args.resource !== undefined) throw new Error('resource 参数仅适用于可选 Motion Web / Onetake 条目');
+          const local = getTemplates().find(item => item.id === args.id);
+          if (local && ['template', 'motion'].includes(args.kind)) {
+            return {
+              ...local,
+              content: local.prompt ? await readFile(join(ROOT, local.prompt), 'utf8') : '',
+              entry: args.source ? { path: local.entry, text: await readFile(join(ROOT, local.entry), 'utf8') } : { path: local.entry },
+            };
+          }
           const { readLibraryItem } = await loadLibrary();
           if (typeof args.kind !== 'string' || !args.kind) throw new Error('kind 必须是 template、design-system 或 skill');
           if (typeof args.id !== 'string' || !args.id) throw new Error('请提供库条目 ID');
@@ -516,6 +531,7 @@ export async function createEngine({ dataDir } = {}) {
       }
       for (const controller of controllers.values()) controller.abort(new Error('服务关闭'));
       await pumpTask;
+      await designStore.flush();
       await store.save();
     }
   };

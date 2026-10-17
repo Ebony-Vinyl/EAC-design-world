@@ -9,11 +9,31 @@ import { api, fileUrl, outputPaths } from './api';
 import { kindLabel, resolveDesignSystems, resolveLibraryTemplates, sourceLabel } from './templates';
 import './design-workspace.css';
 import LibraryThumbnail from './LibraryThumbnail';
+import Dialog from './Dialog';
 
 const videoPattern = /\.(mp4|webm|mov|m4v)(?:\?|$)/i;
 const designKinds = ['website', 'motion', 'deck', 'document', 'image'];
 const kindIcons = { website: LayoutGrid, motion: Film, deck: ListVideo, document: FileText, image: FileImage };
 const deviceWidths = { desktop: '100%', tablet: '820px', mobile: '390px' };
+const editorDrafts = new Map();
+
+function readEditorDraft(key) {
+  if (editorDrafts.has(key)) return editorDrafts.get(key);
+  try {
+    const draft = JSON.parse(sessionStorage.getItem(key) || 'null');
+    if (draft && typeof draft.name === 'string' && typeof draft.content === 'string') return draft;
+  } catch { /* Session storage may be unavailable in an embedded workspace. */ }
+  return null;
+}
+
+function storeEditorDraft(key, draft) {
+  if (draft) editorDrafts.set(key, draft);
+  else editorDrafts.delete(key);
+  try {
+    if (draft) sessionStorage.setItem(key, JSON.stringify(draft));
+    else sessionStorage.removeItem(key);
+  } catch { /* Keep the in-memory draft when browser storage is full or blocked. */ }
+}
 
 function Button({ icon: Icon, children, variant = 'secondary', busy, className = '', ...props }) {
   return <button className={`button ${variant} ${className}`} disabled={busy || props.disabled} {...props}>
@@ -83,7 +103,7 @@ function LibraryPanel({ templates, systems, loading, error, kindFilter, setKindF
   useEffect(() => { if (systems.length && !templates.length) setTab('systems'); else if (templates.length && !systems.length) setTab('templates'); }, [systems.length, templates.length]);
   const kinds = ['全部', ...new Set([...templates.map(item => item.kind), ...systems.map(item => item.kind)].filter(Boolean))];
   const term = query.trim().toLowerCase();
-  const matches = item => !term || `${item.name} ${item.id} ${item.description || ''} ${item.author || ''} ${item.category || ''}`.toLowerCase().includes(term);
+  const matches = item => !term || `${item.name} ${item.id} ${item.source || ''} ${item.description || ''} ${item.author || ''} ${item.category || ''}`.toLowerCase().includes(term);
   const visibleSystems = systems.filter(item => (kindFilter === '全部' || item.kind === kindFilter) && matches(item));
   const visibleTemplates = templates.filter(item => (kindFilter === '全部' || item.kind === kindFilter) && matches(item));
   return <div className="dw-library">
@@ -117,9 +137,7 @@ function LibraryPanel({ templates, systems, loading, error, kindFilter, setKindF
 }
 
 function SystemDialog({ system, onClose, onUse }) {
-  return <div className="modal-backdrop" onMouseDown={event => event.target === event.currentTarget && onClose()}>
-    <section role="dialog" aria-modal="true" aria-label={`${system.name} 设计体系`} className="dialog dw-system-dialog">
-      <header className="dialog-header"><h2>{system.name}</h2><button className="icon-button" title="关闭" aria-label="关闭" onClick={onClose}><X size={16} /></button></header>
+  return <Dialog title={`${system.name} 设计体系`} className="dw-system-dialog" onClose={onClose}>
       <div className="dw-system-body">
         <p className="dw-system-summary">{system.description || '未提供描述。'}</p>
         <section><h3><Palette size={14} />色板</h3><Swatches colors={system.colors} size={44} />
@@ -129,8 +147,7 @@ function SystemDialog({ system, onClose, onUse }) {
         <section><h3><FolderOpen size={14} />来源与许可</h3><Attribution item={system} /><p className="muted dw-license-note">来源与许可信息来自上游条目，未在此处推断。</p></section>
       </div>
       <footer className="dialog-footer"><span className="muted">{system.id}</span><Button variant="primary" icon={Sparkles} onClick={() => onUse(system)}>用这套体系创作</Button></footer>
-    </section>
-  </div>;
+  </Dialog>;
 }
 
 function ProjectDialog({ selection, sessionId, onCreate, onClose, busy }) {
@@ -141,9 +158,7 @@ function ProjectDialog({ selection, sessionId, onCreate, onClose, busy }) {
     event.preventDefault();
     onCreate({ title, brief, kind, ...(selection?.type === 'template' ? { templateId: selection.id } : {}), ...(selection?.type === 'system' ? { designSystemId: selection.id } : {}), sessionId });
   };
-  return <div className="modal-backdrop" onMouseDown={event => event.target === event.currentTarget && onClose()}>
-    <section role="dialog" aria-modal="true" aria-label="新建设计作品" className="dialog dw-project-dialog">
-      <header className="dialog-header"><h2>新建设计作品</h2><button className="icon-button" title="关闭" aria-label="关闭" onClick={onClose}><X size={16} /></button></header>
+  return <Dialog title="新建设计作品" className="dw-project-dialog" onClose={onClose}>
       <form className="dw-project-form" onSubmit={submit}>
         <label>作品名称<input required maxLength={160} autoFocus placeholder="例如：产品发布页、季度汇报幻灯片" value={title} onChange={event => setTitle(event.target.value)} /></label>
         <label>创作说明<textarea rows={4} maxLength={8000} placeholder="想做什么、给谁看、希望传达什么…" value={brief} onChange={event => setBrief(event.target.value)} /></label>
@@ -156,8 +171,7 @@ function ProjectDialog({ selection, sessionId, onCreate, onClose, busy }) {
         </div>
         <div className="dw-dialog-actions"><Button type="button" variant="ghost" onClick={onClose}>取消</Button><Button type="submit" variant="primary" icon={Plus} busy={busy}>创建作品</Button></div>
       </form>
-    </section>
-  </div>;
+  </Dialog>;
 }
 
 function starterFor(name, kind) {
@@ -223,60 +237,125 @@ function EditorPanel({ project, artifacts, artifactId, onSelectArtifact, onSave,
   const [exporting, setExporting] = useState('');
   const [exportResult, setExportResult] = useState(null);
   const [surface, setSurface] = useState(() => window.innerWidth < 900 ? 'preview' : 'split');
+  const [loadedKey, setLoadedKey] = useState('');
+  const [loadError, setLoadError] = useState('');
+  const requestVersion = useRef(0);
+  const latestDraft = useRef(null);
+  const draftKey = `eac:draft:${project.id}:${artifact?.id || 'new'}`;
+  const editable = loadedKey === draftKey && !loading && busy !== 'save';
+  const dirty = loadedKey === draftKey && (artifact
+    ? name !== loadedRevision?.name || content !== loadedRevision?.content
+    : Boolean(name.trim() && content.trim()));
+  const edit = patch => {
+    const next = { name, content, revision, loadedRevision, ...patch };
+    latestDraft.current = { key: draftKey, draft: next };
+    editorDrafts.set(draftKey, next);
+    if (Object.hasOwn(patch, 'name')) setName(patch.name);
+    if (Object.hasOwn(patch, 'content')) setContent(patch.content);
+  };
+  useEffect(() => {
+    const persist = () => {
+      if (latestDraft.current) storeEditorDraft(latestDraft.current.key, latestDraft.current.draft);
+    };
+    window.addEventListener('pagehide', persist);
+    return () => {
+      ++requestVersion.current;
+      persist();
+      window.removeEventListener('pagehide', persist);
+    };
+  }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (latestDraft.current) storeEditorDraft(latestDraft.current.key, latestDraft.current.draft);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [name, content]);
   const exportFile = async format => {
     if (!artifact) return;
+    const version = requestVersion.current;
     setExporting(format); setExportResult(null);
     try {
       const result = await api(`/design/artifacts/${artifact.id}/export/${format}`, { method: 'POST', body: { revision } });
-      setExportResult(result);
-      notify(result.warning || `已导出 ${format.toUpperCase()}`);
+      if (version === requestVersion.current) {
+        setExportResult(result);
+        notify(result.warning || `已导出 ${format.toUpperCase()}`);
+      }
     } catch (error) { notify(error.message, 'error'); }
     finally { setExporting(''); }
   };
-  const dirty = artifact ? (name !== artifact.name || content !== loadedRevision?.content) : false;
-  const load = useCallback(async (target, revisionNumber) => {
-    setLoading(true);
+  const load = useCallback(async (target, revisionNumber, restoreDraft = false) => {
+    const version = ++requestVersion.current;
+    const key = `eac:draft:${project.id}:${target.id}`;
+    const draft = restoreDraft ? readEditorDraft(key) : null;
+    setLoading(true); setLoadError(''); setExportResult(null);
     try {
       const result = await api(`/design/artifacts/${encodeURIComponent(target.id)}/content${revisionNumber ? `?revision=${revisionNumber}` : ''}`);
-      setName(result.name); setContent(result.content); setRevision(result.revision); setLoadedRevision(result);
-    } catch (error) { notify(error.message, 'error'); }
-    finally { setLoading(false); }
-  }, [notify]);
+      if (version !== requestVersion.current) return;
+      const next = draft || { name: result.name, content: result.content, revision: result.revision, loadedRevision: result };
+      setName(next.name); setContent(next.content); setRevision(next.revision); setLoadedRevision(next.loadedRevision);
+      setLoadedKey(key);
+      latestDraft.current = draft ? { key, draft } : null;
+    } catch (error) {
+      if (version === requestVersion.current) setLoadError(error.message);
+    } finally { if (version === requestVersion.current) setLoading(false); }
+  }, [project.id]);
   useEffect(() => {
     if (!artifact) {
+      ++requestVersion.current;
+      setLoading(false); setLoadError(''); setExportResult(null);
       const next = project?.kind === 'document' ? 'document.md' : project?.kind === 'image' ? 'image.svg' : 'index.html';
-      setName(next); setContent(starterFor(next, project?.kind)); setRevision(null); setLoadedRevision(null); return;
+      const draft = readEditorDraft(draftKey);
+      setName(draft?.name ?? next); setContent(draft?.content ?? starterFor(next, project?.kind));
+      setRevision(null); setLoadedRevision(null); setLoadedKey(draftKey);
+      latestDraft.current = draft ? { key: draftKey, draft } : null;
+    } else {
+      load(artifact, artifact.revision, true);
     }
-    load(artifact, artifact.revision);
+    return () => {
+      ++requestVersion.current;
+      if (latestDraft.current) storeEditorDraft(latestDraft.current.key, latestDraft.current.draft);
+      latestDraft.current = null;
+    };
   }, [artifact?.id]);
   const save = async () => {
-    if (!project || !name.trim()) return;
-    const saved = await onSave({ projectId: project.id, name: name.trim(), content, ...(artifact && revision !== null ? { revision } : {}) });
-    if (saved) { setRevision(saved.revision); setLoadedRevision({ content, revision: saved.revision, name: saved.name }); setName(saved.name); }
+    if (!project || !name.trim() || !editable) return;
+    const fileName = name.trim();
+    if (artifacts.some(item => item.id !== artifact?.id && item.name === fileName)) {
+      notify('同名文件已存在，请使用其他文件名。', 'error');
+      return;
+    }
+    const sameFile = artifact && fileName === artifact.name;
+    const saved = await onSave({ projectId: project.id, name: fileName, content, ...(sameFile && revision !== null ? { revision } : {}) });
+    if (saved) {
+      storeEditorDraft(draftKey, null); latestDraft.current = null;
+      setRevision(saved.revision); setLoadedRevision({ content, revision: saved.revision, name: saved.name }); setName(saved.name);
+    }
   };
   return <div className="dw-editor">
     <aside className="dw-file-list">
       <div className="dw-file-list-head"><span className="section-title"><FileText size={14} /><h2>作品文件</h2></span>
-        <button className="icon-button" title="新建文件" aria-label="新建文件" onClick={() => { onSelectArtifact(''); }}><Plus size={15} /></button>
+        <button className="icon-button" title="新建文件" aria-label="新建文件" disabled={busy === 'save'} onClick={() => { onSelectArtifact(''); }}><Plus size={15} /></button>
       </div>
       {artifacts.length ? <ul>{artifacts.map(item => <li key={item.id}>
-        <button className={`dw-file ${item.id === artifact?.id ? 'selected' : ''}`} onClick={() => onSelectArtifact(item.id)}>
+        <button className={`dw-file ${item.id === artifact?.id ? 'selected' : ''}`} disabled={busy === 'save'} onClick={() => onSelectArtifact(item.id)}>
           <FileText size={14} /><span>{item.name}</span><small className="mono">v{item.revision}</small>
         </button>
       </li>)}</ul> : <p className="muted dw-file-empty">还没有文件，先新建一个。</p>}
-      <button className={`dw-file dw-file-new ${!artifact && name ? 'selected' : ''}`} onClick={() => { onSelectArtifact(''); }}>
+      <button className={`dw-file dw-file-new ${!artifact && name ? 'selected' : ''}`} disabled={busy === 'save'} onClick={() => { onSelectArtifact(''); }}>
         <Plus size={14} /><span>新建文件</span>
       </button>
     </aside>
-    <div className="dw-editor-main">
+    <div className="dw-editor-main" aria-busy={loading}>
       <div className="dw-editor-toolbar">
-        <input aria-label="文件名" className="dw-name-input" value={name} placeholder="文件名，如 index.html / deck.md / mark.svg" onChange={event => setName(event.target.value)} />
-        {artifact && revision !== null && <span className="tag">修订 v{revision}{dirty ? ' · 有改动' : ''}</span>}
-        <Button icon={Save} variant="primary" busy={busy === 'save'} disabled={!project || !name.trim() || !dirty && Boolean(artifact)} onClick={save}>保存新版本</Button>
+        <input aria-label="文件名" className="dw-name-input" disabled={!editable} value={loadedKey === draftKey ? name : ''} placeholder="文件名，如 index.html / deck.md / mark.svg" onChange={event => edit({ name: event.target.value })} />
+        {artifact && revision !== null && loadedKey === draftKey && <span className="tag">修订 v{revision}{dirty ? ' · 有改动' : ''}</span>}
+        <Button icon={Save} variant="primary" busy={busy === 'save'} disabled={!editable || !project || !name.trim() || !dirty && Boolean(artifact)} onClick={save}>{loadedKey === draftKey && artifact && name.trim() !== artifact.name ? '另存为新文件' : '保存新版本'}</Button>
       </div>
+      {loadError && <div className="connection-banner" role="alert"><CircleAlert size={15} /><span>{loadError}</span><Button icon={RefreshCw} onClick={() => load(artifact, artifact.revision, true)}>重新读取</Button></div>}
+      {dirty && <div className="dw-draft-status" role="status"><CircleAlert size={12} />有未保存改动 · 草稿已暂存于当前浏览器</div>}
       <div className="dw-tabs dw-surface-tabs" role="tablist" aria-label="编辑显示方式">{[['preview', Eye, '预览作品'], ['source', Code2, '编辑内容'], ['split', LayoutGrid, '并排查看']].map(([id, Icon, label]) => <button key={id} role="tab" aria-selected={surface === id} className={surface === id ? 'selected' : ''} onClick={() => setSurface(id)}><Icon size={14} />{label}</button>)}</div>
       <div className={`dw-editor-split dw-surface-${surface}`}>
-        <textarea className="dw-code mono" aria-label="文件内容" spellCheck={false} value={content} placeholder="在此编写 HTML、SVG 或 Markdown。保存会生成一个新版本，不会覆盖旧版本。" onChange={event => setContent(event.target.value)} />
+        <textarea className="dw-code mono" aria-label="文件内容" disabled={!editable} spellCheck={false} value={loadedKey === draftKey ? content : ''} placeholder="在此编写 HTML、SVG 或 Markdown。保存会生成一个新版本，不会覆盖旧版本。" onChange={event => edit({ content: event.target.value })} />
         <div className="dw-editor-preview">
           <div className="dw-device-bar" role="group" aria-label="预览宽度">
             <button className={device === 'desktop' ? 'selected' : ''} onClick={() => setDevice('desktop')}><Monitor size={14} />桌面</button>
@@ -289,10 +368,10 @@ function EditorPanel({ project, artifacts, artifactId, onSelectArtifact, onSave,
           {!artifact && content.trim() && <p className="dw-draft-note"><CircleAlert size={12} />未保存的草稿预览，保存后才会生成可下载版本。</p>}
         </div>
       </div>
-      {artifact && artifact.kind !== 'markdown' && <div className="dw-export-actions"><Button icon={ArrowDownToLine} busy={exporting === 'pdf'} disabled={Boolean(exporting) || dirty} onClick={() => exportFile('pdf')}>导出 PDF</Button><Button icon={FileImage} busy={exporting === 'png'} disabled={Boolean(exporting) || dirty} onClick={() => exportFile('png')}>导出 PNG</Button>{project?.kind === 'deck' && <Button icon={ListVideo} busy={exporting === 'pptx'} disabled={Boolean(exporting) || dirty} onClick={() => exportFile('pptx')}>导出 PPTX（整页图像）</Button>}{exportResult && <a className="button primary" href={exportResult.url} download>下载 {exportResult.format.toUpperCase()}</a>}</div>}
+      {artifact && artifact.kind !== 'markdown' && <div className="dw-export-actions"><Button icon={ArrowDownToLine} busy={exporting === 'pdf'} disabled={!editable || Boolean(exporting) || dirty} onClick={() => exportFile('pdf')}>导出 PDF</Button><Button icon={FileImage} busy={exporting === 'png'} disabled={!editable || Boolean(exporting) || dirty} onClick={() => exportFile('png')}>导出 PNG</Button>{project?.kind === 'deck' && <Button icon={ListVideo} busy={exporting === 'pptx'} disabled={!editable || Boolean(exporting) || dirty} onClick={() => exportFile('pptx')}>导出 PPTX（整页图像）</Button>}{exportResult && <a className="button primary" href={exportResult.url} download>下载 {exportResult.format.toUpperCase()}</a>}</div>}
       {artifact && <div className="dw-history">
         <span className="section-title"><Layers3 size={14} /><h2>版本历史</h2><span className="count">{artifact.revisions?.length || 0}</span></span>
-        <div className="dw-history-row">{artifact.revisions?.slice().reverse().map(item => <button key={item.revision} className={item.revision === revision ? 'selected' : ''} onClick={() => load(artifact, item.revision)}>v{item.revision}<small>{(item.bytes / 1024).toFixed(1)}KB</small></button>)}</div>
+        <div className="dw-history-row">{artifact.revisions?.slice().reverse().map(item => <button key={item.revision} disabled={dirty || !editable} className={item.revision === revision ? 'selected' : ''} onClick={() => load(artifact, item.revision)}>v{item.revision}<small>{(item.bytes / 1024).toFixed(1)}KB</small></button>)}</div>
       </div>}
     </div>
   </div>;
@@ -389,10 +468,20 @@ export default function DesignWorkspace({ sessionId = '', initialView = 'library
         if (item.entry?.text && /\.html?$/i.test(item.entry.path)) {
           const doc = new DOMParser().parseFromString(item.entry.text, 'text/html');
           const base = new URL(`/${item.entry.path.replace(/[^/]+$/, '')}`, location.origin);
+          const optionalMotion = ['motion-web', 'onetake'].includes(item.source);
+          if (optionalMotion) {
+            doc.querySelectorAll('base').forEach(node => node.remove());
+            const assetBase = doc.createElement('base');
+            assetBase.setAttribute('href', base.pathname);
+            doc.head.prepend(assetBase);
+          }
           doc.querySelectorAll('[src],[href],[poster]').forEach(node => {
             for (const attr of ['src', 'href', 'poster']) {
               const value = node.getAttribute(attr);
-              if (value && !/^(?:[a-z]+:|\/\/|#)/i.test(value)) node.setAttribute(attr, new URL(value, base).href);
+              if (value && !/^(?:[a-z]+:|\/\/|#)/i.test(value)) {
+                const target = new URL(value, base);
+                node.setAttribute(attr, optionalMotion ? `${target.pathname}${target.search}${target.hash}` : target.href);
+              }
             }
           });
           seeded = await api('/design/artifacts', { method: 'POST', body: { projectId: created.id, name: 'index.html', content: `<!doctype html>${doc.documentElement.outerHTML}` } });
@@ -524,10 +613,10 @@ export function DesignCanvas({ sessionId = '', mode = 'design' }) {
     return [...artifactItems, ...videoItems];
   }, [design, videos]);
   const visible = items.filter(item => filter === 'all' || (filter === 'videos' ? item.type === 'video' : item.type !== 'video'));
-  const current = items.find(item => item.id === selected) || null;
+  const current = visible.find(item => item.id === selected) || visible[0] || null;
   useEffect(() => {
-    if (!selected && visible.length) setSelected(visible[0].id);
-  }, [selected, visible.length]);
+    if (selected !== current?.id) setSelected(current?.id || null);
+  }, [selected, current?.id]);
   useEffect(() => {
     if (!current || (current.type !== 'markdown' && current.projectKind !== 'deck')) return;
     let active = true;
@@ -535,9 +624,9 @@ export function DesignCanvas({ sessionId = '', mode = 'design' }) {
     return () => { active = false; };
   }, [current?.id, current?.revision]);
   const deviceButtons = <div className="dw-device-bar" role="group" aria-label="预览宽度">
-    <button className={device === 'desktop' ? 'selected' : ''} onClick={() => setDevice('desktop')}><Monitor size={14} /></button>
-    <button className={device === 'tablet' ? 'selected' : ''} onClick={() => setDevice('tablet')}><Tablet size={14} /></button>
-    <button className={device === 'mobile' ? 'selected' : ''} onClick={() => setDevice('mobile')}><Smartphone size={14} /></button>
+    <button title="桌面预览" aria-label="桌面预览" aria-pressed={device === 'desktop'} className={device === 'desktop' ? 'selected' : ''} onClick={() => setDevice('desktop')}><Monitor size={14} /></button>
+    <button title="平板预览" aria-label="平板预览" aria-pressed={device === 'tablet'} className={device === 'tablet' ? 'selected' : ''} onClick={() => setDevice('tablet')}><Tablet size={14} /></button>
+    <button title="手机预览" aria-label="手机预览" aria-pressed={device === 'mobile'} className={device === 'mobile' ? 'selected' : ''} onClick={() => setDevice('mobile')}><Smartphone size={14} /></button>
   </div>;
   return <div className="dw-shell dw-canvas">
     <div className="dw-topbar">

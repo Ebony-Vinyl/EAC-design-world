@@ -2,9 +2,10 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { toolDefinitions, productionInstructions } from './tools.mjs';
+import { VERSION } from './version.mjs';
 
 const endpoint = process.env.EAC_URL || 'http://127.0.0.1:4173';
-const server = new Server({ name: 'eac-design-world', version: '0.1.0' }, {
+const server = new Server({ name: 'eac-design-world', version: VERSION }, {
   capabilities: { tools: {} }, instructions: productionInstructions
 });
 const routes = {

@@ -16,6 +16,7 @@ window.__ModuleLoader__.load({
     const templatePattern = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/;
     const en = {
       title: 'EAC design world', templates: 'Choose template', library: 'Video templates',
+      maintenance: 'Plugin maintenance', workspace: 'Creative workspace',
       selected: 'Selected template', selectionFailed: 'Could not sync the selection. Please reload the plugin.',
       addSelection: 'Try again', normal: 'Normal mode', edit: 'Editing mode', design: 'Design mode',
       soon: 'Coming soon', mode: 'Creation mode', close: 'Close template library',
@@ -30,6 +31,7 @@ window.__ModuleLoader__.load({
     };
     const zh = {
       title: 'EAC design world', templates: '选择模板', library: '视频模板',
+      maintenance: '插件维护', workspace: '创作工作台',
       selected: '已选模板', selectionFailed: '选择未能同步，请重试或重新加载插件。',
       addSelection: '重新加入', normal: '正常模式', edit: '剪辑模式', design: 'Design 模式',
       soon: '即将推出', mode: '创作模式', close: '关闭模板库',
@@ -195,8 +197,9 @@ window.__ModuleLoader__.load({
       const t = ctx.locale.bind(NS);
       ctx.effect(() => ctx.locale.register(NS, { en, zh }));
       function Settings() {
-        return h('iframe', { title: t('title'), src: `${ORIGIN}/`, 'data-eac-frame': 'settings',
-          style: { display: 'block', border: 0, width: '100%', minWidth: 0, height: 'min(760px, 78vh)', background: 'transparent' } });
+        return h('div', null,
+          h('iframe', { title: t('title'), src: `${ORIGIN}/?view=maintenance`, 'data-eac-frame': 'settings',
+            style: { display: 'block', border: 0, width: '100%', minWidth: 0, height: 'min(760px, 78vh)', background: 'transparent' } }));
       }
       function CanvasPanel({ sessionId, mode, onClose }) {
         const [width, setWidth] = React.useState(560);

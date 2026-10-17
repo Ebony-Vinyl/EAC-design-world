@@ -18,13 +18,15 @@ export async function exportDesignArtifact({ store, id, format, revision, origin
   const abort = () => { void browser.close(); };
   signal?.addEventListener('abort', abort, { once: true });
   try {
-    const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });
+    const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, serviceWorkers: 'block' });
+    const documentUrl = new URL(`/__eac-export/${randomUUID()}.html`, origin).href;
     await page.route('**/*', route => {
       const url = new URL(route.request().url());
+      if (url.href === documentUrl) return route.fulfill({ contentType: 'text/html; charset=utf-8', body: source.content });
       if (url.origin === origin && url.pathname.startsWith('/vendor/')) return route.continue();
       return route.abort();
     });
-    await page.setContent(source.content, { waitUntil: 'load', timeout: 30000 });
+    await page.goto(documentUrl, { waitUntil: 'load', timeout: 30000 });
     await page.evaluate(() => document.fonts.ready);
     const slideCount = project.kind === 'deck' ? await page.evaluate(() => {
       let nodes = [...document.querySelectorAll('[data-slide],.slide,.deck-page')];

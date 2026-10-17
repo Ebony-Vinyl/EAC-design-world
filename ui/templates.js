@@ -52,6 +52,8 @@ const sourceLabels = {
   'motion-promo-film-v2': 'MOTION PROMO V2',
   'local-skill': 'LOCAL SKILL',
   'open-design': 'OPEN DESIGN',
+  'motion-web': 'MOTION WEB',
+  'onetake': 'ONETAKE',
 };
 const authorName = author => typeof author === 'string' ? author : author?.name || '';
 const entryPath = entry => typeof entry === 'string' ? entry : entry?.path || '';

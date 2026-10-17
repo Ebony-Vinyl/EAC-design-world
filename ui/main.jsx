@@ -6,14 +6,17 @@ import {
   Clock3, ExternalLink, FileImage, FileText, FileVideo, Film, Folder, FolderOpen, Grid2X2,
   Layers3, ListVideo, LoaderCircle, Maximize2, Monitor,
   Palette, Play, Plus, Radio, RefreshCw, Scissors, Search, Settings2, SlidersHorizontal,
-  Sparkles, Square, WandSparkles, Workflow, X,
+  Sparkles, Square, WandSparkles, Workflow, Wrench, X,
 } from 'lucide-react';
 import { api, fileUrl, jobNames, outputPaths, resultWarnings, statusNames } from './api';
 import { kindLabel, localTemplates, resolveDesignSystems, resolveTemplates, sourceLabel } from './templates';
 import DesignWorkspace, { DesignCanvas } from './DesignWorkspace';
 import TimelineEditor from './TimelineEditor';
 import TemplatePickerGallery from './TemplatePickerGallery';
+import MaintenancePanel from './MaintenancePanel';
+import Dialog from './Dialog';
 import './styles.css';
+import './polish.css';
 
 const initialForm = { title: '', brief: '', templateId: '01-flat-vector', width: 1920, height: 1080, fps: 30 };
 const isActive = job => ['running', 'queued'].includes(job.status);
@@ -31,6 +34,7 @@ const pickerQuery = new URLSearchParams(window.location.search);
 const pickerPage = pickerQuery.get('view') === 'templates';
 const canvasPage = pickerQuery.get('view') === 'canvas';
 const designPage = pickerQuery.get('view') === 'design';
+const maintenancePage = pickerQuery.get('view') === 'maintenance';
 const pickerMode = ['normal', 'edit', 'design'].includes(pickerQuery.get('mode')) ? pickerQuery.get('mode') : 'edit';
 const pickerKind = pickerQuery.get('kind') || 'website';
 const canvasSessionId = pickerQuery.get('sessionId') || '';
@@ -88,34 +92,6 @@ function Thumbnail({ template, className = '' }) {
     : <div className={`template-placeholder ${className}`}><Monitor size={30} strokeWidth={1.25} /><span>{template?.name || '选择视觉模板'}</span><small>产品界面动效</small></div>;
 }
 
-function Dialog({ title, children, onClose, className = '' }) {
-  const ref = useRef(null);
-  const closeRef = useRef(onClose);
-  closeRef.current = onClose;
-  useEffect(() => {
-    const previous = document.activeElement;
-    ref.current?.focus();
-    const handler = event => {
-      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeRef.current(); }
-      if (event.key !== 'Tab') return;
-      const elements = ref.current?.querySelectorAll('button:not(:disabled), input, textarea, select, a[href], video[controls]');
-      if (!elements?.length) return;
-      const first = elements[0];
-      const last = elements[elements.length - 1];
-      if (event.shiftKey && (document.activeElement === first || document.activeElement === ref.current)) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-    };
-    document.addEventListener('keydown', handler);
-    return () => { document.removeEventListener('keydown', handler); previous?.focus(); };
-  }, []);
-  return <div className="modal-backdrop" onMouseDown={event => event.target === event.currentTarget && onClose()}>
-    <section ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className={`dialog ${className}`}>
-      <header className="dialog-header"><h2>{title}</h2><IconButton icon={X} label="关闭" onClick={onClose} /></header>
-      {children}
-    </section>
-  </div>;
-}
-
 function Empty({ icon: Icon = Layers3, title, description, action }) {
   return <div className="empty"><Icon size={27} strokeWidth={1.4} /><strong>{title}</strong>{description && <p>{description}</p>}{action}</div>;
 }
@@ -132,27 +108,33 @@ function MotionPreview({ template }) {
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
+    setReady(false);
+    setFailed(false);
     let animation;
     let start;
     let last = 0;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const render = now => {
       try {
         const source = frame.current?.contentWindow;
-        if (source?.__ready && typeof source.__seek === 'function' && now - last > 33) {
+        if (!document.hidden && source?.__ready && typeof source.__seek === 'function' && now - last > 33) {
           start ??= now;
-          source.__seek(((now - start) / 1000) % (source.__DUR || template.duration || 12));
+          source.__seek(reducedMotion.matches ? 0 : ((now - start) / 1000) % (source.__DUR || template.duration || 12));
           last = now;
           setReady(true);
+          if (reducedMotion.matches) return;
         }
       } catch { setFailed(true); return; }
       animation = requestAnimationFrame(render);
     };
+    const restart = () => { cancelAnimationFrame(animation); start = undefined; animation = requestAnimationFrame(render); };
+    reducedMotion.addEventListener('change', restart);
     animation = requestAnimationFrame(render);
     const timeout = setTimeout(() => {
       try { if (typeof frame.current?.contentWindow?.__seek !== 'function') setFailed(true); }
       catch { setFailed(true); }
     }, 15000);
-    return () => { cancelAnimationFrame(animation); clearTimeout(timeout); };
+    return () => { cancelAnimationFrame(animation); clearTimeout(timeout); reducedMotion.removeEventListener('change', restart); };
   }, [template.id]);
   return <div ref={container} className="motion-preview">
     {(!ready || failed) && <Thumbnail template={template} />}
@@ -167,13 +149,13 @@ function TemplateDetail({ template, onClose, onSelect }) {
     <div className="detail-media">
       {template.preview && !mediaError
         ? <video key={template.id} controls playsInline preload="metadata" poster={template.thumbnail} src={fileUrl(template.preview)} onError={() => setMediaError(true)} />
-        : template.entry && template.source === 'open-design' ? <iframe title={`${template.name}模板源码预览`} src={`/${template.entry}`} sandbox="allow-scripts" className="upstream-source-preview" /> : template.entry && template.id.startsWith('motion-promo-film') ? <MotionPreview template={template} /> : <Thumbnail template={template} />}
+        : template.entry && (template.source === 'open-design' || ['motion-web', 'onetake'].includes(template.source)) ? <iframe title={`${template.name}模板源码预览`} src={`/${template.entry}`} sandbox="allow-scripts" className="upstream-source-preview" /> : template.entry && template.id.startsWith('motion-promo-film') ? <MotionPreview template={template} /> : <Thumbnail template={template} />}
       {mediaError && <span className="media-note">视频暂不可用，当前显示模板参考图</span>}
     </div>
     <div className="detail-body"><div><span className="eyebrow">{template.source}</span><h2>{template.name}</h2><p>{template.description}</p></div>
       <span className="tag">{template.category}</span>
     </div>
-    {template.source === 'open-design' && <div className="template-runtime-note"><span>{template.license} · {template.author || 'OpenDesign'}</span><p>{template.requirements?.join('；') || (template.renderable === false ? '参考模板：需外部生成或补充素材后制作' : '已导入本地源文件，可定制后制作')}。</p>{template.homepage && <a href={template.homepage} target="_blank" rel="noreferrer">查看原始来源</a>}</div>}
+    {['open-design', 'motion-web', 'onetake'].includes(template.source) && <div className="template-runtime-note"><span>{template.license} · {template.author || sourceLabel(template.source)}</span><p>{template.requirements?.join('；') || (template.renderable === false ? '参考模板：需外部生成或补充素材后制作' : '已导入本地源文件，可定制后制作')}。</p>{template.homepage && <a href={template.homepage} target="_blank" rel="noreferrer">查看原始来源</a>}</div>}
     <footer className="dialog-footer"><span>{template.subtitle || template.id}</span><Button variant="primary" icon={Check} onClick={() => onSelect(template)}>使用此模板</Button></footer>
   </Dialog>;
 }
@@ -323,15 +305,24 @@ function JobList({ jobs, onCancel, busy, projects, minimal = false }) {
   </article>)}</div> : <Empty icon={ListVideo} title="暂无制作任务" description="提交渲染、录制或旁白任务后，进度将在这里更新。" />;
 }
 
-function Preview() {
+function Preview({ project, template, onPreviewTemplate }) {
   const stage = useRef(null);
   const [mediaError, setMediaError] = useState(false);
+  const [mode, setMode] = useState('output');
+  const output = project?.lastOutput?.path;
+  const showOutput = mode === 'output' && Boolean(output);
+  useEffect(() => { setMediaError(false); }, [output]);
+  useEffect(() => { setMode('output'); }, [project?.id, output]);
   return <section className="preview-section">
-    <div className="section-toolbar"><div className="section-title"><Monitor size={15} /><h2>画面预览</h2></div><IconButton icon={Maximize2} label="全屏预览" onClick={() => stage.current?.requestFullscreen?.().catch(() => {})} /></div>
+    <div className="section-toolbar"><div className="section-title"><Monitor size={15} /><h2>画面预览</h2></div>
+      {output && <div className="segmented" role="group" aria-label="预览内容"><button className={mode === 'output' ? 'selected' : ''} aria-pressed={mode === 'output'} onClick={() => setMode('output')}>项目成片</button><button className={mode === 'template' ? 'selected' : ''} aria-pressed={mode === 'template'} onClick={() => setMode('template')}>所选模板</button></div>}
+      <IconButton icon={Maximize2} label="全屏预览" onClick={() => stage.current?.requestFullscreen?.().catch(() => {})} /></div>
     <div ref={stage} className="preview-stage">
-      <video src="/media/studio-preview.mp4" aria-label="Our Free Model 宣传片 65s" controls playsInline preload="metadata" onError={() => setMediaError(true)} />
-      {mediaError && <div className="media-error" role="alert"><CircleAlert size={15} />预览视频暂不可播放，请重新加载页面。</div>}
+      {showOutput ? <video key={output} src={fileUrl(output)} aria-label={`${project.title} 项目成片`} controls playsInline preload="metadata" onError={() => setMediaError(true)} />
+        : <><Thumbnail template={template} /><button className="play-preview" title="预览所选模板" aria-label="预览所选模板" onClick={onPreviewTemplate}><Play size={20} fill="currentColor" /></button><span className="stage-label">模板参考 · {template.name}</span></>}
+      {showOutput && mediaError && <div className="media-error" role="alert"><CircleAlert size={15} />成片暂不可播放，可在素材与输出中查看文件。</div>}
     </div>
+    <div className="preview-footer"><div><span className="tiny-dot" /><span>{showOutput ? '项目成片' : '所选模板'}</span><span className="divider-text">/</span><span className="muted">{showOutput ? project.title : template.name}</span></div><span className="mono">{showOutput ? `${project.width} × ${project.height}` : template.source}</span></div>
   </section>;
 }
 
@@ -469,7 +460,7 @@ function FileRow({ path, name, onPreview }) {
 
 function App() {
   const picker = pickerPage;
-  const [view, setView] = useState(picker ? 'templates' : 'studio');
+  const [view, setView] = useState(picker ? 'templates' : maintenancePage ? 'maintenance' : 'studio');
   const [data, setData] = useState({ projects: [], jobs: [], templates: [], settings: {}, capabilities: [] });
   const [library, setLibrary] = useState({ templates: [], designSystems: [] });
   const [connected, setConnected] = useState(false);
@@ -484,6 +475,7 @@ function App() {
   const [busy, setBusy] = useState('');
   const [toast, setToast] = useState(null);
   const [dialog, setDialog] = useState(null);
+  const [previewTemplate, setPreviewTemplate] = useState(null);
   const [studioTab, setStudioTab] = useState('overview');
   const [jobFilter, setJobFilter] = useState('all');
   const requestInFlight = useRef(false);
@@ -601,9 +593,9 @@ function App() {
   const cancelJob = id => mutate(`cancel-${id}`, () => api(`/jobs/${encodeURIComponent(id)}/cancel`, { method: 'POST' }), '已请求取消任务');
   const importAsset = path => mutate('asset', () => api(`/projects/${encodeURIComponent(project.id)}/assets`, { method: 'POST', body: { path } }), '素材已导入');
   const changeView = value => setView(value);
-  const title = { studio: '制作工作台', templates: '视觉模板', design: '设计工作台', workflow: '制作流程', jobs: '任务队列', assets: '素材与输出', settings: '工作空间设置' }[view];
-  const subtitle = { studio: '从一份简报，开始下一支作品。', templates: '找到适合表达的视觉语言。', design: '从设计库选择体系与模板，创作网站、幻灯片、文档与图片。', workflow: '连接素材、镜头、声音与最终成片。', jobs: '追踪每一次录制、生成与渲染。', assets: '项目素材与真实制作输出。', settings: '设置输出目录、制作画质与旁白声音。' }[view];
-  const eyebrow = { studio: 'PRODUCTION STUDIO', templates: 'VISUAL LIBRARY', design: 'DESIGN WORKSPACE', workflow: 'PRODUCTION CONTROL', jobs: 'PRODUCTION CONTROL', assets: 'PRODUCTION CONTROL', settings: 'WORKSPACE PREFERENCES' }[view];
+  const title = { studio: '制作工作台', templates: '视觉模板', design: '设计工作台', workflow: '制作流程', jobs: '任务队列', assets: '素材与输出', maintenance: '插件维护', settings: '工作空间设置' }[view];
+  const subtitle = { studio: '从一份简报，开始下一支作品。', templates: '找到适合表达的视觉语言。', design: '从设计库选择体系与模板，创作网站、幻灯片、文档与图片。', workflow: '连接素材、镜头、声音与最终成片。', jobs: '追踪每一次录制、生成与渲染。', assets: '项目素材与真实制作输出。', maintenance: '版本、更新、热重载与公告。', settings: '设置输出目录、制作画质与旁白声音。' }[view];
+  const eyebrow = { studio: 'PRODUCTION STUDIO', templates: 'VISUAL LIBRARY', design: 'DESIGN WORKSPACE', workflow: 'PRODUCTION CONTROL', jobs: 'PRODUCTION CONTROL', assets: 'PRODUCTION CONTROL', maintenance: 'PLUGIN MAINTENANCE', settings: 'WORKSPACE PREFERENCES' }[view];
   const newProject = () => { setForm({ ...initialForm, templateId }); setDialog('project'); };
   if (canvasPage) return <DesignCanvas sessionId={canvasSessionId} mode={canvasMode} />;
   if (designPage) return <div className="route-page"><DesignWorkspace sessionId={appSessionId} embedded={window.parent !== window} /></div>;
@@ -611,13 +603,13 @@ function App() {
     onSelect={selectTemplate} onSelectSystem={selectDesignSystem} onKindChange={setPickerKindState}
     onBrowseAll={() => pickerPost({ type: 'eac:open-picker' })}
     onState={state => { if (state.templateId !== null) setTemplateId(state.templateId); if (state.designSystemId !== null) setDesignSystemId(state.designSystemId); if (state.mode) setPickerModeState(state.mode); if (state.kind) setPickerKindState(state.kind); }} />;
-  const navEntries = [['studio', Clapperboard, '制作工作台'], ['templates', Grid2X2, '视觉模板'], ['design', Palette, '设计工作台'], ['workflow', Workflow, '制作流程'], ['jobs', ListVideo, '任务队列'], ['assets', FolderOpen, '素材与输出']];
+  const navEntries = [['studio', Clapperboard, '制作工作台'], ['templates', Grid2X2, '视觉模板'], ['design', Palette, '设计工作台'], ['workflow', Workflow, '制作流程'], ['jobs', ListVideo, '任务队列'], ['assets', FolderOpen, '素材与输出'], ['maintenance', Wrench, '插件维护']];
   return <div className="app-shell">
     <header className="app-topnav">
       <Brand compact />
       <nav className="topnav-items" aria-label="工作空间导航">{navEntries.map(([id, Icon, label]) => <button key={id} className={`topnav-item ${view === id ? 'active' : ''}`} onClick={() => changeView(id)}><Icon size={16} strokeWidth={1.7} /><span>{label}</span>{id === 'jobs' && activeJobs.length > 0 && <span className="nav-badge">{activeJobs.length}</span>}{id === 'templates' && <span className="nav-count">{templates.length}</span>}</button>)}</nav>
       <div className="topnav-right">
-        {project && view !== 'settings' && <span className="current-project"><Folder size={13} />{project.title}</span>}
+        {project && !['settings', 'maintenance'].includes(view) && <span className="current-project"><Folder size={13} />{project.title}</span>}
         <span className="harness-label"><span className="tiny-dot" />DEEPSEEK HARNESS</span>
         <IconButton icon={RefreshCw} label="刷新服务状态" onClick={refresh} />
         <button className={`topnav-item settings-item ${view === 'settings' ? 'active' : ''}`} onClick={() => changeView('settings')}><Settings2 size={16} strokeWidth={1.7} /><span>设置</span></button>
@@ -625,11 +617,11 @@ function App() {
       </div>
     </header>
     <main className={`main-content view-${view}`}>
-      {view !== 'settings' && <div className="page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}<span className="heading-dot">.</span></h1><p>{subtitle}</p></div><div className="heading-actions">{project && <span className="current-project"><Folder size={14} />{project.title}</span>}{view !== 'design' && <Button icon={Plus} variant="primary" onClick={newProject}>新建项目</Button>}</div></div>}
+      {view !== 'settings' && <div className="page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}<span className="heading-dot">.</span></h1><p>{subtitle}</p></div>{view !== 'maintenance' && <div className="heading-actions">{project && <span className="current-project"><Folder size={14} />{project.title}</span>}{view !== 'design' && <Button icon={Plus} variant="primary" onClick={newProject}>新建项目</Button>}</div>}</div>}
       {!connected && !loading && <div className="connection-banner" role="status"><CircleAlert size={16} /><span>本地 API 未连接<span className="connection-detail"> · {connectionError}</span></span><Button icon={RefreshCw} variant="ghost" onClick={refresh}>重试</Button></div>}
       {view === 'studio' && <>
         <div className="studio-tabs"><div role="tablist" aria-label="工作台视图"><button role="tab" aria-selected={studioTab === 'overview'} className={studioTab === 'overview' ? 'selected' : ''} onClick={() => setStudioTab('overview')}><SlidersHorizontal size={15} />制作概览</button><button role="tab" aria-selected={studioTab === 'jobs'} className={studioTab === 'jobs' ? 'selected' : ''} onClick={() => setStudioTab('jobs')}><Clock3 size={15} />项目任务<span>{projectJobs.length}</span></button><button role="tab" aria-selected={studioTab === 'timeline'} className={studioTab === 'timeline' ? 'selected' : ''} onClick={() => setStudioTab('timeline')}><Scissors size={15} />时间线编辑</button></div><span className="studio-format">{project ? `${project.width} × ${project.height} / ${project.fps} fps` : '1920 × 1080 / 30 fps'}</span></div>
-        {studioTab === 'overview' ? <div className="studio-layout"><div className="studio-main"><Preview /><ClipStrip project={project} onPlan={() => planProject()} busy={busy === 'plan'} />
+        {studioTab === 'overview' ? <div className="studio-layout"><div className="studio-main"><Preview project={project} template={selectedTemplate} onPreviewTemplate={() => setPreviewTemplate(selectedTemplate)} /><ClipStrip project={project} onPlan={() => planProject()} busy={busy === 'plan'} />
           <section className="recommendations"><div className="section-toolbar"><div className="section-title"><Grid2X2 size={15} /><h2>视觉风格</h2><span className="count">{templates.length}</span></div><Button icon={ArrowRight} variant="ghost" onClick={() => changeView('templates')}>浏览全部</Button></div><div className="template-strip">{templates.slice(0, 4).map(template => <button key={template.id} className={`mini-template ${template.id === templateId ? 'selected' : ''}`} onClick={() => selectTemplate(template)}><div><Thumbnail template={template} />{template.id === templateId && <span className="selected-mark"><Check size={12} /></span>}</div><span>{template.name}{template.id === templateId && <Check size={12} />}</span></button>)}</div></section>
         </div><aside className="brief-panel"><header><div className="section-title"><FileImage size={16} /><h2>制作简报</h2></div><span className={`tag ${project ? 'teal-tag' : ''}`}>{project ? '已创建' : '新项目'}</span></header>
           {project ? <><div className="project-summary"><h3>{project.title}</h3><p>{project.brief}</p><dl><div><dt>视觉风格</dt><dd>{templates.find(item => item.id === project.templateId)?.name || project.templateId}</dd></div><div><dt>画面规格</dt><dd>{project.width} × {project.height}</dd></div><div><dt>帧率</dt><dd>{project.fps} fps</dd></div><div><dt>项目素材</dt><dd>{project.assets?.length || 0} 个文件</dd></div><div><dt>更新时间</dt><dd>{displayDate(project.updatedAt) || '—'}</dd></div></dl></div>{templateId !== project.templateId && <div className="template-change"><Sparkles size={15} /><span>模板渲染将使用「{selectedTemplate.name}」</span></div>}<div className="brief-actions"><Button variant="primary" icon={Workflow} onClick={() => changeView('workflow')}>一键制作与工作流<ArrowRight size={14} /></Button><Button icon={Play} busy={busy === 'render'} onClick={() => runJob('render')}>渲染项目</Button><Button icon={Clapperboard} busy={busy === 'render-template'} onClick={() => runJob('render-template')}>渲染所选模板</Button></div></> : <ProjectForm form={form} setForm={setForm} templates={templates} onSubmit={createProject} busy={busy === 'project'} onTemplateChange={setTemplateId} />}
@@ -646,9 +638,11 @@ function App() {
       {view === 'jobs' && <><div className="jobs-toolbar"><div className="filter-tabs">{[['all', '全部任务'], ['active', '进行中'], ['completed', '已完成'], ['failed', '失败']].map(([id, label]) => <button key={id} className={jobFilter === id ? 'selected' : ''} onClick={() => setJobFilter(id)}>{label}{id === 'active' && <span className="count">{activeJobs.length}</span>}</button>)}</div><IconButton icon={RefreshCw} label="刷新任务" onClick={refresh} /></div><JobList jobs={data.jobs.filter(job => jobFilter === 'all' || (jobFilter === 'active' ? isActive(job) : job.status === jobFilter))} onCancel={cancelJob} busy={busy} projects={data.projects} /></>}
       {view === 'assets' && <AssetsView project={project} jobs={data.jobs} onImport={importAsset} busy={busy === 'asset'} />}
       {view === 'settings' && <SettingsView settings={data.settings} capabilities={data.capabilities} connected={connected} onSave={draft => mutate('settings', () => api('/settings', { method: 'PUT', body: draft }), '设置已保存')} busy={busy === 'settings'} />}
+      {view === 'maintenance' && <MaintenancePanel notify={notify} />}
       {view !== 'settings' && <footer className="page-footer"><span>EAC design world<span className="footer-divider">/</span>让创作有序发生</span><span><span className={`availability ${connected ? 'available' : ''}`} />{connected ? '工作空间已同步' : loading ? '正在连接' : '离线浏览'}</span></footer>}
     </main>
     {dialog === 'project' && <Dialog title="新建制作项目" onClose={() => setDialog(null)}><div className="project-dialog-body"><ProjectForm form={form} setForm={setForm} templates={templates} onSubmit={createProject} busy={busy === 'project'} existing={false} onTemplateChange={setTemplateId} /></div></Dialog>}
+    {previewTemplate && <TemplateDetail template={previewTemplate} onClose={() => setPreviewTemplate(null)} onSelect={template => { selectTemplate(template); setPreviewTemplate(null); }} />}
     {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
   </div>;
 }

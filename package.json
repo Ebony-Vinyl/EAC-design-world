@@ -1,6 +1,6 @@
 {
   "name": "eac-design-world",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "EAC design world: autonomous video production for DeepSeek Harness",
   "type": "module",
   "main": "./plugin/host.mjs",
@@ -15,10 +15,14 @@
     "dev": "node src/server.mjs --dev",
     "start": "node src/server.mjs",
     "build": "vite build",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node --test --test-concurrency=2 tests/*.test.mjs",
     "mcp": "node src/mcp.mjs",
     "doctor": "node scripts/doctor.mjs",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "motion:import": "node scripts/import-motion-libraries.mjs",
+    "motion:verify": "node scripts/verify-motion-libraries.mjs",
+    "update:manifest": "node scripts/build-update-manifest.mjs",
+    "verify:maintenance": "node scripts/verify-maintenance-package.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.2",

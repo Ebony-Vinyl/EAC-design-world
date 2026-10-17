@@ -180,7 +180,7 @@ test('existing verified EAC server uses a remote tool proxy without a second eng
     request: async (url, options) => {
       requests.push({ url, options });
       return { ok: true, json: async () => url.endsWith('/health')
-        ? { ok: true, name: 'EAC design world', version: '0.1.0' }
+        ? { ok: true, name: 'EAC design world', version: '0.3.0' }
         : { id: 'remote-project' } };
     },
   });
@@ -192,6 +192,18 @@ test('existing verified EAC server uses a remote tool proxy without a second eng
   assert.equal(requests[1].url, 'http://127.0.0.1:4173/api/projects/a%2Fb');
   assert.equal(requests[1].options.method, 'GET');
   await active.close();
+  assert.equal(ctx.registered.size, 0);
+});
+
+test('outdated running EAC service is rejected instead of hiding missing new capabilities', async () => {
+  const ctx = hostContext();
+  await assert.rejects(activate(ctx, {}, {
+    createEngine: async () => { throw new Error('must not create a second engine'); },
+    startServer: async () => { throw new Error('must not start a second listener'); },
+    toolDefinitions,
+    assertPortAvailable: async () => { throw Object.assign(new Error('occupied'), { code: 'EADDRINUSE' }); },
+    request: async () => ({ ok: true, json: async () => ({ ok: true, name: 'EAC design world', version: '0.1.0' }) }),
+  }), { code: 'EAC_STALE_RUNTIME' });
   assert.equal(ctx.registered.size, 0);
 });
 
@@ -266,7 +278,7 @@ test('client uses genuine official slots and releases every registration', async
   assert.ok(!registrations.some(row => row.options.name === 'conversation.composer.dock'),
     'the ambient stats dock must not contain a full template iframe');
   const settings = renderToStaticMarkup(React.createElement(registrations.find(row => row.options.name === 'settings.section').component));
-  assert.match(settings, /src="http:\/\/127\.0\.0\.1:4173\/"/);
+  assert.match(settings, /src="http:\/\/127\.0\.0\.1:4173\/\?view=maintenance"/);
   const controls = registrations.find(row => row.options.name === 'conversation.input.left');
   const templates = renderToStaticMarkup(React.createElement(controls.component, {
     useInput: selector => selector({ draft: '' }),

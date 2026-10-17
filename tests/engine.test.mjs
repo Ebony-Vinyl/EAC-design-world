@@ -128,7 +128,7 @@ test('storage persists projects and only accepts production settings', () => set
   await engine.handle('project_create', { title: 'Persistent' });
   await engine.settingsUpdate({ quality: 'draft', ttsVoice: '' });
   const state = await engine.state();
-  assert.equal(state.templates.length, 17);
+  assert.equal(state.templates.filter(item => !['motion-web', 'onetake'].includes(item.source)).length, 17);
   assert.deepEqual(Object.keys(state.settings).sort(), ['outputRoot', 'quality', 'ttsVoice']);
   const disk = JSON.parse(await readFile(engine.store.file, 'utf8'));
   assert.equal(disk.projects[0].title, 'Persistent');

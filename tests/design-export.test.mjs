@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createEngine } from '../src/engine.mjs';
 import { startServer } from '../src/server.mjs';
+import http from 'node:http';
+import { exportDesignArtifact } from '../src/design-export.mjs';
 
 test('real HTML deck exports PDF, PNG and a two-slide PowerPoint with explicit image fidelity', { timeout: 120000 }, async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-design-export-'));
@@ -38,4 +40,30 @@ test('real HTML deck exports PDF, PNG and a two-slide PowerPoint with explicit i
     }
     assert.equal((await engine.designStore.readContent(artifact.id)).revision, 1);
   } finally { await app.close(); await engine.close(); await rm(directory, { recursive: true, force: true }); }
+});
+
+test('export resolves relative vendor assets and blocks requests to the API', { timeout: 45000 }, async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'eac-export-assets-'));
+  const engine = await createEngine({ dataDir: directory });
+  const requests = [];
+  const server = http.createServer((request, response) => {
+    requests.push(request.url);
+    response.writeHead(200, { 'content-type': 'image/svg+xml' });
+    response.end('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="red"/></svg>');
+  });
+  try {
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    const origin = `http://127.0.0.1:${server.address().port}`;
+    const project = await engine.handle('design_project_create', { title: 'Relative assets', kind: 'website' });
+    const artifact = await engine.handle('design_artifact_save', {
+      projectId: project.id, name: 'index.html',
+      content: '<!doctype html><img src="/vendor/relative.svg"><script>fetch("/api/design/projects",{method:"POST"}).catch(()=>{})</script>',
+    });
+    const result = await exportDesignArtifact({ store: engine.designStore, id: artifact.id, format: 'png', origin });
+    assert.ok((await readFile(result.path)).length > 500);
+    assert.deepEqual(requests, ['/vendor/relative.svg']);
+  } finally {
+    await new Promise(resolve => { server.close(resolve); server.closeAllConnections(); });
+    await engine.close(); await rm(directory, { recursive: true, force: true });
+  }
 });

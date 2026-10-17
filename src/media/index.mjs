@@ -278,11 +278,17 @@ export async function recordBrowser({ url, actions = [], outputDir, width = 1280
   if (!Array.isArray(actions) || actions.length > 100) throw new TypeError('actions must contain at most 100 actions');
   let waits = 0;
   for (const action of actions) {
-    if (!action || !['click', 'fill', 'wait', 'scroll'].includes(action.type)) throw new TypeError('Unsupported browser action');
+    if (!action || !['click', 'fill', 'wait', 'scroll', 'move', 'wheel'].includes(action.type)) throw new TypeError('Unsupported browser action');
     if (['click', 'fill'].includes(action.type) && (typeof action.selector !== 'string' || !action.selector)) throw new TypeError('click/fill requires selector');
     if (action.type === 'fill' && typeof action.text !== 'string') throw new TypeError('fill requires text');
     if (action.type === 'wait') waits += number(action.ms, 'action.ms', 0, 30_000, 1000);
-    if (action.type === 'scroll') number(action.deltaY, 'action.deltaY', -100000, 100000, 600);
+    if (['scroll', 'wheel'].includes(action.type)) number(action.deltaY, 'action.deltaY', -100000, 100000, 600);
+    if (action.type === 'wheel') number(action.deltaX, 'action.deltaX', -100000, 100000, 0);
+    if (action.type === 'move') {
+      number(action.x, 'action.x', 0, width - 1);
+      number(action.y, 'action.y', 0, height - 1);
+      integer(action.steps, 'action.steps', 1, 120, 1);
+    }
   }
   if (waits > 90_000) throw new RangeError('Total browser waits must not exceed 90 seconds');
   const directory = filePath(outputDir, 'outputDir');

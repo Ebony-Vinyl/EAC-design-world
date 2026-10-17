@@ -355,15 +355,15 @@ try {
     picker.on('pageerror', error => pageErrors.push(error.message));
     await picker.addInitScript(() => window.addEventListener('message', event => { window.selectedTemplate = event.data; }));
     await picker.goto(`${app.url}/?view=templates`);
-    await picker.locator('.template-card').first().waitFor();
+    await picker.locator('.library-card').first().waitFor();
     const template = state.templates.find(item => item.id === '02-line-art');
     assert.ok(template);
     await picker.getByRole('button', { name: `选择${template.name}`, exact: true }).click();
     await picker.waitForFunction(() => window.selectedTemplate?.type === 'eac:template');
     assert.equal(await picker.evaluate(() => window.selectedTemplate.templateId), '02-line-art');
     await picker.getByLabel('搜索模板', { exact: true }).fill(template.id);
-    assert.equal(await picker.locator('.template-card').count(), 1);
-    await picker.waitForFunction(() => document.querySelector('.template-image')?.naturalWidth > 0);
+    assert.equal(await picker.locator('.library-card').count(), 1);
+    await picker.waitForFunction(() => document.querySelector('.library-cover')?.naturalWidth > 0);
     await noLegacyUI(picker);
     await picker.screenshot({ path: join(directory, 'template-picker.png'), fullPage: true });
   } finally { await picker.close(); }

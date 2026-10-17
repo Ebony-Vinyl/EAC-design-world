@@ -221,7 +221,7 @@ test('library API and tool mapping surface templates, systems and modes', async 
     assert.ok(body.templates.length >= 17);
     assert.equal(body.provenance.repo, 'nexu-io/open-design');
     assert.equal(body.designSystems.length, 152);
-    assert.equal(body.templates.length, 534);
+    assert.equal(body.templates.filter(item => !['motion-web', 'onetake'].includes(item.source)).length, 534);
     assert.ok(body.templates.filter(item => item.id.startsWith('od-')).every(item => item.license && item.provenance));
     const sourceTemplate = body.templates.find(item => item.id.startsWith('od-') && item.entry);
     assert.equal(typeof sourceTemplate.entry, 'string');
