@@ -1,0 +1,2141 @@
+[
+  {
+    "id": "od-ds-agentic",
+    "source": "vendor/open-design/design-systems/agentic/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-agentic.jpg"
+  },
+  {
+    "id": "od-ds-airtable",
+    "source": "vendor/open-design/design-systems/airtable/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-airtable.jpg"
+  },
+  {
+    "id": "od-ds-airbnb",
+    "source": "vendor/open-design/design-systems/airbnb/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-airbnb.jpg"
+  },
+  {
+    "id": "od-ds-application",
+    "source": "vendor/open-design/design-systems/application/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-application.jpg"
+  },
+  {
+    "id": "od-ds-ant",
+    "source": "vendor/open-design/design-systems/ant/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-ant.jpg"
+  },
+  {
+    "id": "od-ds-apple",
+    "source": "vendor/open-design/design-systems/apple/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-apple.jpg"
+  },
+  {
+    "id": "od-ds-atelier-zero",
+    "source": "vendor/open-design/design-systems/atelier-zero/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-atelier-zero.jpg"
+  },
+  {
+    "id": "od-ds-arc",
+    "source": "vendor/open-design/design-systems/arc/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-arc.jpg"
+  },
+  {
+    "id": "od-ds-artistic",
+    "source": "vendor/open-design/design-systems/artistic/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-artistic.jpg"
+  },
+  {
+    "id": "od-ds-binance",
+    "source": "vendor/open-design/design-systems/binance/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-binance.jpg"
+  },
+  {
+    "id": "od-ds-bento",
+    "source": "vendor/open-design/design-systems/bento/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-bento.jpg"
+  },
+  {
+    "id": "od-ds-bmw",
+    "source": "vendor/open-design/design-systems/bmw/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-bmw.jpg"
+  },
+  {
+    "id": "od-ds-bmw-m",
+    "source": "vendor/open-design/design-systems/bmw-m/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-bmw-m.jpg"
+  },
+  {
+    "id": "od-ds-brutalism",
+    "source": "vendor/open-design/design-systems/brutalism/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-brutalism.jpg"
+  },
+  {
+    "id": "od-ds-bold",
+    "source": "vendor/open-design/design-systems/bold/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-bold.jpg"
+  },
+  {
+    "id": "od-ds-bugatti",
+    "source": "vendor/open-design/design-systems/bugatti/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-bugatti.jpg"
+  },
+  {
+    "id": "od-ds-cafe",
+    "source": "vendor/open-design/design-systems/cafe/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-cafe.jpg"
+  },
+  {
+    "id": "od-ds-cal",
+    "source": "vendor/open-design/design-systems/cal/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-cal.jpg"
+  },
+  {
+    "id": "od-ds-claude",
+    "source": "vendor/open-design/design-systems/claude/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-claude.jpg"
+  },
+  {
+    "id": "od-ds-canva",
+    "source": "vendor/open-design/design-systems/canva/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-canva.jpg"
+  },
+  {
+    "id": "od-ds-cisco",
+    "source": "vendor/open-design/design-systems/cisco/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-cisco.jpg"
+  },
+  {
+    "id": "od-ds-claymorphism",
+    "source": "vendor/open-design/design-systems/claymorphism/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-claymorphism.jpg"
+  },
+  {
+    "id": "od-ds-clay",
+    "source": "vendor/open-design/design-systems/clay/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-clay.jpg"
+  },
+  {
+    "id": "od-ds-cloudflare-kumo",
+    "error": "Preview source unavailable in the imported snapshot."
+  },
+  {
+    "id": "od-ds-clean",
+    "source": "vendor/open-design/design-systems/clean/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-clean.jpg"
+  },
+  {
+    "id": "od-ds-clickhouse",
+    "source": "vendor/open-design/design-systems/clickhouse/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-clickhouse.jpg"
+  },
+  {
+    "id": "od-ds-cohere",
+    "source": "vendor/open-design/design-systems/cohere/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-cohere.jpg"
+  },
+  {
+    "id": "od-ds-coinbase",
+    "source": "vendor/open-design/design-systems/coinbase/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-coinbase.jpg"
+  },
+  {
+    "id": "od-ds-colorful",
+    "source": "vendor/open-design/design-systems/colorful/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-colorful.jpg"
+  },
+  {
+    "id": "od-ds-composio",
+    "source": "vendor/open-design/design-systems/composio/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-composio.jpg"
+  },
+  {
+    "id": "od-ds-contemporary",
+    "source": "vendor/open-design/design-systems/contemporary/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-contemporary.jpg"
+  },
+  {
+    "id": "od-ds-corporate",
+    "source": "vendor/open-design/design-systems/corporate/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-corporate.jpg"
+  },
+  {
+    "id": "od-ds-cosmic",
+    "source": "vendor/open-design/design-systems/cosmic/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-cosmic.jpg"
+  },
+  {
+    "id": "od-ds-creative",
+    "source": "vendor/open-design/design-systems/creative/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-creative.jpg"
+  },
+  {
+    "id": "od-ds-cursor",
+    "source": "vendor/open-design/design-systems/cursor/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-cursor.jpg"
+  },
+  {
+    "id": "od-ds-dashboard",
+    "source": "vendor/open-design/design-systems/dashboard/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-dashboard.jpg"
+  },
+  {
+    "id": "od-ds-default",
+    "source": "vendor/open-design/design-systems/default/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-default.jpg"
+  },
+  {
+    "id": "od-ds-discord",
+    "source": "vendor/open-design/design-systems/discord/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-discord.jpg"
+  },
+  {
+    "id": "od-ds-dithered",
+    "source": "vendor/open-design/design-systems/dithered/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-dithered.jpg"
+  },
+  {
+    "id": "od-ds-doodle",
+    "source": "vendor/open-design/design-systems/doodle/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-doodle.jpg"
+  },
+  {
+    "id": "od-ds-dramatic",
+    "source": "vendor/open-design/design-systems/dramatic/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-dramatic.jpg"
+  },
+  {
+    "id": "od-ds-editorial",
+    "source": "vendor/open-design/design-systems/editorial/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-editorial.jpg"
+  },
+  {
+    "id": "od-ds-duolingo",
+    "source": "vendor/open-design/design-systems/duolingo/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-duolingo.jpg"
+  },
+  {
+    "id": "od-ds-elegant",
+    "source": "vendor/open-design/design-systems/elegant/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-elegant.jpg"
+  },
+  {
+    "id": "od-ds-elevenlabs",
+    "source": "vendor/open-design/design-systems/elevenlabs/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-elevenlabs.jpg"
+  },
+  {
+    "id": "od-ds-energetic",
+    "source": "vendor/open-design/design-systems/energetic/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-energetic.jpg"
+  },
+  {
+    "id": "od-ds-expo",
+    "source": "vendor/open-design/design-systems/expo/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-expo.jpg"
+  },
+  {
+    "id": "od-ds-expressive",
+    "source": "vendor/open-design/design-systems/expressive/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-expressive.jpg"
+  },
+  {
+    "id": "od-ds-enterprise",
+    "source": "vendor/open-design/design-systems/enterprise/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-enterprise.jpg"
+  },
+  {
+    "id": "od-ds-fantasy",
+    "source": "vendor/open-design/design-systems/fantasy/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-fantasy.jpg"
+  },
+  {
+    "id": "od-ds-flat",
+    "source": "vendor/open-design/design-systems/flat/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-flat.jpg"
+  },
+  {
+    "id": "od-ds-ferrari",
+    "source": "vendor/open-design/design-systems/ferrari/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-ferrari.jpg"
+  },
+  {
+    "id": "od-ds-figma",
+    "source": "vendor/open-design/design-systems/figma/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-figma.jpg"
+  },
+  {
+    "id": "od-ds-friendly",
+    "source": "vendor/open-design/design-systems/friendly/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-friendly.jpg"
+  },
+  {
+    "id": "od-ds-futuristic",
+    "source": "vendor/open-design/design-systems/futuristic/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-futuristic.jpg"
+  },
+  {
+    "id": "od-ds-framer",
+    "source": "vendor/open-design/design-systems/framer/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-framer.jpg"
+  },
+  {
+    "id": "od-ds-github",
+    "source": "vendor/open-design/design-systems/github/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-github.jpg"
+  },
+  {
+    "id": "od-ds-glassmorphism",
+    "source": "vendor/open-design/design-systems/glassmorphism/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-glassmorphism.jpg"
+  },
+  {
+    "id": "od-ds-gradient",
+    "source": "vendor/open-design/design-systems/gradient/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-gradient.jpg"
+  },
+  {
+    "id": "od-ds-hashicorp",
+    "source": "vendor/open-design/design-systems/hashicorp/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-hashicorp.jpg"
+  },
+  {
+    "id": "od-ds-hud",
+    "source": "vendor/open-design/design-systems/hud/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-hud.jpg"
+  },
+  {
+    "id": "od-ds-huggingface",
+    "source": "vendor/open-design/design-systems/huggingface/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-huggingface.jpg"
+  },
+  {
+    "id": "od-ds-ibm",
+    "source": "vendor/open-design/design-systems/ibm/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-ibm.jpg"
+  },
+  {
+    "id": "od-ds-intercom",
+    "source": "vendor/open-design/design-systems/intercom/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-intercom.jpg"
+  },
+  {
+    "id": "od-ds-kami",
+    "source": "vendor/open-design/design-systems/kami/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-kami.jpg"
+  },
+  {
+    "id": "od-ds-kraken",
+    "source": "vendor/open-design/design-systems/kraken/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-kraken.jpg"
+  },
+  {
+    "id": "od-ds-lamborghini",
+    "source": "vendor/open-design/design-systems/lamborghini/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-lamborghini.jpg"
+  },
+  {
+    "id": "od-ds-levels",
+    "source": "vendor/open-design/design-systems/levels/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-levels.jpg"
+  },
+  {
+    "id": "od-ds-lingo",
+    "source": "vendor/open-design/design-systems/lingo/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-lingo.jpg"
+  },
+  {
+    "id": "od-ds-linear-app",
+    "source": "vendor/open-design/design-systems/linear-app/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-linear-app.jpg"
+  },
+  {
+    "id": "od-ds-loom",
+    "source": "vendor/open-design/design-systems/loom/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-loom.jpg"
+  },
+  {
+    "id": "od-ds-mastercard",
+    "source": "vendor/open-design/design-systems/mastercard/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-mastercard.jpg"
+  },
+  {
+    "id": "od-ds-lovable",
+    "source": "vendor/open-design/design-systems/lovable/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-lovable.jpg"
+  },
+  {
+    "id": "od-ds-luxury",
+    "source": "vendor/open-design/design-systems/luxury/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-luxury.jpg"
+  },
+  {
+    "id": "od-ds-material",
+    "source": "vendor/open-design/design-systems/material/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-material.jpg"
+  },
+  {
+    "id": "od-ds-meta",
+    "source": "vendor/open-design/design-systems/meta/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-meta.jpg"
+  },
+  {
+    "id": "od-ds-minimal",
+    "source": "vendor/open-design/design-systems/minimal/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-minimal.jpg"
+  },
+  {
+    "id": "od-ds-minimax",
+    "source": "vendor/open-design/design-systems/minimax/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-minimax.jpg"
+  },
+  {
+    "id": "od-ds-mintlify",
+    "source": "vendor/open-design/design-systems/mintlify/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-mintlify.jpg"
+  },
+  {
+    "id": "od-ds-miro",
+    "source": "vendor/open-design/design-systems/miro/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-miro.jpg"
+  },
+  {
+    "id": "od-ds-mission-control",
+    "source": "vendor/open-design/design-systems/mission-control/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-mission-control.jpg"
+  },
+  {
+    "id": "od-ds-mistral-ai",
+    "source": "vendor/open-design/design-systems/mistral-ai/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-mistral-ai.jpg"
+  },
+  {
+    "id": "od-ds-modern",
+    "source": "vendor/open-design/design-systems/modern/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-modern.jpg"
+  },
+  {
+    "id": "od-ds-mono",
+    "source": "vendor/open-design/design-systems/mono/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-mono.jpg"
+  },
+  {
+    "id": "od-ds-mongodb",
+    "source": "vendor/open-design/design-systems/mongodb/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-mongodb.jpg"
+  },
+  {
+    "id": "od-ds-neobrutalism",
+    "source": "vendor/open-design/design-systems/neobrutalism/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-neobrutalism.jpg"
+  },
+  {
+    "id": "od-ds-neumorphism",
+    "source": "vendor/open-design/design-systems/neumorphism/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-neumorphism.jpg"
+  },
+  {
+    "id": "od-ds-neon",
+    "source": "vendor/open-design/design-systems/neon/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-neon.jpg"
+  },
+  {
+    "id": "od-ds-nike",
+    "source": "vendor/open-design/design-systems/nike/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-nike.jpg"
+  },
+  {
+    "id": "od-ds-nvidia",
+    "source": "vendor/open-design/design-systems/nvidia/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-nvidia.jpg"
+  },
+  {
+    "id": "od-ds-notion",
+    "source": "vendor/open-design/design-systems/notion/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-notion.jpg"
+  },
+  {
+    "id": "od-ds-ollama",
+    "source": "vendor/open-design/design-systems/ollama/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-ollama.jpg"
+  },
+  {
+    "id": "od-ds-openai",
+    "source": "vendor/open-design/design-systems/openai/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-openai.jpg"
+  },
+  {
+    "id": "od-ds-opencode-ai",
+    "source": "vendor/open-design/design-systems/opencode-ai/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-opencode-ai.jpg"
+  },
+  {
+    "id": "od-ds-pacman",
+    "source": "vendor/open-design/design-systems/pacman/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-pacman.jpg"
+  },
+  {
+    "id": "od-ds-paper",
+    "source": "vendor/open-design/design-systems/paper/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-paper.jpg"
+  },
+  {
+    "id": "od-ds-perplexity",
+    "source": "vendor/open-design/design-systems/perplexity/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-perplexity.jpg"
+  },
+  {
+    "id": "od-ds-perspective",
+    "source": "vendor/open-design/design-systems/perspective/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-perspective.jpg"
+  },
+  {
+    "id": "od-ds-pinterest",
+    "source": "vendor/open-design/design-systems/pinterest/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-pinterest.jpg"
+  },
+  {
+    "id": "od-ds-playstation",
+    "source": "vendor/open-design/design-systems/playstation/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-playstation.jpg"
+  },
+  {
+    "id": "od-ds-posthog",
+    "source": "vendor/open-design/design-systems/posthog/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-posthog.jpg"
+  },
+  {
+    "id": "od-ds-premium",
+    "source": "vendor/open-design/design-systems/premium/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-premium.jpg"
+  },
+  {
+    "id": "od-ds-professional",
+    "source": "vendor/open-design/design-systems/professional/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-professional.jpg"
+  },
+  {
+    "id": "od-ds-publication",
+    "source": "vendor/open-design/design-systems/publication/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-publication.jpg"
+  },
+  {
+    "id": "od-ds-raycast",
+    "source": "vendor/open-design/design-systems/raycast/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-raycast.jpg"
+  },
+  {
+    "id": "od-ds-refined",
+    "source": "vendor/open-design/design-systems/refined/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-refined.jpg"
+  },
+  {
+    "id": "od-ds-renault",
+    "source": "vendor/open-design/design-systems/renault/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-renault.jpg"
+  },
+  {
+    "id": "od-ds-resend",
+    "source": "vendor/open-design/design-systems/resend/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-resend.jpg"
+  },
+  {
+    "id": "od-ds-retro",
+    "source": "vendor/open-design/design-systems/retro/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-retro.jpg"
+  },
+  {
+    "id": "od-ds-replicate",
+    "source": "vendor/open-design/design-systems/replicate/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-replicate.jpg"
+  },
+  {
+    "id": "od-ds-revolut",
+    "source": "vendor/open-design/design-systems/revolut/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-revolut.jpg"
+  },
+  {
+    "id": "od-ds-runwayml",
+    "source": "vendor/open-design/design-systems/runwayml/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-runwayml.jpg"
+  },
+  {
+    "id": "od-ds-sanity",
+    "source": "vendor/open-design/design-systems/sanity/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-sanity.jpg"
+  },
+  {
+    "id": "od-ds-shadcn",
+    "source": "vendor/open-design/design-systems/shadcn/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-shadcn.jpg"
+  },
+  {
+    "id": "od-ds-sentry",
+    "source": "vendor/open-design/design-systems/sentry/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-sentry.jpg"
+  },
+  {
+    "id": "od-ds-simple",
+    "source": "vendor/open-design/design-systems/simple/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-simple.jpg"
+  },
+  {
+    "id": "od-ds-skeumorphism",
+    "source": "vendor/open-design/design-systems/skeumorphism/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-skeumorphism.jpg"
+  },
+  {
+    "id": "od-ds-shopify",
+    "source": "vendor/open-design/design-systems/shopify/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-shopify.jpg"
+  },
+  {
+    "id": "od-ds-sleek",
+    "source": "vendor/open-design/design-systems/sleek/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-sleek.jpg"
+  },
+  {
+    "id": "od-ds-spacex",
+    "source": "vendor/open-design/design-systems/spacex/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-spacex.jpg"
+  },
+  {
+    "id": "od-ds-slack",
+    "source": "vendor/open-design/design-systems/slack/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-slack.jpg"
+  },
+  {
+    "id": "od-ds-spacious",
+    "source": "vendor/open-design/design-systems/spacious/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-spacious.jpg"
+  },
+  {
+    "id": "od-ds-spotify",
+    "source": "vendor/open-design/design-systems/spotify/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-spotify.jpg"
+  },
+  {
+    "id": "od-ds-starbucks",
+    "source": "vendor/open-design/design-systems/starbucks/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-starbucks.jpg"
+  },
+  {
+    "id": "od-ds-storytelling",
+    "source": "vendor/open-design/design-systems/storytelling/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-storytelling.jpg"
+  },
+  {
+    "id": "od-ds-stripe",
+    "source": "vendor/open-design/design-systems/stripe/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-stripe.jpg"
+  },
+  {
+    "id": "od-ds-supabase",
+    "source": "vendor/open-design/design-systems/supabase/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-supabase.jpg"
+  },
+  {
+    "id": "od-ds-superhuman",
+    "source": "vendor/open-design/design-systems/superhuman/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-superhuman.jpg"
+  },
+  {
+    "id": "od-ds-tesla",
+    "source": "vendor/open-design/design-systems/tesla/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-tesla.jpg"
+  },
+  {
+    "id": "od-ds-tetris",
+    "source": "vendor/open-design/design-systems/tetris/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-tetris.jpg"
+  },
+  {
+    "id": "od-ds-tom-modern",
+    "error": "Preview source unavailable in the imported snapshot."
+  },
+  {
+    "id": "od-ds-theverge",
+    "source": "vendor/open-design/design-systems/theverge/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-theverge.jpg"
+  },
+  {
+    "id": "od-ds-together-ai",
+    "source": "vendor/open-design/design-systems/together-ai/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-together-ai.jpg"
+  },
+  {
+    "id": "od-ds-totality-festival",
+    "source": "vendor/open-design/design-systems/totality-festival/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-totality-festival.jpg"
+  },
+  {
+    "id": "od-ds-trading-terminal",
+    "source": "vendor/open-design/design-systems/trading-terminal/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-trading-terminal.jpg"
+  },
+  {
+    "id": "od-ds-urdu",
+    "source": "vendor/open-design/design-systems/urdu/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-urdu.jpg"
+  },
+  {
+    "id": "od-ds-vercel",
+    "source": "vendor/open-design/design-systems/vercel/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-vercel.jpg"
+  },
+  {
+    "id": "od-ds-uber",
+    "source": "vendor/open-design/design-systems/uber/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-uber.jpg"
+  },
+  {
+    "id": "od-ds-vibrant",
+    "source": "vendor/open-design/design-systems/vibrant/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-vibrant.jpg"
+  },
+  {
+    "id": "od-ds-vodafone",
+    "source": "vendor/open-design/design-systems/vodafone/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-vodafone.jpg"
+  },
+  {
+    "id": "od-ds-vintage",
+    "source": "vendor/open-design/design-systems/vintage/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-vintage.jpg"
+  },
+  {
+    "id": "od-ds-voltagent",
+    "source": "vendor/open-design/design-systems/voltagent/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-voltagent.jpg"
+  },
+  {
+    "id": "od-ds-warm-editorial",
+    "source": "vendor/open-design/design-systems/warm-editorial/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-warm-editorial.jpg"
+  },
+  {
+    "id": "od-ds-warp",
+    "source": "vendor/open-design/design-systems/warp/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-warp.jpg"
+  },
+  {
+    "id": "od-ds-webex",
+    "source": "vendor/open-design/design-systems/webex/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-webex.jpg"
+  },
+  {
+    "id": "od-ds-webflow",
+    "source": "vendor/open-design/design-systems/webflow/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-webflow.jpg"
+  },
+  {
+    "id": "od-ds-wechat",
+    "source": "vendor/open-design/design-systems/wechat/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-wechat.jpg"
+  },
+  {
+    "id": "od-ds-wired",
+    "source": "vendor/open-design/design-systems/wired/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-wired.jpg"
+  },
+  {
+    "id": "od-ds-wise",
+    "source": "vendor/open-design/design-systems/wise/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-wise.jpg"
+  },
+  {
+    "id": "od-ds-xiaohongshu",
+    "source": "vendor/open-design/design-systems/xiaohongshu/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-xiaohongshu.jpg"
+  },
+  {
+    "id": "od-ds-x-ai",
+    "source": "vendor/open-design/design-systems/x-ai/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-x-ai.jpg"
+  },
+  {
+    "id": "od-ds-zapier",
+    "source": "vendor/open-design/design-systems/zapier/system/artifacts/landing.html",
+    "image": "/library-previews/od-ds-zapier.jpg"
+  },
+  {
+    "id": "od-audio-jingle",
+    "source": "vendor/open-design/templates/examples/audio-jingle/example.html",
+    "image": "/library-previews/od-audio-jingle.jpg"
+  },
+  {
+    "id": "od-blog-post",
+    "source": "vendor/open-design/templates/examples/blog-post/example.html",
+    "image": "/library-previews/od-blog-post.jpg"
+  },
+  {
+    "id": "od-article-magazine",
+    "source": "vendor/open-design/templates/examples/article-magazine/example.html",
+    "image": "/library-previews/od-article-magazine.jpg"
+  },
+  {
+    "id": "od-card-twitter",
+    "source": "vendor/open-design/templates/examples/card-twitter/example.html",
+    "image": "/library-previews/od-card-twitter.jpg"
+  },
+  {
+    "id": "od-codex-interactive-capability-map",
+    "error": "Preview source unavailable in the imported snapshot."
+  },
+  {
+    "id": "od-critique",
+    "error": "Preview source unavailable in the imported snapshot."
+  },
+  {
+    "id": "od-card-xiaohongshu",
+    "source": "vendor/open-design/templates/examples/card-xiaohongshu/example.html",
+    "image": "/library-previews/od-card-xiaohongshu.jpg"
+  },
+  {
+    "id": "od-clinical-case-report",
+    "source": "vendor/open-design/templates/examples/clinical-case-report/example.html",
+    "image": "/library-previews/od-clinical-case-report.jpg"
+  },
+  {
+    "id": "od-dashboard",
+    "source": "vendor/open-design/templates/examples/dashboard/example.html",
+    "image": "/library-previews/od-dashboard.jpg"
+  },
+  {
+    "id": "od-dating-web",
+    "source": "vendor/open-design/templates/examples/dating-web/example.html",
+    "image": "/library-previews/od-dating-web.jpg"
+  },
+  {
+    "id": "od-deck-guizang-editorial",
+    "source": "vendor/open-design/templates/examples/deck-guizang-editorial/example.html",
+    "image": "/library-previews/od-deck-guizang-editorial.jpg"
+  },
+  {
+    "id": "od-deck-open-slide-canvas",
+    "source": "vendor/open-design/templates/examples/deck-open-slide-canvas/example.html",
+    "image": "/library-previews/od-deck-open-slide-canvas.jpg"
+  },
+  {
+    "id": "od-deck-swiss-international",
+    "source": "vendor/open-design/templates/examples/deck-swiss-international/example.html",
+    "image": "/library-previews/od-deck-swiss-international.jpg"
+  },
+  {
+    "id": "od-doc-kami-parchment",
+    "source": "vendor/open-design/templates/examples/doc-kami-parchment/example.html",
+    "image": "/library-previews/od-doc-kami-parchment.jpg"
+  },
+  {
+    "id": "od-digital-eguide",
+    "source": "vendor/open-design/templates/examples/digital-eguide/example.html",
+    "image": "/library-previews/od-digital-eguide.jpg"
+  },
+  {
+    "id": "od-docs-page",
+    "source": "vendor/open-design/templates/examples/docs-page/example.html",
+    "image": "/library-previews/od-docs-page.jpg"
+  },
+  {
+    "id": "od-email-marketing",
+    "source": "vendor/open-design/templates/examples/email-marketing/example.html",
+    "image": "/library-previews/od-email-marketing.jpg"
+  },
+  {
+    "id": "od-data-report",
+    "source": "vendor/open-design/templates/examples/data-report/example.html",
+    "image": "/library-previews/od-data-report.jpg"
+  },
+  {
+    "id": "od-flowai-live-dashboard-template",
+    "source": "vendor/open-design/templates/examples/flowai-live-dashboard-template/example.html",
+    "image": "/library-previews/od-flowai-live-dashboard-template.jpg"
+  },
+  {
+    "id": "od-eng-runbook",
+    "source": "vendor/open-design/templates/examples/eng-runbook/example.html",
+    "image": "/library-previews/od-eng-runbook.jpg"
+  },
+  {
+    "id": "od-finance-report",
+    "source": "vendor/open-design/templates/examples/finance-report/example.html",
+    "image": "/library-previews/od-finance-report.jpg"
+  },
+  {
+    "id": "od-frame-data-chart-nyt",
+    "source": "vendor/open-design/templates/examples/frame-data-chart-nyt/example.html",
+    "image": "/library-previews/od-frame-data-chart-nyt.jpg"
+  },
+  {
+    "id": "od-frame-flowchart-sticky",
+    "source": "vendor/open-design/templates/examples/frame-flowchart-sticky/example.html",
+    "image": "/library-previews/od-frame-flowchart-sticky.jpg"
+  },
+  {
+    "id": "od-frame-glitch-title",
+    "source": "vendor/open-design/templates/examples/frame-glitch-title/example.html",
+    "image": "/library-previews/od-frame-glitch-title.jpg"
+  },
+  {
+    "id": "od-frame-light-leak-cinema",
+    "source": "vendor/open-design/templates/examples/frame-light-leak-cinema/example.html",
+    "image": "/library-previews/od-frame-light-leak-cinema.jpg"
+  },
+  {
+    "id": "od-frame-logo-outro",
+    "source": "vendor/open-design/templates/examples/frame-logo-outro/example.html",
+    "image": "/library-previews/od-frame-logo-outro.jpg"
+  },
+  {
+    "id": "od-frontend-slides",
+    "error": "Preview source unavailable in the imported snapshot."
+  },
+  {
+    "id": "od-frame-liquid-bg-hero",
+    "source": "vendor/open-design/templates/examples/frame-liquid-bg-hero/example.html",
+    "image": "/library-previews/od-frame-liquid-bg-hero.jpg"
+  },
+  {
+    "id": "od-frame-macos-notification",
+    "source": "vendor/open-design/templates/examples/frame-macos-notification/example.html",
+    "image": "/library-previews/od-frame-macos-notification.jpg"
+  },
+  {
+    "id": "od-fs-creative-voltage",
+    "source": "vendor/open-design/templates/examples/fs-creative-voltage/example.html",
+    "image": "/library-previews/od-fs-creative-voltage.jpg"
+  },
+  {
+    "id": "od-fs-editorial-forest",
+    "source": "vendor/open-design/templates/examples/fs-editorial-forest/example.html",
+    "image": "/library-previews/od-fs-editorial-forest.jpg"
+  },
+  {
+    "id": "od-fs-electric-studio",
+    "source": "vendor/open-design/templates/examples/fs-electric-studio/example.html",
+    "image": "/library-previews/od-fs-electric-studio.jpg"
+  },
+  {
+    "id": "od-fs-emerald-editorial",
+    "source": "vendor/open-design/templates/examples/fs-emerald-editorial/example.html",
+    "image": "/library-previews/od-fs-emerald-editorial.jpg"
+  },
+  {
+    "id": "od-gamified-app",
+    "source": "vendor/open-design/templates/examples/gamified-app/example.html",
+    "image": "/library-previews/od-gamified-app.jpg"
+  },
+  {
+    "id": "od-fs-notebook-tabs",
+    "source": "vendor/open-design/templates/examples/fs-notebook-tabs/example.html",
+    "image": "/library-previews/od-fs-notebook-tabs.jpg"
+  },
+  {
+    "id": "od-github-dashboard",
+    "source": "vendor/open-design/templates/examples/github-dashboard/example.html",
+    "image": "/library-previews/od-github-dashboard.jpg"
+  },
+  {
+    "id": "od-hps-bauhaus",
+    "source": "vendor/open-design/templates/examples/hps-bauhaus/example.html",
+    "image": "/library-previews/od-hps-bauhaus.jpg"
+  },
+  {
+    "id": "od-hps-academic-paper",
+    "source": "vendor/open-design/templates/examples/hps-academic-paper/example.html",
+    "image": "/library-previews/od-hps-academic-paper.jpg"
+  },
+  {
+    "id": "od-hps-memphis-pop",
+    "source": "vendor/open-design/templates/examples/hps-memphis-pop/example.html",
+    "image": "/library-previews/od-hps-memphis-pop.jpg"
+  },
+  {
+    "id": "od-hps-retro-tv",
+    "source": "vendor/open-design/templates/examples/hps-retro-tv/example.html",
+    "image": "/library-previews/od-hps-retro-tv.jpg"
+  },
+  {
+    "id": "od-hps-true-blueprint",
+    "source": "vendor/open-design/templates/examples/hps-true-blueprint/example.html",
+    "image": "/library-previews/od-hps-true-blueprint.jpg"
+  },
+  {
+    "id": "od-hr-onboarding",
+    "source": "vendor/open-design/templates/examples/hr-onboarding/example.html",
+    "image": "/library-previews/od-hr-onboarding.jpg"
+  },
+  {
+    "id": "od-hps-y2k-chrome",
+    "source": "vendor/open-design/templates/examples/hps-y2k-chrome/example.html",
+    "image": "/library-previews/od-hps-y2k-chrome.jpg"
+  },
+  {
+    "id": "od-html-ppt-course-module",
+    "source": "vendor/open-design/templates/examples/html-ppt-course-module/example.html",
+    "image": "/library-previews/od-html-ppt-course-module.jpg"
+  },
+  {
+    "id": "od-html-ppt-graphify-dark-graph",
+    "source": "vendor/open-design/templates/examples/html-ppt-graphify-dark-graph/example.html",
+    "image": "/library-previews/od-html-ppt-graphify-dark-graph.jpg"
+  },
+  {
+    "id": "od-html-ppt-hermes-cyber-terminal",
+    "source": "vendor/open-design/templates/examples/html-ppt-hermes-cyber-terminal/example.html",
+    "image": "/library-previews/od-html-ppt-hermes-cyber-terminal.jpg"
+  },
+  {
+    "id": "od-html-ppt-knowledge-arch-blueprint",
+    "source": "vendor/open-design/templates/examples/html-ppt-knowledge-arch-blueprint/example.html",
+    "image": "/library-previews/od-html-ppt-knowledge-arch-blueprint.jpg"
+  },
+  {
+    "id": "od-html-ppt-pitch-deck",
+    "source": "vendor/open-design/templates/examples/html-ppt-pitch-deck/example.html",
+    "image": "/library-previews/od-html-ppt-pitch-deck.jpg"
+  },
+  {
+    "id": "od-html-ppt-obsidian-claude-gradient",
+    "source": "vendor/open-design/templates/examples/html-ppt-obsidian-claude-gradient/example.html",
+    "image": "/library-previews/od-html-ppt-obsidian-claude-gradient.jpg"
+  },
+  {
+    "id": "od-html-ppt-presenter-mode-reveal",
+    "source": "vendor/open-design/templates/examples/html-ppt-presenter-mode-reveal/example.html",
+    "image": "/library-previews/od-html-ppt-presenter-mode-reveal.jpg"
+  },
+  {
+    "id": "od-html-ppt-taste-brutalist",
+    "source": "vendor/open-design/templates/examples/html-ppt-taste-brutalist/example.html",
+    "image": "/library-previews/od-html-ppt-taste-brutalist.jpg"
+  },
+  {
+    "id": "od-html-ppt-taste-editorial",
+    "source": "vendor/open-design/templates/examples/html-ppt-taste-editorial/example.html",
+    "image": "/library-previews/od-html-ppt-taste-editorial.jpg"
+  },
+  {
+    "id": "od-html-ppt-product-launch",
+    "source": "vendor/open-design/templates/examples/html-ppt-product-launch/example.html",
+    "image": "/library-previews/od-html-ppt-product-launch.jpg"
+  },
+  {
+    "id": "od-html-ppt-tech-sharing",
+    "source": "vendor/open-design/templates/examples/html-ppt-tech-sharing/example.html",
+    "image": "/library-previews/od-html-ppt-tech-sharing.jpg"
+  },
+  {
+    "id": "od-html-ppt-weekly-report",
+    "source": "vendor/open-design/templates/examples/html-ppt-weekly-report/example.html",
+    "image": "/library-previews/od-html-ppt-weekly-report.jpg"
+  },
+  {
+    "id": "od-html-ppt-testing-safety-alert",
+    "source": "vendor/open-design/templates/examples/html-ppt-testing-safety-alert/example.html",
+    "image": "/library-previews/od-html-ppt-testing-safety-alert.jpg"
+  },
+  {
+    "id": "od-html-ppt-xhs-pastel-card",
+    "source": "vendor/open-design/templates/examples/html-ppt-xhs-pastel-card/example.html",
+    "image": "/library-previews/od-html-ppt-xhs-pastel-card.jpg"
+  },
+  {
+    "id": "od-html-ppt-xhs-white-editorial",
+    "source": "vendor/open-design/templates/examples/html-ppt-xhs-white-editorial/example.html",
+    "image": "/library-previews/od-html-ppt-xhs-white-editorial.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-8-bit-orbit",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-8-bit-orbit/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-8-bit-orbit.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-block-frame",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-block-frame/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-block-frame.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-biennale-yellow",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-biennale-yellow/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-biennale-yellow.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-blue-professional",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-blue-professional/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-blue-professional.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-broadside",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-broadside/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-broadside.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-cartesian",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-cartesian/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-cartesian.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-capsule",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-capsule/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-capsule.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-cobalt-grid",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-cobalt-grid/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-cobalt-grid.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-coral",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-coral/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-coral.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-creative-mode",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-creative-mode/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-creative-mode.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-daisy-days",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-daisy-days/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-daisy-days.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-editorial-tri-tone",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-editorial-tri-tone/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-editorial-tri-tone.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-grove",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-grove/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-grove.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-bold-poster",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-bold-poster/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-bold-poster.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-long-table",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-long-table/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-long-table.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-mat",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-mat/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-mat.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-monochrome",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-monochrome/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-monochrome.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-peoples-platform",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-peoples-platform/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-peoples-platform.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-neo-grid-bold",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-neo-grid-bold/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-neo-grid-bold.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-pin-and-paper",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-pin-and-paper/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-pin-and-paper.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-pink-script",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-pink-script/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-pink-script.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-playful",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-playful/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-playful.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-raw-grid",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-raw-grid/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-raw-grid.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-retro-windows",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-retro-windows/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-retro-windows.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-retro-zine",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-retro-zine/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-retro-zine.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-scatterbrain",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-scatterbrain/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-scatterbrain.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-sakura-chroma",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-sakura-chroma/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-sakura-chroma.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-signal",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-signal/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-signal.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-soft-editorial",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-soft-editorial/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-soft-editorial.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-stencil-tablet",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-stencil-tablet/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-stencil-tablet.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-studio",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-studio/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-studio.jpg"
+  },
+  {
+    "id": "od-html-ppt-zhangzara-vellum",
+    "source": "vendor/open-design/templates/examples/html-ppt-zhangzara-vellum/example.html",
+    "image": "/library-previews/od-html-ppt-zhangzara-vellum.jpg"
+  },
+  {
+    "id": "od-huashu-annual-letter",
+    "source": "vendor/open-design/templates/examples/huashu-annual-letter/example.html",
+    "image": "/library-previews/od-huashu-annual-letter.jpg"
+  },
+  {
+    "id": "od-huashu-bento-insight",
+    "source": "vendor/open-design/templates/examples/huashu-bento-insight/example.html",
+    "image": "/library-previews/od-huashu-bento-insight.jpg"
+  },
+  {
+    "id": "od-huashu-golden-circle",
+    "source": "vendor/open-design/templates/examples/huashu-golden-circle/example.html",
+    "image": "/library-previews/od-huashu-golden-circle.jpg"
+  },
+  {
+    "id": "od-huashu-keynote-black",
+    "source": "vendor/open-design/templates/examples/huashu-keynote-black/example.html",
+    "image": "/library-previews/od-huashu-keynote-black.jpg"
+  },
+  {
+    "id": "od-huashu-luxe-whitespace",
+    "source": "vendor/open-design/templates/examples/huashu-luxe-whitespace/example.html",
+    "image": "/library-previews/od-huashu-luxe-whitespace.jpg"
+  },
+  {
+    "id": "od-huashu-pentagram-grid",
+    "source": "vendor/open-design/templates/examples/huashu-pentagram-grid/example.html",
+    "image": "/library-previews/od-huashu-pentagram-grid.jpg"
+  },
+  {
+    "id": "od-huashu-slides",
+    "source": "vendor/open-design/templates/examples/huashu-slides/example.html",
+    "image": "/library-previews/od-huashu-slides.jpg"
+  },
+  {
+    "id": "od-huashu-sparkline-arc",
+    "source": "vendor/open-design/templates/examples/huashu-sparkline-arc/example.html",
+    "image": "/library-previews/od-huashu-sparkline-arc.jpg"
+  },
+  {
+    "id": "od-huashu-takram-soft-tech",
+    "source": "vendor/open-design/templates/examples/huashu-takram-soft-tech/example.html",
+    "image": "/library-previews/od-huashu-takram-soft-tech.jpg"
+  },
+  {
+    "id": "od-image-poster",
+    "source": "vendor/open-design/templates/examples/image-poster/example.html",
+    "image": "/library-previews/od-image-poster.jpg"
+  },
+  {
+    "id": "od-ib-pitch-book",
+    "source": "vendor/open-design/templates/examples/ib-pitch-book/example.html",
+    "image": "/library-previews/od-ib-pitch-book.jpg"
+  },
+  {
+    "id": "od-invoice",
+    "source": "vendor/open-design/templates/examples/invoice/example.html",
+    "image": "/library-previews/od-invoice.jpg"
+  },
+  {
+    "id": "od-kami-deck",
+    "source": "vendor/open-design/templates/examples/kami-deck/example.html",
+    "image": "/library-previews/od-kami-deck.jpg"
+  },
+  {
+    "id": "od-kami-landing",
+    "source": "vendor/open-design/templates/examples/kami-landing/example.html",
+    "image": "/library-previews/od-kami-landing.jpg"
+  },
+  {
+    "id": "od-kanban-board",
+    "source": "vendor/open-design/templates/examples/kanban-board/example.html",
+    "image": "/library-previews/od-kanban-board.jpg"
+  },
+  {
+    "id": "od-magazine-poster",
+    "source": "vendor/open-design/templates/examples/magazine-poster/example.html",
+    "image": "/library-previews/od-magazine-poster.jpg"
+  },
+  {
+    "id": "od-meeting-notes",
+    "source": "vendor/open-design/templates/examples/meeting-notes/example.html",
+    "image": "/library-previews/od-meeting-notes.jpg"
+  },
+  {
+    "id": "od-live-dashboard",
+    "source": "vendor/open-design/templates/examples/live-dashboard/example.html",
+    "image": "/library-previews/od-live-dashboard.jpg"
+  },
+  {
+    "id": "od-mobile-app",
+    "source": "vendor/open-design/templates/examples/mobile-app/example.html",
+    "image": "/library-previews/od-mobile-app.jpg"
+  },
+  {
+    "id": "od-mobile-onboarding",
+    "source": "vendor/open-design/templates/examples/mobile-onboarding/example.html",
+    "image": "/library-previews/od-mobile-onboarding.jpg"
+  },
+  {
+    "id": "od-mockup-device-3d",
+    "source": "vendor/open-design/templates/examples/mockup-device-3d/example.html",
+    "image": "/library-previews/od-mockup-device-3d.jpg"
+  },
+  {
+    "id": "od-motion-frames",
+    "source": "vendor/open-design/templates/examples/motion-frames/example.html",
+    "image": "/library-previews/od-motion-frames.jpg"
+  },
+  {
+    "id": "od-open-design-homepage",
+    "source": "vendor/open-design/templates/examples/open-design-homepage/example.html",
+    "image": "/library-previews/od-open-design-homepage.jpg"
+  },
+  {
+    "id": "od-open-design-landing",
+    "source": "vendor/open-design/templates/examples/open-design-landing/example.html",
+    "image": "/library-previews/od-open-design-landing.jpg"
+  },
+  {
+    "id": "od-open-design-landing-deck",
+    "source": "vendor/open-design/templates/examples/open-design-landing-deck/example.html",
+    "image": "/library-previews/od-open-design-landing-deck.jpg"
+  },
+  {
+    "id": "od-orbit-github",
+    "source": "vendor/open-design/templates/examples/orbit-github/example.html",
+    "image": "/library-previews/od-orbit-github.jpg"
+  },
+  {
+    "id": "od-orbit-general",
+    "source": "vendor/open-design/templates/examples/orbit-general/example.html",
+    "image": "/library-previews/od-orbit-general.jpg"
+  },
+  {
+    "id": "od-orbit-gmail",
+    "source": "vendor/open-design/templates/examples/orbit-gmail/example.html",
+    "image": "/library-previews/od-orbit-gmail.jpg"
+  },
+  {
+    "id": "od-orbit-linear",
+    "source": "vendor/open-design/templates/examples/orbit-linear/example.html",
+    "image": "/library-previews/od-orbit-linear.jpg"
+  },
+  {
+    "id": "od-orbit-notion",
+    "source": "vendor/open-design/templates/examples/orbit-notion/example.html",
+    "image": "/library-previews/od-orbit-notion.jpg"
+  },
+  {
+    "id": "od-pm-spec",
+    "source": "vendor/open-design/templates/examples/pm-spec/example.html",
+    "image": "/library-previews/od-pm-spec.jpg"
+  },
+  {
+    "id": "od-pricing-page",
+    "source": "vendor/open-design/templates/examples/pricing-page/example.html",
+    "image": "/library-previews/od-pricing-page.jpg"
+  },
+  {
+    "id": "od-poster-hero",
+    "source": "vendor/open-design/templates/examples/poster-hero/example.html",
+    "image": "/library-previews/od-poster-hero.jpg"
+  },
+  {
+    "id": "od-ppt-keynote",
+    "source": "vendor/open-design/templates/examples/ppt-keynote/example.html",
+    "image": "/library-previews/od-ppt-keynote.jpg"
+  },
+  {
+    "id": "od-resume-modern",
+    "source": "vendor/open-design/templates/examples/resume-modern/example.html",
+    "image": "/library-previews/od-resume-modern.jpg"
+  },
+  {
+    "id": "od-saas-landing",
+    "source": "vendor/open-design/templates/examples/saas-landing/example.html",
+    "image": "/library-previews/od-saas-landing.jpg"
+  },
+  {
+    "id": "od-simple-deck",
+    "source": "vendor/open-design/templates/examples/simple-deck/example.html",
+    "image": "/library-previews/od-simple-deck.jpg"
+  },
+  {
+    "id": "od-social-carousel",
+    "source": "vendor/open-design/templates/examples/social-carousel/example.html",
+    "image": "/library-previews/od-social-carousel.jpg"
+  },
+  {
+    "id": "od-social-media-dashboard",
+    "source": "vendor/open-design/templates/examples/social-media-dashboard/example.html",
+    "image": "/library-previews/od-social-media-dashboard.jpg"
+  },
+  {
+    "id": "od-social-reddit-card",
+    "source": "vendor/open-design/templates/examples/social-reddit-card/example.html",
+    "image": "/library-previews/od-social-reddit-card.jpg"
+  },
+  {
+    "id": "od-social-spotify-card",
+    "source": "vendor/open-design/templates/examples/social-spotify-card/example.html",
+    "image": "/library-previews/od-social-spotify-card.jpg"
+  },
+  {
+    "id": "od-social-media-matrix-tracker-template",
+    "source": "vendor/open-design/templates/examples/social-media-matrix-tracker-template/example.html",
+    "image": "/library-previews/od-social-media-matrix-tracker-template.jpg"
+  },
+  {
+    "id": "od-social-x-post-card",
+    "source": "vendor/open-design/templates/examples/social-x-post-card/example.html",
+    "image": "/library-previews/od-social-x-post-card.jpg"
+  },
+  {
+    "id": "od-sprite-animation",
+    "source": "vendor/open-design/templates/examples/sprite-animation/example.html",
+    "image": "/library-previews/od-sprite-animation.jpg"
+  },
+  {
+    "id": "od-tweaks",
+    "source": "vendor/open-design/templates/examples/tweaks/example.html",
+    "image": "/library-previews/od-tweaks.jpg"
+  },
+  {
+    "id": "od-trading-analysis-dashboard-template",
+    "source": "vendor/open-design/templates/examples/trading-analysis-dashboard-template/example.html",
+    "image": "/library-previews/od-trading-analysis-dashboard-template.jpg"
+  },
+  {
+    "id": "od-team-okrs",
+    "source": "vendor/open-design/templates/examples/team-okrs/example.html",
+    "image": "/library-previews/od-team-okrs.jpg"
+  },
+  {
+    "id": "od-velar-luxury-real-estate",
+    "source": "vendor/open-design/templates/examples/velar-luxury-real-estate/example.html",
+    "image": "/library-previews/od-velar-luxury-real-estate.jpg"
+  },
+  {
+    "id": "od-ve-midnight-editorial",
+    "source": "vendor/open-design/templates/examples/ve-midnight-editorial/example.html",
+    "image": "/library-previews/od-ve-midnight-editorial.jpg"
+  },
+  {
+    "id": "od-ve-terminal-mono",
+    "source": "vendor/open-design/templates/examples/ve-terminal-mono/example.html",
+    "image": "/library-previews/od-ve-terminal-mono.jpg"
+  },
+  {
+    "id": "od-vfx-text-cursor",
+    "source": "vendor/open-design/templates/examples/vfx-text-cursor/example.html",
+    "image": "/library-previews/od-vfx-text-cursor.jpg"
+  },
+  {
+    "id": "od-video-shortform",
+    "source": "vendor/open-design/templates/examples/video-shortform/example.html",
+    "image": "/library-previews/od-video-shortform.jpg"
+  },
+  {
+    "id": "od-video-hyperframes",
+    "source": "vendor/open-design/templates/examples/video-hyperframes/example.html",
+    "image": "/library-previews/od-video-hyperframes.jpg"
+  },
+  {
+    "id": "od-web-clone",
+    "source": "vendor/open-design/templates/examples/web-clone/index.html",
+    "image": "/library-previews/od-web-clone.jpg"
+  },
+  {
+    "id": "od-waitlist-page",
+    "source": "vendor/open-design/templates/examples/waitlist-page/example.html",
+    "image": "/library-previews/od-waitlist-page.jpg"
+  },
+  {
+    "id": "od-web-prototype",
+    "source": "vendor/open-design/templates/examples/web-prototype/example.html",
+    "image": "/library-previews/od-web-prototype.jpg"
+  },
+  {
+    "id": "od-web-prototype-taste-brutalist",
+    "source": "vendor/open-design/templates/examples/web-prototype-taste-brutalist/example.html",
+    "image": "/library-previews/od-web-prototype-taste-brutalist.jpg"
+  },
+  {
+    "id": "od-web-prototype-taste-editorial",
+    "source": "vendor/open-design/templates/examples/web-prototype-taste-editorial/example.html",
+    "image": "/library-previews/od-web-prototype-taste-editorial.jpg"
+  },
+  {
+    "id": "od-web-prototype-taste-soft",
+    "source": "vendor/open-design/templates/examples/web-prototype-taste-soft/example.html",
+    "image": "/library-previews/od-web-prototype-taste-soft.jpg"
+  },
+  {
+    "id": "od-webgl-aurora-veil",
+    "source": "vendor/open-design/templates/examples/webgl-aurora-veil/example.html",
+    "image": "/library-previews/od-webgl-aurora-veil.jpg"
+  },
+  {
+    "id": "od-webgl-depth-gallery",
+    "source": "vendor/open-design/templates/examples/webgl-depth-gallery/example.html",
+    "image": "/library-previews/od-webgl-depth-gallery.jpg"
+  },
+  {
+    "id": "od-webgl-caustic-pool",
+    "source": "vendor/open-design/templates/examples/webgl-caustic-pool/example.html",
+    "image": "/library-previews/od-webgl-caustic-pool.jpg"
+  },
+  {
+    "id": "od-webgl-experience",
+    "source": "vendor/open-design/templates/examples/webgl-experience/example.html",
+    "image": "/library-previews/od-webgl-experience.jpg"
+  },
+  {
+    "id": "od-webgl-distortion-grain",
+    "source": "vendor/open-design/templates/examples/webgl-distortion-grain/example.html",
+    "image": "/library-previews/od-webgl-distortion-grain.jpg"
+  },
+  {
+    "id": "od-webgl-halftone-drift",
+    "source": "vendor/open-design/templates/examples/webgl-halftone-drift/example.html",
+    "image": "/library-previews/od-webgl-halftone-drift.jpg"
+  },
+  {
+    "id": "od-webgl-holographic-foil",
+    "source": "vendor/open-design/templates/examples/webgl-holographic-foil/example.html",
+    "image": "/library-previews/od-webgl-holographic-foil.jpg"
+  },
+  {
+    "id": "od-webgl-horizontal-parallax",
+    "source": "vendor/open-design/templates/examples/webgl-horizontal-parallax/example.html",
+    "image": "/library-previews/od-webgl-horizontal-parallax.jpg"
+  },
+  {
+    "id": "od-webgl-liquid-iridescence",
+    "source": "vendor/open-design/templates/examples/webgl-liquid-iridescence/example.html",
+    "image": "/library-previews/od-webgl-liquid-iridescence.jpg"
+  },
+  {
+    "id": "od-webgl-liquid-metal",
+    "source": "vendor/open-design/templates/examples/webgl-liquid-metal/example.html",
+    "image": "/library-previews/od-webgl-liquid-metal.jpg"
+  },
+  {
+    "id": "od-webgl-particle-galaxy",
+    "source": "vendor/open-design/templates/examples/webgl-particle-galaxy/example.html",
+    "image": "/library-previews/od-webgl-particle-galaxy.jpg"
+  },
+  {
+    "id": "od-webgl-neon-grid",
+    "source": "vendor/open-design/templates/examples/webgl-neon-grid/example.html",
+    "image": "/library-previews/od-webgl-neon-grid.jpg"
+  },
+  {
+    "id": "od-webgl-raymarched-hero",
+    "source": "vendor/open-design/templates/examples/webgl-raymarched-hero/example.html",
+    "image": "/library-previews/od-webgl-raymarched-hero.jpg"
+  },
+  {
+    "id": "od-webgl-voronoi-cells",
+    "source": "vendor/open-design/templates/examples/webgl-voronoi-cells/example.html",
+    "image": "/library-previews/od-webgl-voronoi-cells.jpg"
+  },
+  {
+    "id": "od-webgl-pixel-reveal-gallery",
+    "source": "vendor/open-design/templates/examples/webgl-pixel-reveal-gallery/example.html",
+    "image": "/library-previews/od-webgl-pixel-reveal-gallery.jpg"
+  },
+  {
+    "id": "od-wireframe-annotated",
+    "source": "vendor/open-design/templates/examples/wireframe-annotated/example.html",
+    "image": "/library-previews/od-wireframe-annotated.jpg"
+  },
+  {
+    "id": "od-wireframe-greybox",
+    "source": "vendor/open-design/templates/examples/wireframe-greybox/example.html",
+    "image": "/library-previews/od-wireframe-greybox.jpg"
+  },
+  {
+    "id": "od-weekly-update",
+    "source": "vendor/open-design/templates/examples/weekly-update/example.html",
+    "image": "/library-previews/od-weekly-update.jpg"
+  },
+  {
+    "id": "od-worker-visualizer",
+    "source": "vendor/open-design/templates/examples/worker-visualizer/example.html",
+    "image": "/library-previews/od-worker-visualizer.jpg"
+  },
+  {
+    "id": "od-wireframe-mobile-flow",
+    "source": "vendor/open-design/templates/examples/wireframe-mobile-flow/example.html",
+    "image": "/library-previews/od-wireframe-mobile-flow.jpg"
+  },
+  {
+    "id": "od-dt-audio-jingle",
+    "source": "vendor/open-design/templates/design-templates/audio-jingle/example.html",
+    "image": "/library-previews/od-dt-audio-jingle.jpg"
+  },
+  {
+    "id": "od-dt-aster-atelier",
+    "source": "vendor/open-design/templates/design-templates/aster-atelier/example.html",
+    "image": "/library-previews/od-dt-aster-atelier.jpg"
+  },
+  {
+    "id": "od-dt-blog-post",
+    "source": "vendor/open-design/templates/design-templates/blog-post/example.html",
+    "image": "/library-previews/od-dt-blog-post.jpg"
+  },
+  {
+    "id": "od-dt-clinical-case-report",
+    "source": "vendor/open-design/templates/design-templates/clinical-case-report/example.html",
+    "image": "/library-previews/od-dt-clinical-case-report.jpg"
+  },
+  {
+    "id": "od-dt-contact-widget",
+    "source": "vendor/open-design/templates/design-templates/contact-widget/example.html",
+    "image": "/library-previews/od-dt-contact-widget.jpg"
+  },
+  {
+    "id": "od-dt-critique",
+    "source": "vendor/open-design/templates/design-templates/critique/example.html",
+    "image": "/library-previews/od-dt-critique.jpg"
+  },
+  {
+    "id": "od-dt-dashboard",
+    "source": "vendor/open-design/templates/design-templates/dashboard/example.html",
+    "image": "/library-previews/od-dt-dashboard.jpg"
+  },
+  {
+    "id": "od-dt-dating-web",
+    "source": "vendor/open-design/templates/design-templates/dating-web/example.html",
+    "image": "/library-previews/od-dt-dating-web.jpg"
+  },
+  {
+    "id": "od-dt-digital-eguide",
+    "source": "vendor/open-design/templates/design-templates/digital-eguide/example.html",
+    "image": "/library-previews/od-dt-digital-eguide.jpg"
+  },
+  {
+    "id": "od-dt-docs-page",
+    "source": "vendor/open-design/templates/design-templates/docs-page/example.html",
+    "image": "/library-previews/od-dt-docs-page.jpg"
+  },
+  {
+    "id": "od-dt-email-marketing",
+    "source": "vendor/open-design/templates/design-templates/email-marketing/example.html",
+    "image": "/library-previews/od-dt-email-marketing.jpg"
+  },
+  {
+    "id": "od-dt-eng-runbook",
+    "source": "vendor/open-design/templates/design-templates/eng-runbook/example.html",
+    "image": "/library-previews/od-dt-eng-runbook.jpg"
+  },
+  {
+    "id": "od-dt-flowai-live-dashboard-template",
+    "source": "vendor/open-design/templates/design-templates/flowai-live-dashboard-template/example.html",
+    "image": "/library-previews/od-dt-flowai-live-dashboard-template.jpg"
+  },
+  {
+    "id": "od-dt-finance-report",
+    "source": "vendor/open-design/templates/design-templates/finance-report/example.html",
+    "image": "/library-previews/od-dt-finance-report.jpg"
+  },
+  {
+    "id": "od-dt-gamified-app",
+    "source": "vendor/open-design/templates/design-templates/gamified-app/example.html",
+    "image": "/library-previews/od-dt-gamified-app.jpg"
+  },
+  {
+    "id": "od-dt-github-dashboard",
+    "source": "vendor/open-design/templates/design-templates/github-dashboard/example.html",
+    "image": "/library-previews/od-dt-github-dashboard.jpg"
+  },
+  {
+    "id": "od-dt-hr-onboarding",
+    "source": "vendor/open-design/templates/design-templates/hr-onboarding/example.html",
+    "image": "/library-previews/od-dt-hr-onboarding.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-graphify-dark-graph",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-graphify-dark-graph/example.html",
+    "image": "/library-previews/od-dt-html-ppt-graphify-dark-graph.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-course-module",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-course-module/example.html",
+    "image": "/library-previews/od-dt-html-ppt-course-module.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-hermes-cyber-terminal",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-hermes-cyber-terminal/example.html",
+    "image": "/library-previews/od-dt-html-ppt-hermes-cyber-terminal.jpg"
+  },
+  {
+    "id": "od-wireframe-sketch",
+    "error": "Preview source unavailable in the imported snapshot."
+  },
+  {
+    "id": "od-dt-html-ppt-knowledge-arch-blueprint",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-knowledge-arch-blueprint/example.html",
+    "image": "/library-previews/od-dt-html-ppt-knowledge-arch-blueprint.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-obsidian-claude-gradient",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-obsidian-claude-gradient/example.html",
+    "image": "/library-previews/od-dt-html-ppt-obsidian-claude-gradient.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-pitch-deck",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-pitch-deck/example.html",
+    "image": "/library-previews/od-dt-html-ppt-pitch-deck.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-presenter-mode-reveal",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-presenter-mode-reveal/example.html",
+    "image": "/library-previews/od-dt-html-ppt-presenter-mode-reveal.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-taste-brutalist",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-taste-brutalist/example.html",
+    "image": "/library-previews/od-dt-html-ppt-taste-brutalist.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-product-launch",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-product-launch/example.html",
+    "image": "/library-previews/od-dt-html-ppt-product-launch.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-taste-editorial",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-taste-editorial/example.html",
+    "image": "/library-previews/od-dt-html-ppt-taste-editorial.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-weekly-report",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-weekly-report/example.html",
+    "image": "/library-previews/od-dt-html-ppt-weekly-report.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-tech-sharing",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-tech-sharing/example.html",
+    "image": "/library-previews/od-dt-html-ppt-tech-sharing.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-testing-safety-alert",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-testing-safety-alert/example.html",
+    "image": "/library-previews/od-dt-html-ppt-testing-safety-alert.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-xhs-pastel-card",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-xhs-pastel-card/example.html",
+    "image": "/library-previews/od-dt-html-ppt-xhs-pastel-card.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-8-bit-orbit",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-8-bit-orbit/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-8-bit-orbit.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-xhs-white-editorial",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-xhs-white-editorial/example.html",
+    "image": "/library-previews/od-dt-html-ppt-xhs-white-editorial.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-biennale-yellow",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-biennale-yellow/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-biennale-yellow.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-block-frame",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-block-frame/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-block-frame.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-blue-professional",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-blue-professional/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-blue-professional.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-bold-poster",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-bold-poster/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-bold-poster.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-capsule",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-capsule/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-capsule.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-broadside",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-broadside/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-broadside.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-cartesian",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-cartesian/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-cartesian.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-cobalt-grid",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-cobalt-grid/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-cobalt-grid.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-coral",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-coral/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-coral.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-creative-mode",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-creative-mode/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-creative-mode.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-daisy-days",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-daisy-days/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-daisy-days.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-editorial-tri-tone",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-editorial-tri-tone/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-editorial-tri-tone.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-long-table",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-long-table/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-long-table.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-grove",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-grove/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-grove.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-monochrome",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-monochrome/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-monochrome.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-mat",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-mat/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-mat.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-neo-grid-bold",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-neo-grid-bold/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-neo-grid-bold.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-peoples-platform",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-peoples-platform/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-peoples-platform.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-pin-and-paper",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-pin-and-paper/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-pin-and-paper.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-playful",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-playful/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-playful.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-pink-script",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-pink-script/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-pink-script.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-raw-grid",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-raw-grid/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-raw-grid.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-retro-windows",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-retro-windows/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-retro-windows.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-retro-zine",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-retro-zine/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-retro-zine.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-sakura-chroma",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-sakura-chroma/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-sakura-chroma.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-scatterbrain",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-scatterbrain/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-scatterbrain.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-soft-editorial",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-soft-editorial/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-soft-editorial.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-signal",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-signal/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-signal.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-stencil-tablet",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-stencil-tablet/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-stencil-tablet.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-studio",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-studio/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-studio.jpg"
+  },
+  {
+    "id": "od-dt-html-ppt-zhangzara-vellum",
+    "source": "vendor/open-design/templates/design-templates/html-ppt-zhangzara-vellum/example.html",
+    "image": "/library-previews/od-dt-html-ppt-zhangzara-vellum.jpg"
+  },
+  {
+    "id": "od-dt-image-poster",
+    "source": "vendor/open-design/templates/design-templates/image-poster/example.html",
+    "image": "/library-previews/od-dt-image-poster.jpg"
+  },
+  {
+    "id": "od-dt-ib-pitch-book",
+    "source": "vendor/open-design/templates/design-templates/ib-pitch-book/example.html",
+    "image": "/library-previews/od-dt-ib-pitch-book.jpg"
+  },
+  {
+    "id": "od-dt-invoice",
+    "source": "vendor/open-design/templates/design-templates/invoice/example.html",
+    "image": "/library-previews/od-dt-invoice.jpg"
+  },
+  {
+    "id": "od-dt-kami-deck",
+    "source": "vendor/open-design/templates/design-templates/kami-deck/example.html",
+    "image": "/library-previews/od-dt-kami-deck.jpg"
+  },
+  {
+    "id": "od-dt-kami-landing",
+    "source": "vendor/open-design/templates/design-templates/kami-landing/example.html",
+    "image": "/library-previews/od-dt-kami-landing.jpg"
+  },
+  {
+    "id": "od-dt-kanban-board",
+    "source": "vendor/open-design/templates/design-templates/kanban-board/example.html",
+    "image": "/library-previews/od-dt-kanban-board.jpg"
+  },
+  {
+    "id": "od-dt-magazine-poster",
+    "source": "vendor/open-design/templates/design-templates/magazine-poster/example.html",
+    "image": "/library-previews/od-dt-magazine-poster.jpg"
+  },
+  {
+    "id": "od-dt-live-dashboard",
+    "source": "vendor/open-design/templates/design-templates/live-dashboard/example.html",
+    "image": "/library-previews/od-dt-live-dashboard.jpg"
+  },
+  {
+    "id": "od-dt-meeting-notes",
+    "source": "vendor/open-design/templates/design-templates/meeting-notes/example.html",
+    "image": "/library-previews/od-dt-meeting-notes.jpg"
+  },
+  {
+    "id": "od-dt-mobile-onboarding",
+    "source": "vendor/open-design/templates/design-templates/mobile-onboarding/example.html",
+    "image": "/library-previews/od-dt-mobile-onboarding.jpg"
+  },
+  {
+    "id": "od-dt-mobile-app",
+    "source": "vendor/open-design/templates/design-templates/mobile-app/example.html",
+    "image": "/library-previews/od-dt-mobile-app.jpg"
+  },
+  {
+    "id": "od-dt-motion-frames",
+    "source": "vendor/open-design/templates/design-templates/motion-frames/example.html",
+    "image": "/library-previews/od-dt-motion-frames.jpg"
+  },
+  {
+    "id": "od-dt-orbit-general",
+    "source": "vendor/open-design/templates/design-templates/orbit-general/example.html",
+    "image": "/library-previews/od-dt-orbit-general.jpg"
+  },
+  {
+    "id": "od-dt-open-design-landing-deck",
+    "source": "vendor/open-design/templates/design-templates/open-design-landing-deck/example.html",
+    "image": "/library-previews/od-dt-open-design-landing-deck.jpg"
+  },
+  {
+    "id": "od-dt-open-design-landing",
+    "source": "vendor/open-design/templates/design-templates/open-design-landing/example.html",
+    "image": "/library-previews/od-dt-open-design-landing.jpg"
+  },
+  {
+    "id": "od-dt-orbit-github",
+    "source": "vendor/open-design/templates/design-templates/orbit-github/example.html",
+    "image": "/library-previews/od-dt-orbit-github.jpg"
+  },
+  {
+    "id": "od-dt-orbit-gmail",
+    "source": "vendor/open-design/templates/design-templates/orbit-gmail/example.html",
+    "image": "/library-previews/od-dt-orbit-gmail.jpg"
+  },
+  {
+    "id": "od-dt-orbit-linear",
+    "source": "vendor/open-design/templates/design-templates/orbit-linear/example.html",
+    "image": "/library-previews/od-dt-orbit-linear.jpg"
+  },
+  {
+    "id": "od-dt-orbit-notion",
+    "source": "vendor/open-design/templates/design-templates/orbit-notion/example.html",
+    "image": "/library-previews/od-dt-orbit-notion.jpg"
+  },
+  {
+    "id": "od-dt-pm-spec",
+    "source": "vendor/open-design/templates/design-templates/pm-spec/example.html",
+    "image": "/library-previews/od-dt-pm-spec.jpg"
+  },
+  {
+    "id": "od-dt-pricing-page",
+    "source": "vendor/open-design/templates/design-templates/pricing-page/example.html",
+    "image": "/library-previews/od-dt-pricing-page.jpg"
+  },
+  {
+    "id": "od-dt-social-carousel",
+    "source": "vendor/open-design/templates/design-templates/social-carousel/example.html",
+    "image": "/library-previews/od-dt-social-carousel.jpg"
+  },
+  {
+    "id": "od-dt-saas-landing",
+    "source": "vendor/open-design/templates/design-templates/saas-landing/example.html",
+    "image": "/library-previews/od-dt-saas-landing.jpg"
+  },
+  {
+    "id": "od-dt-simple-deck",
+    "source": "vendor/open-design/templates/design-templates/simple-deck/example.html",
+    "image": "/library-previews/od-dt-simple-deck.jpg"
+  },
+  {
+    "id": "od-dt-social-media-dashboard",
+    "source": "vendor/open-design/templates/design-templates/social-media-dashboard/example.html",
+    "image": "/library-previews/od-dt-social-media-dashboard.jpg"
+  },
+  {
+    "id": "od-dt-sprite-animation",
+    "source": "vendor/open-design/templates/design-templates/sprite-animation/example.html",
+    "image": "/library-previews/od-dt-sprite-animation.jpg"
+  },
+  {
+    "id": "od-dt-social-media-matrix-tracker-template",
+    "source": "vendor/open-design/templates/design-templates/social-media-matrix-tracker-template/example.html",
+    "image": "/library-previews/od-dt-social-media-matrix-tracker-template.jpg"
+  },
+  {
+    "id": "od-dt-trading-analysis-dashboard-template",
+    "source": "vendor/open-design/templates/design-templates/trading-analysis-dashboard-template/example.html",
+    "image": "/library-previews/od-dt-trading-analysis-dashboard-template.jpg"
+  },
+  {
+    "id": "od-dt-tweaks",
+    "source": "vendor/open-design/templates/design-templates/tweaks/example.html",
+    "image": "/library-previews/od-dt-tweaks.jpg"
+  },
+  {
+    "id": "od-dt-team-okrs",
+    "source": "vendor/open-design/templates/design-templates/team-okrs/example.html",
+    "image": "/library-previews/od-dt-team-okrs.jpg"
+  },
+  {
+    "id": "od-dt-video-shortform",
+    "source": "vendor/open-design/templates/design-templates/video-shortform/example.html",
+    "image": "/library-previews/od-dt-video-shortform.jpg"
+  },
+  {
+    "id": "od-dt-waitlist-page",
+    "source": "vendor/open-design/templates/design-templates/waitlist-page/example.html",
+    "image": "/library-previews/od-dt-waitlist-page.jpg"
+  },
+  {
+    "id": "od-dt-web-prototype",
+    "source": "vendor/open-design/templates/design-templates/web-prototype/example.html",
+    "image": "/library-previews/od-dt-web-prototype.jpg"
+  },
+  {
+    "id": "od-dt-web-prototype-taste-editorial",
+    "source": "vendor/open-design/templates/design-templates/web-prototype-taste-editorial/example.html",
+    "image": "/library-previews/od-dt-web-prototype-taste-editorial.jpg"
+  },
+  {
+    "id": "od-dt-web-prototype-taste-brutalist",
+    "source": "vendor/open-design/templates/design-templates/web-prototype-taste-brutalist/example.html",
+    "image": "/library-previews/od-dt-web-prototype-taste-brutalist.jpg"
+  },
+  {
+    "id": "od-dt-web-prototype-taste-soft",
+    "source": "vendor/open-design/templates/design-templates/web-prototype-taste-soft/example.html",
+    "image": "/library-previews/od-dt-web-prototype-taste-soft.jpg"
+  },
+  {
+    "id": "od-dt-webgl-experience",
+    "source": "vendor/open-design/templates/design-templates/webgl-experience/example.html",
+    "image": "/library-previews/od-dt-webgl-experience.jpg"
+  },
+  {
+    "id": "od-dt-weekly-update",
+    "source": "vendor/open-design/templates/design-templates/weekly-update/example.html",
+    "image": "/library-previews/od-dt-weekly-update.jpg"
+  },
+  {
+    "id": "od-dt-wireframe-annotated",
+    "source": "vendor/open-design/templates/design-templates/wireframe-annotated/example.html",
+    "image": "/library-previews/od-dt-wireframe-annotated.jpg"
+  },
+  {
+    "id": "od-dt-wireframe-greybox",
+    "source": "vendor/open-design/templates/design-templates/wireframe-greybox/example.html",
+    "image": "/library-previews/od-dt-wireframe-greybox.jpg"
+  },
+  {
+    "id": "od-dt-wireframe-mobile-flow",
+    "source": "vendor/open-design/templates/design-templates/wireframe-mobile-flow/example.html",
+    "image": "/library-previews/od-dt-wireframe-mobile-flow.jpg"
+  },
+  {
+    "id": "od-dt-worker-visualizer",
+    "source": "vendor/open-design/templates/design-templates/worker-visualizer/example.html",
+    "image": "/library-previews/od-dt-worker-visualizer.jpg"
+  },
+  {
+    "id": "od-dt-wireframe-sketch",
+    "source": "vendor/open-design/templates/design-templates/wireframe-sketch/example.html",
+    "image": "/library-previews/od-dt-wireframe-sketch.jpg"
+  }
+]

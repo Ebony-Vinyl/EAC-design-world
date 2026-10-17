@@ -1,0 +1,3972 @@
+{
+  "schemaVersion": 1,
+  "license": "See licenses/ for original upstream licenses and copyright notices (OFL, Apache, or vendor-specific)",
+  "googleFontsCommit": "47d54ca1ebb14fd864695f1d39dc734f39017c33",
+  "fontsourceVersion": "5.2.5",
+  "resourceHanRoundedVersion": "v0.990",
+  "scope": [
+    "motion-promo-film",
+    "motion-promo-film-v2",
+    "mg-styles-15"
+  ],
+  "unprovisioned": [
+    {
+      "family": "Douyin Sans",
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/douyinsans/DouyinSansBold.ttf",
+      "reason": "No usable official original font plus license obtained; no substitute installed"
+    }
+  ],
+  "sourceBytes": 169469986,
+  "sources": [
+    {
+      "url": "https://alliance-communityfile-drcn.dbankcdn.com/FileServer/getFile/cmtyManage/011/111/111/0000000000011111111.20260627152129.89276966309836366526585265125586:50001231000000:2800:A0161E048334FE0271F9F5ECBBD5070D17381C7846125F4D7109DBC7B532C715.zip?needInitFileName=true",
+      "sha256": "5440a3d9337828eda72e35f48fbb246873bca26e89644d433a8b01b85e45ef85",
+      "bytes": 22636812,
+      "cache": "downloads/7dd5261808b56701a6a5-85265125586_50001231000000_2800_A0161E048334FE0271F9F5ECBBD5070D17381C7846125F4D7109DBC7B532C715.zip"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/instrument-serif@5.2.5/LICENSE",
+      "sha256": "18aabf190848725e2576eefb5c29ba06aac1029d02132252a7f312eac2e50cf3",
+      "bytes": 4314,
+      "cache": "downloads/44e2097fc99947399c8d-LICENSE"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/instrument-serif@5.2.5/files/instrument-serif-latin-400-italic.woff2",
+      "sha256": "1d6e1bd7bc12e2920ed13edb467b8a5ec4a344e6fb78eb9e302ad9ab00981b9c",
+      "bytes": 22184,
+      "cache": "downloads/1e6346badc60b08b88a3-instrument-serif-latin-400-italic.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/instrument-serif@5.2.5/files/instrument-serif-latin-400-normal.woff2",
+      "sha256": "7796998dac1ab02b98c32b6e2babbd56255ff3b4e9681d9c7c608530d9033eb6",
+      "bytes": 21036,
+      "cache": "downloads/4ec94d28a32e701c5779-instrument-serif-latin-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.2.5/LICENSE",
+      "sha256": "18aabf190848725e2576eefb5c29ba06aac1029d02132252a7f312eac2e50cf3",
+      "bytes": 4314,
+      "cache": "downloads/9e7d776f843d6db64396-LICENSE"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.2.5/files/jetbrains-mono-latin-400-normal.woff2",
+      "sha256": "14425ba9c695763c1547f48a206b7aa60350a33ae23de09f0407877f3fcd89eb",
+      "bytes": 21168,
+      "cache": "downloads/9c5ff13ccbb0169b5a5f-jetbrains-mono-latin-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.2.5/files/jetbrains-mono-latin-700-normal.woff2",
+      "sha256": "d0d4e818808f2a0ba39b2b09d1989366f63494e295f003c7ef436697378507e8",
+      "bytes": 21908,
+      "cache": "downloads/2940d320cd867fa58b71-jetbrains-mono-latin-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/400.css",
+      "sha256": "9fe7280737e2481082f21f321c697ac3b81ad47b707ec1dbd48631e7ee0157e1",
+      "bytes": 105678,
+      "cache": "downloads/0f4dcbad2b65440dc55f-400.css"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css",
+      "sha256": "61b34cbd06358b613aa31479c64b85bdcdf5de8c92bddd7ef3264530f6697578",
+      "bytes": 105678,
+      "cache": "downloads/7b62daafc7e6e1aced4e-700.css"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/LICENSE",
+      "sha256": "18aabf190848725e2576eefb5c29ba06aac1029d02132252a7f312eac2e50cf3",
+      "bytes": 4314,
+      "cache": "downloads/0b5c02fea15152e007e1-LICENSE"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-100-400-normal.woff2",
+      "sha256": "56cb49ae9271e89fb0103e8676da8b264eb4ba61448fc8213c9bd871830dad1b",
+      "bytes": 44668,
+      "cache": "downloads/9a46c4214c47f28f2f2e-noto-serif-sc-100-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-100-700-normal.woff2",
+      "sha256": "ac29c0725506bce44c0a85a07f668580315b665c03b7f1dcd3b5ab24c5655ab0",
+      "bytes": 45612,
+      "cache": "downloads/0bd87b749891b657f813-noto-serif-sc-100-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-101-400-normal.woff2",
+      "sha256": "6c574faa473824f5922527af279f5510e62c0946079a97485393a43ee17bdaf1",
+      "bytes": 41124,
+      "cache": "downloads/03d16511d691e44e3fee-noto-serif-sc-101-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-101-700-normal.woff2",
+      "sha256": "bb0ab7d0372b30d36a6872cdc0c011f93614fee60936783434d055ba8e730bd9",
+      "bytes": 42072,
+      "cache": "downloads/7bd5175b981b4ec95406-noto-serif-sc-101-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-103-400-normal.woff2",
+      "sha256": "1c2b9bde25957d2144519b8afd7edcde9ab11882c487ef1476f12bd30496fe1f",
+      "bytes": 44452,
+      "cache": "downloads/f4b64e277911ec070c89-noto-serif-sc-103-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-103-700-normal.woff2",
+      "sha256": "bfb87c34e384390623914ca9352fefa5c24d1d6f06475f418ffe4f563ba6171d",
+      "bytes": 45604,
+      "cache": "downloads/00ad49eebf2f267a8b72-noto-serif-sc-103-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-104-400-normal.woff2",
+      "sha256": "736f1e790cd9ee0dcd12efab900546e3a4428db603ee4630a1b43585c1a0b791",
+      "bytes": 42648,
+      "cache": "downloads/864721f8b4e27e0d2a18-noto-serif-sc-104-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-104-700-normal.woff2",
+      "sha256": "9d3c9333163f7ce381712607ed5f0227ecf19844764784ce37dc9a6e3965d45b",
+      "bytes": 43696,
+      "cache": "downloads/34cd5efb9e0c0cb8b563-noto-serif-sc-104-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-105-400-normal.woff2",
+      "sha256": "4e2d04186bde9c704697e716a76c0b84929683aeb6e397c0a3a6ab5a167ab968",
+      "bytes": 42880,
+      "cache": "downloads/720cf7fbd74ea84489c2-noto-serif-sc-105-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-105-700-normal.woff2",
+      "sha256": "ceefdb929b6220f41c20cc7317532656a63e45b65b1ae54eaf5a09f4fb107a4f",
+      "bytes": 43980,
+      "cache": "downloads/9b5d2af7248de150c87a-noto-serif-sc-105-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-106-400-normal.woff2",
+      "sha256": "804b813482d83b9b8539b4a0173bf681cc3529f456a9c983f90f58e1617adbbf",
+      "bytes": 43156,
+      "cache": "downloads/b401b604089a6e82c196-noto-serif-sc-106-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-106-700-normal.woff2",
+      "sha256": "8b9f7681bf3bd2b7405c3f279ab882874be96729772832070996e7b45da965b6",
+      "bytes": 44228,
+      "cache": "downloads/7b3de196de4bdaf663ae-noto-serif-sc-106-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-107-400-normal.woff2",
+      "sha256": "8ac9fe5a3b825b24d89bb8ace16cbc6eab37b36c9783e578ba75bec0a48d3cf5",
+      "bytes": 41932,
+      "cache": "downloads/ffd974bf47d3e2c64269-noto-serif-sc-107-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-107-700-normal.woff2",
+      "sha256": "e591ba761990098d85c859d839c7c4857742147192acc2b5bd48b890e2c73f5e",
+      "bytes": 43012,
+      "cache": "downloads/230acff788976b4d54b2-noto-serif-sc-107-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-108-400-normal.woff2",
+      "sha256": "fff36e90be88e692bed7d6fd2f0ddcdbeb87be2421382ab11f5f5fb779f3b22b",
+      "bytes": 43968,
+      "cache": "downloads/abe8032624d8da3599d7-noto-serif-sc-108-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-108-700-normal.woff2",
+      "sha256": "30bff4ec55e45147ecbe7c3b22a8296e386ad79fb91b7589d55f66d020da5821",
+      "bytes": 44928,
+      "cache": "downloads/3e26dd201725e15797bb-noto-serif-sc-108-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-109-400-normal.woff2",
+      "sha256": "987e6e9204d1c34fda8f53b31ded1637d6f056b3b24a44e8566b8b85a040824b",
+      "bytes": 41796,
+      "cache": "downloads/cca12c2c255373664420-noto-serif-sc-109-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-109-700-normal.woff2",
+      "sha256": "396d696faabcb6f7a739b9c4825530e6f734449c4ede40026a55a6f08edb16f9",
+      "bytes": 42724,
+      "cache": "downloads/ae4f2505ece826f3f34b-noto-serif-sc-109-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-110-400-normal.woff2",
+      "sha256": "1004f6329bf8e116889149de865c84fc5b35e59f688f5758d0b1686ff33daadb",
+      "bytes": 41872,
+      "cache": "downloads/103d88d4fdd91413a10a-noto-serif-sc-110-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-110-700-normal.woff2",
+      "sha256": "7dce3bc5bbdc165bb51024bd42e01b966202bbe0313a6ae3d93747e8ec37ebcf",
+      "bytes": 42888,
+      "cache": "downloads/1da9a9c4b9b42121a6f0-noto-serif-sc-110-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-111-400-normal.woff2",
+      "sha256": "fa5bf2e42c5a4805381c1d8f7c4beb4f0d30f2525068b015d56ea8a97ca2c364",
+      "bytes": 42864,
+      "cache": "downloads/447f79a8c15bfc5255a0-noto-serif-sc-111-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-111-700-normal.woff2",
+      "sha256": "ce1f349434e354fbeb1e38a334e5ae3aac07f2b02636934ca9a3fbadbc1fe85c",
+      "bytes": 43744,
+      "cache": "downloads/d64085f1090ce7cdd2bf-noto-serif-sc-111-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-112-400-normal.woff2",
+      "sha256": "cc08d5476f107e89b4597a97c9f6f91e945c09cd17c5910ee6606f77d6528249",
+      "bytes": 40016,
+      "cache": "downloads/09a48219243599b7feee-noto-serif-sc-112-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-112-700-normal.woff2",
+      "sha256": "7e7b4a1b21626941bffed883eafa4381b36785ccab05ec4bc361657653dc3a28",
+      "bytes": 40956,
+      "cache": "downloads/109ef7d1e81d4b235f80-noto-serif-sc-112-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-113-400-normal.woff2",
+      "sha256": "3ef60ddb5d922d2bfc5d824fdfda2e670a5209ada3ec24a4a3dbb0165bb38f63",
+      "bytes": 39832,
+      "cache": "downloads/4f9368eaa81457991ae0-noto-serif-sc-113-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-113-700-normal.woff2",
+      "sha256": "59d2b0aae35d849ac46315ae93017fa980c0816eae263e056e68e3a4f216a417",
+      "bytes": 40908,
+      "cache": "downloads/fe458fcc25b1dc49441f-noto-serif-sc-113-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-114-400-normal.woff2",
+      "sha256": "fa35f9857271207d950697a344d1e3624069b735c7be2cdcc52d6d6c2851b678",
+      "bytes": 39460,
+      "cache": "downloads/e4fb287ab6e91203eb71-noto-serif-sc-114-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-114-700-normal.woff2",
+      "sha256": "91c6c30154b1445f21b56dfdb8b16c1bc669e6a2a2b2e41f690fe6524bcb16e0",
+      "bytes": 40448,
+      "cache": "downloads/a538aa15e8da91293ebb-noto-serif-sc-114-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-115-400-normal.woff2",
+      "sha256": "f46dd32fe0e97121f27a8df5921b45cf93a96a7c697ed516e1bd83ebd3dd22b3",
+      "bytes": 38188,
+      "cache": "downloads/da5cc1668e4d25712619-noto-serif-sc-115-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-115-700-normal.woff2",
+      "sha256": "20c0032b081f6359580deba4e3e7f323a281f068fbcb19ca4650a3ba02c69502",
+      "bytes": 39036,
+      "cache": "downloads/b48b3efc9865ad57fb0d-noto-serif-sc-115-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-116-400-normal.woff2",
+      "sha256": "24b25a8cf7656b7f97cd85a053b8c650cbfdf0f1fceac4aa71ac116c30670524",
+      "bytes": 35468,
+      "cache": "downloads/effb90f2974271526fad-noto-serif-sc-116-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-116-700-normal.woff2",
+      "sha256": "af7e0e48cc94125c0a7480a6d5fd477e9ec7116270b2b6ba6d020f4fff38f32e",
+      "bytes": 36360,
+      "cache": "downloads/41be968f899a5b2e4931-noto-serif-sc-116-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-117-400-normal.woff2",
+      "sha256": "e04e6854f00bfe5fcb2cfb90b193be0592eb54368cb710f0f4c2c58785004a6c",
+      "bytes": 35116,
+      "cache": "downloads/8148e105a97d474a32ab-noto-serif-sc-117-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-117-700-normal.woff2",
+      "sha256": "e6a69a16bd356a5d1cd6226b321581b9b1ceb4b072095f7d31239834f4c307f2",
+      "bytes": 35796,
+      "cache": "downloads/c4335d71c45e90492e7f-noto-serif-sc-117-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-118-400-normal.woff2",
+      "sha256": "a95263ffdeb04f135785fafabb3bab408dab6bb5e71e92e287ec5e160dc08a92",
+      "bytes": 30616,
+      "cache": "downloads/d4bac194197881216b1e-noto-serif-sc-118-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-118-700-normal.woff2",
+      "sha256": "61d6e648075044a37312b1a977fb8955114059e5058ba8f8f124dd1b86e6622e",
+      "bytes": 31468,
+      "cache": "downloads/1ce52b83858c4fc6c361-noto-serif-sc-118-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-119-400-normal.woff2",
+      "sha256": "e313549dbb0b4c567ce2105fce8364e6d971b5dd0be8c90351799edc1296f854",
+      "bytes": 53816,
+      "cache": "downloads/3fb6b8c1c20cad3a1343-noto-serif-sc-119-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-119-700-normal.woff2",
+      "sha256": "e99d308aa9edadcc567dd52f6519c1bb90d866789e693205244c76cd62d2ee78",
+      "bytes": 54672,
+      "cache": "downloads/26b99d5ae00c1c69d229-noto-serif-sc-119-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-28-400-normal.woff2",
+      "sha256": "034ca3c5272128d9a21cc301d2b8e5232169b98dfd0437fbf1c0314fa91e288b",
+      "bytes": 35612,
+      "cache": "downloads/2d11798eea2571906204-noto-serif-sc-28-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-28-700-normal.woff2",
+      "sha256": "a7c0d3eb810aa74e61d401bd4fb3452fe179e655745825ff7a6b6f3a742b4bd6",
+      "bytes": 36704,
+      "cache": "downloads/c0b69963f6666852d1f5-noto-serif-sc-28-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-4-400-normal.woff2",
+      "sha256": "275c9b0b6cb07900387f1b938e593857fdc29986c7d32cbe577f488dac4f9f0d",
+      "bytes": 2792,
+      "cache": "downloads/74b5c6d4ba9213e1d5cf-noto-serif-sc-4-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-4-700-normal.woff2",
+      "sha256": "760838f8248b50cfcb9a37afde6abd3fda6a208fa60da7cd4045bb7a9a200ae4",
+      "bytes": 2824,
+      "cache": "downloads/031d5e83a28bd160c25a-noto-serif-sc-4-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-87-400-normal.woff2",
+      "sha256": "9aefe6029e95940af407feb74a7ba8a0827b9dd3a4cfd828ca9e16a80021f077",
+      "bytes": 5432,
+      "cache": "downloads/c5f3898737653d2f3b2d-noto-serif-sc-87-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-87-700-normal.woff2",
+      "sha256": "e33b41a144ebabebf24c005d64850e6261e5cbea26f8f70f030b37205e3031c0",
+      "bytes": 5484,
+      "cache": "downloads/d582b70709d8b817c843-noto-serif-sc-87-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-88-400-normal.woff2",
+      "sha256": "bdec889204d4e798a5dff2872d1c37cf08a240c4b7cc63f76bc7eddb84b9899f",
+      "bytes": 6248,
+      "cache": "downloads/17d8151b26dbd8bfdb8d-noto-serif-sc-88-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-88-700-normal.woff2",
+      "sha256": "dfc0fcb3cf144ee09eb708d3e099dde8666fa9685cf7a22bf7ee8fd97c568b72",
+      "bytes": 6236,
+      "cache": "downloads/0fd08447c9ff6f815109-noto-serif-sc-88-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-89-400-normal.woff2",
+      "sha256": "c0f551c263cf0045a91c21365629cfe7e0bae71f266cc45bb9a17b91293e276e",
+      "bytes": 6988,
+      "cache": "downloads/6cade682460c85cd5f29-noto-serif-sc-89-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-89-700-normal.woff2",
+      "sha256": "a7e69c6bf3e6384d303a062bd7d64020b26df42831785862552741713a9129dd",
+      "bytes": 6992,
+      "cache": "downloads/ce043dca26714cc06b46-noto-serif-sc-89-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-90-400-normal.woff2",
+      "sha256": "74cda1cd91320c0b5c23894d0eabd9f41cb80a12005794bb5f310a2ecec7d639",
+      "bytes": 5988,
+      "cache": "downloads/9a812c7d6b24067e4c70-noto-serif-sc-90-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-90-700-normal.woff2",
+      "sha256": "1651967f37f22f3b5dbd232fe019adc70fc6f2f337d7c0408a14557931240a07",
+      "bytes": 5908,
+      "cache": "downloads/82558d0f10d7eadd9ad7-noto-serif-sc-90-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-99-400-normal.woff2",
+      "sha256": "09c05a4ac7d568eda8106359287844bbe41a066e0b9f34a07acbeb550bb4eda5",
+      "bytes": 6944,
+      "cache": "downloads/79c4b49a0f8f300eb9df-noto-serif-sc-99-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-99-700-normal.woff2",
+      "sha256": "ffe2cfdcde20005c8439b016da7bbb2661c981a4665c8b1900361d309b63be45",
+      "bytes": 6956,
+      "cache": "downloads/2f910a72009d6a61f4e7-noto-serif-sc-99-700-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-latin-400-normal.woff2",
+      "sha256": "b33070205f40df26518977f3d8037feddb35dac8cb02c376f220c663b309481e",
+      "bytes": 18624,
+      "cache": "downloads/e646fbef0f59d5b024b8-noto-serif-sc-latin-400-normal.woff2"
+    },
+    {
+      "url": "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-latin-700-normal.woff2",
+      "sha256": "dc83b2195d8488176f5a0bb0699f2f4716a36a608177cbb97efc0072d2489215",
+      "bytes": 18676,
+      "cache": "downloads/df5f4be62d83032281a8-noto-serif-sc-latin-700-normal.woff2"
+    },
+    {
+      "url": "https://fonts.alibabadesign.com/AlibabaPuHuiTi-3/AlibabaPuHuiTi-3-105-Heavy.zip",
+      "sha256": "1e208f1e816943c4d45c2fc510efc264e8a8dc6c9e28259717f845648ce0dcde",
+      "bytes": 8322388,
+      "cache": "downloads/bf96121275994edd043b-AlibabaPuHuiTi-3-105-Heavy.zip"
+    },
+    {
+      "url": "https://fonts.alibabadesign.com/AlibabaPuHuiTi-3/AlibabaPuHuiTi-3-115-Black/AlibabaPuHuiTi-3-115-Black.ttf",
+      "sha256": "9a31c7b28f1debf06bc21b4eb7a098f5c57082ef5707b443f7bce29ef1f8ebdb",
+      "bytes": 2517492,
+      "cache": "downloads/a3e7d0c81855cdc86729-AlibabaPuHuiTi-3-115-Black.ttf"
+    },
+    {
+      "url": "https://fonts.alibabadesign.com/AlibabaPuHuiTi-3/AlibabaPuHuiTi-3-55-Regular/AlibabaPuHuiTi-3-55-Regular.ttf",
+      "sha256": "be33bc8d45ced30fa5c542f6f056565baf85003d4e079522110d76016f8a04e2",
+      "bytes": 8532824,
+      "cache": "downloads/e50f2e83cc6d5a9cfcb4-AlibabaPuHuiTi-3-55-Regular.ttf"
+    },
+    {
+      "url": "https://fonts.alibabadesign.com/AlibabaPuHuiTi-3/AlibabaPuHuiTi-3-65-Medium/AlibabaPuHuiTi-3-65-Medium.ttf",
+      "sha256": "d92b378a2d08ac1e5c2b87d03b9939fdfae93d3c336b6a13ac4e00ce44f6db9e",
+      "bytes": 8429388,
+      "cache": "downloads/7ea055f04956db8de5bf-AlibabaPuHuiTi-3-65-Medium.ttf"
+    },
+    {
+      "url": "https://fonts.alibabadesign.com/AlibabaPuHuiTi-3/AlibabaPuHuiTi-3-85-Bold/AlibabaPuHuiTi-3-85-Bold.ttf",
+      "sha256": "d50f483fd8d9f95f9edbecdc199aee5fa9ddc5db8027f0d80334c3f502af61c8",
+      "bytes": 8371268,
+      "cache": "downloads/2309f9eb3066c37c5ca9-AlibabaPuHuiTi-3-85-Bold.ttf"
+    },
+    {
+      "url": "https://fonts.alibabadesign.com/AlimamaShuHeiTi/AlimamaShuHeiTi-Bold.zip",
+      "sha256": "fbb4b7f1ca5f3b60432a56c329da98e596388586413dcccddd97717a3b43cce4",
+      "bytes": 3101820,
+      "cache": "downloads/a635eac2ef4df200e739-AlimamaShuHeiTi-Bold.zip"
+    },
+    {
+      "url": "https://github.com/CyanoHao/Resource-Han-Rounded/releases/download/v0.990/RHR-CN-0.990.7z",
+      "sha256": "e7005f7b4a7a0b8352d32c4a1358ff47564eb73be7fdb2db00d9f792755e9dc7",
+      "bytes": 38463511,
+      "cache": "downloads/8a770f696b909ac104c1-RHR-CN-0.990.7z"
+    },
+    {
+      "url": "https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.10.16/fusion-pixel-font-12px-proportional-ttf.woff2-v2026.10.16.zip",
+      "sha256": "c89a0bcf83ecad218ba595f5bb7163f7e899c5688d944cf525c78efa5919efcd",
+      "bytes": 6664276,
+      "cache": "downloads/16146f05490cb90ed5f9-fusion-pixel-font-12px-proportional-ttf.woff2-v2026.10.16.zip"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/CyanoHao/Resource-Han-Rounded/v0.990/LICENSE.txt",
+      "sha256": "7abe5f490780cd2fd5a67502b993e244ef87d631fb7b98244e9819ff590da4af",
+      "bytes": 4504,
+      "cache": "downloads/39e5577c8db5e8467cad-LICENSE.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/apache/luckiestguy/LICENSE.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "cache": "downloads/6085941de0007bf53102-LICENSE.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/apache/luckiestguy/LuckiestGuy-Regular.ttf",
+      "sha256": "cfbdd68a039f92df51cf3721506af6242e64594c6325fe0bedbeff3fe385d980",
+      "bytes": 73320,
+      "cache": "downloads/e80003fc33236edca9b9-LuckiestGuy-Regular.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/anton/Anton-Regular.ttf",
+      "sha256": "a4ba3a92350ebb031da0cb47630ac49eb265082ca1bc0450442f4a83ab947cab",
+      "bytes": 170812,
+      "cache": "downloads/213a01a532441d583a9f-Anton-Regular.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/anton/OFL.txt",
+      "sha256": "ee67e6ee22790b7929f1a3769ca2801d565c64b5a9096942c1adf5596de9c9e4",
+      "bytes": 4484,
+      "cache": "downloads/f57e5efa35c62af143f7-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/archivo/Archivo-Italic%5Bwdth%2Cwght%5D.ttf",
+      "sha256": "305d13b4eb80e62f7d517f78d7c045250d977552a420f2dbed906f314e761305",
+      "bytes": 741368,
+      "cache": "downloads/8c3ce21309c782a3b3a3-Archivo-Italic%5Bwdth%2Cwght%5D.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/archivo/OFL.txt",
+      "sha256": "108b4e57c9c796d3d38d0428ca7ee39de47ad93187302718d9b2d8864b9b716b",
+      "bytes": 4388,
+      "cache": "downloads/f7680f86cf28dd6fbc5d-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/bebasneue/BebasNeue-Regular.ttf",
+      "sha256": "08e4623805102d819f58601e46e345648846075e363b2ceb23313c2d1c83ec73",
+      "bytes": 61400,
+      "cache": "downloads/4108eb83d2941dd487c4-BebasNeue-Regular.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/bebasneue/OFL.txt",
+      "sha256": "72082f6cb4d04be2ecf7cc7d9e1e7d73787f0af8a5a278a47cade70c16b78341",
+      "bytes": 4337,
+      "cache": "downloads/ea7741eb72cb57dd69e0-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/caveat/Caveat%5Bwght%5D.ttf",
+      "sha256": "0bdb6b660482d31531b3945849fba5916b3ef8695da7024a9e6b9ee3c4157988",
+      "bytes": 403648,
+      "cache": "downloads/06a86a7aa3926f0e7fcd-Caveat%5Bwght%5D.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/caveat/OFL.txt",
+      "sha256": "1f9d81d094273d82f3898a1ee8b598a717d050ecbf5ff7bede105b704880157b",
+      "bytes": 4385,
+      "cache": "downloads/0928115f1e1e83a94ffe-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/chakrapetch/ChakraPetch-SemiBold.ttf",
+      "sha256": "45264de3204ddbd5fb3e14a2402acd5c630d16650ae5fc221d2c52da46a6734b",
+      "bytes": 78604,
+      "cache": "downloads/ccbceb7f7403aab7af90-ChakraPetch-SemiBold.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/chakrapetch/OFL.txt",
+      "sha256": "13831d02389d917d22fcfa6c79f98f8acbf61d230add0e73a4d4dc5f3bfb9e56",
+      "bytes": 4396,
+      "cache": "downloads/7c4cfc05a2c73138e12a-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/cormorantgaramond/CormorantGaramond%5Bwght%5D.ttf",
+      "sha256": "b20b7d9626dd956b2c5e558692ad328b1f19e3275e2782db4fa07670d83f35e0",
+      "bytes": 1195560,
+      "cache": "downloads/ed97373420144b333e2f-CormorantGaramond%5Bwght%5D.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/cormorantgaramond/OFL.txt",
+      "sha256": "60700d351cac4650c51f3f9db318d2a420f8b45052dba2715eb5fec41f0f6956",
+      "bytes": 4387,
+      "cache": "downloads/df3e02d2d8e66edac68f-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/dmsans/DMSans%5Bopsz%2Cwght%5D.ttf",
+      "sha256": "8cd08d97e89c24d0aa92edd2f0f4c8ee6195eee9b7c9f154865a58b02f0c1c0d",
+      "bytes": 240164,
+      "cache": "downloads/15ec3b71c94e4056a39e-DMSans%5Bopsz%2Cwght%5D.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/dmsans/OFL.txt",
+      "sha256": "9af36190332437f5ecd09974de43c1f7c77a310a996cdd8ceb25628b458840e1",
+      "bytes": 4482,
+      "cache": "downloads/1c3643683720ef860640-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/fraunces/Fraunces%5BSOFT%2CWONK%2Copsz%2Cwght%5D.ttf",
+      "sha256": "177ff6c0f14e5550a3c624247cd1189611d4eb65d000b14944c63d967958abbb",
+      "bytes": 360440,
+      "cache": "downloads/2d4301faac3ecadc748b-Fraunces%5BSOFT%2CWONK%2Copsz%2Cwght%5D.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/fraunces/OFL.txt",
+      "sha256": "bdf4c22802eaf804f998195871c6b8938aac2ac14b2d78a8bd66a6f1eced833b",
+      "bytes": 4391,
+      "cache": "downloads/81c61616866894901c00-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/fredoka/Fredoka%5Bwdth%2Cwght%5D.ttf",
+      "sha256": "2ba02e68b152868aef9ba28e24b3648c7d457fe6f25c761f2c2c53fb61a73fc8",
+      "bytes": 159184,
+      "cache": "downloads/48e1fcd1f22b43cd64c6-Fredoka%5Bwdth%2Cwght%5D.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/fredoka/OFL.txt",
+      "sha256": "5c9e7eee5c6b25f4b05b8d53b2e470ea4962f9ced742d044a98f7d95d1375bab",
+      "bytes": 4388,
+      "cache": "downloads/b806cdaa5892141d3180-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/ibmplexmono/IBMPlexMono-Medium.ttf",
+      "sha256": "a9b4c49bb299e05b5f6c481e7fb5e78943d2793249a0c8874ab574a2d1ea6755",
+      "bytes": 136704,
+      "cache": "downloads/570327a434a43468b8bc-IBMPlexMono-Medium.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/ibmplexmono/IBMPlexMono-SemiBold.ttf",
+      "sha256": "d3c38e55c78f5b0f28009fddba4834ec503278936a5986032424c9bd2d23aa46",
+      "bytes": 140216,
+      "cache": "downloads/f2e9d4e618b984ac11cf-IBMPlexMono-SemiBold.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/ibmplexmono/OFL.txt",
+      "sha256": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da",
+      "bytes": 4456,
+      "cache": "downloads/e51cc9f1b0a76d6b6f9a-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/instrumentserif/InstrumentSerif-Italic.ttf",
+      "sha256": "08939b8bdf534afec24ae0ef5e03f948940cd9a8fe08e7fecbad040e62327385",
+      "bytes": 71592,
+      "cache": "downloads/f8e86d0ae5fd61b222f8-InstrumentSerif-Italic.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/instrumentserif/InstrumentSerif-Regular.ttf",
+      "sha256": "498efd461f6ddfcb7a111bf9a565709d2085d48201d501ead960d93e84ffbb88",
+      "bytes": 70012,
+      "cache": "downloads/952dfefa2effc3adc752-InstrumentSerif-Regular.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/instrumentserif/OFL.txt",
+      "sha256": "129ed7618959716959f2941fdd5b49e0ad6e6c1d78726761786a00253d865521",
+      "bytes": 4405,
+      "cache": "downloads/7a67e18d13a5a427fb37-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf",
+      "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031",
+      "bytes": 876576,
+      "cache": "downloads/678e8c2f6006a4ff5f67-Inter%5Bopsz%2Cwght%5D.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/inter/OFL.txt",
+      "sha256": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57",
+      "bytes": 4377,
+      "cache": "downloads/484c30805177b5f0e068-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/jetbrainsmono/JetBrainsMono%5Bwght%5D.ttf",
+      "sha256": "48715a42ec242c21e9f02692891e147d022299a52e48d5e413e1a942193ffeda",
+      "bytes": 187208,
+      "cache": "downloads/f1ae7a6b3d635ec4919c-JetBrainsMono%5Bwght%5D.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/jetbrainsmono/OFL.txt",
+      "sha256": "b2fe5e8987594e9ffd1d2ca52a2f5d73eb8335243893c5d6254b5ad69269591d",
+      "bytes": 4399,
+      "cache": "downloads/12165be37b539fad1d90-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/longcang/LongCang-Regular.ttf",
+      "sha256": "e5bf2c3f24ef2327c6f136d8f73e2f9dfdf44896fdbeb35a9515f44777bb91bc",
+      "bytes": 5162508,
+      "cache": "downloads/0494a61edb4e044c146f-LongCang-Regular.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/longcang/OFL.txt",
+      "sha256": "603546b7219a94bb59bf8294458194a5010119486354092b66a09a3fd61aeacc",
+      "bytes": 4390,
+      "cache": "downloads/fdc1e78bf828b146407f-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/lxgwmarkergothic/LXGWMarkerGothic-Regular.ttf",
+      "sha256": "e6a55cfd5f18dc393f92670a164397a69242cb4eabe1d3feb5dc22fc4947a8ba",
+      "bytes": 3187360,
+      "cache": "downloads/962f9c5260bb9ff087fb-LXGWMarkerGothic-Regular.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/lxgwmarkergothic/OFL.txt",
+      "sha256": "58e494ff4a5177d593a97ffc482f4069f59f54a0d4049fd29e531d3b1009e8b4",
+      "bytes": 4401,
+      "cache": "downloads/99f71ebb1c89777c890b-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/michroma/Michroma-Regular.ttf",
+      "sha256": "b62301163788bc5b7f8fcac0b74b184e34e1827e577b499ecb724da065098f87",
+      "bytes": 64344,
+      "cache": "downloads/e6a95d58c85ce597929e-Michroma-Regular.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/michroma/OFL.txt",
+      "sha256": "33c39ce59a45bfb0dae3280e98bdb46be59d6d68efc62d4dc5fae90a26d2f393",
+      "bytes": 4395,
+      "cache": "downloads/5b818dee41b36efc03fa-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/mrdafoe/MrDafoe-Regular.ttf",
+      "sha256": "a42a3c66a709927f358243fdfcbc437bd8eb188e2ee6a680c52f5be12c670fd2",
+      "bytes": 47976,
+      "cache": "downloads/23cab41b8c76da9a393f-MrDafoe-Regular.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/mrdafoe/OFL.txt",
+      "sha256": "0da6a3e5b24a9fa04085c20a2a1d3101eeb1e0bff56a2291f407187e1b2adcf2",
+      "bytes": 4398,
+      "cache": "downloads/ffc7d9f04e1be0ec8aa8-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf",
+      "sha256": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
+      "bytes": 17772300,
+      "cache": "downloads/9b1809ed2ab6325306aa-NotoSansSC%5Bwght%5D.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/notosanssc/OFL.txt",
+      "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9",
+      "bytes": 4388,
+      "cache": "downloads/ace07546f2b4ffb56222-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/notoserifsc/NotoSerifSC%5Bwght%5D.ttf",
+      "sha256": "050080d9255a86808f2945bffac582b31ef32bc36411ce29563b4961670c66f9",
+      "bytes": 25125512,
+      "cache": "downloads/3c2b29983d9ff61163f9-NotoSerifSC%5Bwght%5D.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/notoserifsc/OFL.txt",
+      "sha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6",
+      "bytes": 4350,
+      "cache": "downloads/f4c13037728efa3400c2-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/outfit/OFL.txt",
+      "sha256": "c676351bf8576b9aba743cd5eaa8c0e7ee0d51f805d720447b4df4ddb6a2e416",
+      "bytes": 4389,
+      "cache": "downloads/f7c0c084f6f5b5ece468-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/outfit/Outfit%5Bwght%5D.ttf",
+      "sha256": "fc7287273e66929776e2ba54f144fe699080bec29f61bf649d70d871468aeade",
+      "bytes": 110884,
+      "cache": "downloads/83f7f2c2ea7d3d55b982-Outfit%5Bwght%5D.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/poppins/OFL.txt",
+      "sha256": "6be04893d770899a015649c7aa3b582f871b272f8747a92b78b17c3e5c8b2573",
+      "bytes": 4385,
+      "cache": "downloads/453d46d69a041a2e7de5-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/poppins/Poppins-Black.ttf",
+      "sha256": "d82aaaf98a9283f9a8edd24e51173337d8eaf09e25cd3d98831f8ec8461748a1",
+      "bytes": 153440,
+      "cache": "downloads/75b1051d7a146946d15e-Poppins-Black.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/poppins/Poppins-SemiBold.ttf",
+      "sha256": "d3bf1bdaf0550e83da9ac0b1d1d9fe6db086835a83aa28578e609a394b9a0286",
+      "bytes": 157312,
+      "cache": "downloads/cc8b5d96b409e4ab3268-Poppins-SemiBold.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/pressstart2p/OFL.txt",
+      "sha256": "705960c3281a5765ecc0b59bd4ed7ca59eed165748076bc2fc3e8fdbfeb944b0",
+      "bytes": 4413,
+      "cache": "downloads/5a0b5c4eb752fad988f7-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/pressstart2p/PressStart2P-Regular.ttf",
+      "sha256": "034c77f1f05ec89421e4a63f0e3a4ca1ecf852cc6d2bf611f126f275728e017d",
+      "bytes": 118204,
+      "cache": "downloads/384ab28e7e37191fb4f4-PressStart2P-Regular.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/rajdhani/OFL.txt",
+      "sha256": "f62ef357d3a1c3d27edd35a6e1ba350e8a8d13499797964eeadefbf0b3b15d1f",
+      "bytes": 4373,
+      "cache": "downloads/993bd924150a31d6a243-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/rajdhani/Rajdhani-Bold.ttf",
+      "sha256": "691470dd3286a14e9677940d0bf75796179841ba5215cbda1a2c8910a3226afd",
+      "bytes": 400680,
+      "cache": "downloads/ed1e7c6f117c66b4ca32-Rajdhani-Bold.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/rajdhani/Rajdhani-SemiBold.ttf",
+      "sha256": "94bbd25a18ca665999feb05a537de9fd2b860dcfb78bbe9ca00270825bf235da",
+      "bytes": 390340,
+      "cache": "downloads/02a5f2a466108c583df9-Rajdhani-SemiBold.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/sora/OFL.txt",
+      "sha256": "ba0b9729c9428ba79a0459ab8ec575791b51509dbec213e383d0316d37fec299",
+      "bytes": 4385,
+      "cache": "downloads/cad264c57710e88be75a-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/sora/Sora%5Bwght%5D.ttf",
+      "sha256": "84ff7096ae3ec6c8be47d906d1a0ba4de7f2ce78c615275c77301964a316e16c",
+      "bytes": 111400,
+      "cache": "downloads/9d61140ccd3e8b8e1f3f-Sora%5Bwght%5D.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/unbounded/OFL.txt",
+      "sha256": "31e5d4e83955e7103c34570dd49b0570ef490800bd65b42923c0dd02445263b3",
+      "bytes": 4392,
+      "cache": "downloads/776769063154b2268588-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/unbounded/Unbounded%5Bwght%5D.ttf",
+      "sha256": "323b511be380c8d474ef030686b71aedde501f8d9cd46da558b7c40454372c3f",
+      "bytes": 778272,
+      "cache": "downloads/fd55a49811845135de35-Unbounded%5Bwght%5D.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/vt323/OFL.txt",
+      "sha256": "27d9af34210253e7ca1251fbace86c6f65b40031d6ce1a75493a1b2093631298",
+      "bytes": 4367,
+      "cache": "downloads/db02cef95a554e7ee9de-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/vt323/VT323-Regular.ttf",
+      "sha256": "cf4de751ada78ceac033dbe16a687742939995b77bc2a052ae17a4957958594d",
+      "bytes": 153116,
+      "cache": "downloads/0c0938f0c76568fd22aa-VT323-Regular.ttf"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/zcoolkuaile/OFL.txt",
+      "sha256": "538078469839b4a2e7ad22bef4ebe41681a4e53749bb2a072144024f1d6d703d",
+      "bytes": 4398,
+      "cache": "downloads/5a13d46f3be9d6600fc9-OFL.txt"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/zcoolkuaile/ZCOOLKuaiLe-Regular.ttf",
+      "sha256": "812a6fc1fe54b6d73a419245c32dfeba8aa33104d5be90d1cf6af082007cb71d",
+      "bytes": 1514968,
+      "cache": "downloads/271fd0da4bd43becec3f-ZCOOLKuaiLe-Regular.ttf"
+    },
+    {
+      "url": "https://www.yuque.com/yiguang-wkqc2/puhuiti/nus9wiinq4aeiegy/markdown?plain=true",
+      "sha256": "97146a5b9082ba81ce810fd7c1ddfa60c3459ee2b590f121e099272c0cc1e9dc",
+      "bytes": 5216,
+      "cache": "downloads/5828aefbd77327eb9c1f-markdown"
+    }
+  ],
+  "assets": [
+    {
+      "path": "vendor/fonts/licenses/alibabapuhuiti3-LICENSE.md",
+      "sha256": "97146a5b9082ba81ce810fd7c1ddfa60c3459ee2b590f121e099272c0cc1e9dc",
+      "bytes": 5216,
+      "sources": [
+        "https://www.yuque.com/yiguang-wkqc2/puhuiti/nus9wiinq4aeiegy/markdown?plain=true"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/alimamashuheiti-INSTRUCTION.txt",
+      "sha256": "3a1ce1aff5d9d8888b51ddec7101eae286b055d09d58b1645b1a66ec9530a504",
+      "bytes": 992,
+      "sources": [
+        "https://fonts.alibabadesign.com/AlimamaShuHeiTi/AlimamaShuHeiTi-Bold.zip"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/alimamashuheiti-LICENSE.txt",
+      "sha256": "7eac3a7336a06ba7aa45604865ddc95558426bac74c0feb5bd671c4c71a35c8f",
+      "bytes": 2030,
+      "sources": [
+        "https://fonts.alibabadesign.com/AlimamaShuHeiTi/AlimamaShuHeiTi-Bold.zip"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/anton-OFL.txt",
+      "sha256": "ee67e6ee22790b7929f1a3769ca2801d565c64b5a9096942c1adf5596de9c9e4",
+      "bytes": 4484,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/anton/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/archivo-OFL.txt",
+      "sha256": "108b4e57c9c796d3d38d0428ca7ee39de47ad93187302718d9b2d8864b9b716b",
+      "bytes": 4388,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/archivo/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/bebasneue-OFL.txt",
+      "sha256": "72082f6cb4d04be2ecf7cc7d9e1e7d73787f0af8a5a278a47cade70c16b78341",
+      "bytes": 4337,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/bebasneue/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/caveat-OFL.txt",
+      "sha256": "1f9d81d094273d82f3898a1ee8b598a717d050ecbf5ff7bede105b704880157b",
+      "bytes": 4385,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/caveat/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/chakrapetch-OFL.txt",
+      "sha256": "13831d02389d917d22fcfa6c79f98f8acbf61d230add0e73a4d4dc5f3bfb9e56",
+      "bytes": 4396,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/chakrapetch/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/cormorantgaramond-OFL.txt",
+      "sha256": "60700d351cac4650c51f3f9db318d2a420f8b45052dba2715eb5fec41f0f6956",
+      "bytes": 4387,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/cormorantgaramond/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/dmsans-OFL.txt",
+      "sha256": "9af36190332437f5ecd09974de43c1f7c77a310a996cdd8ceb25628b458840e1",
+      "bytes": 4482,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/dmsans/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/fraunces-OFL.txt",
+      "sha256": "bdf4c22802eaf804f998195871c6b8938aac2ac14b2d78a8bd66a6f1eced833b",
+      "bytes": 4391,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/fraunces/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/fredoka-OFL.txt",
+      "sha256": "5c9e7eee5c6b25f4b05b8d53b2e470ea4962f9ced742d044a98f7d95d1375bab",
+      "bytes": 4388,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/fredoka/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/fusion-pixel/LICENSES/ark-pixel/OFL.txt",
+      "sha256": "3ab41567e68e3988ba1ef16dd2644eca95ca5648ea12e7d46e6287fc0bbe5aee",
+      "bytes": 4412,
+      "sources": [
+        "https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.10.16/fusion-pixel-font-12px-proportional-ttf.woff2-v2026.10.16.zip"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/fusion-pixel/LICENSES/cubic-11/OFL.txt",
+      "sha256": "2b6e5938e5cffa0b9e183bd05f8c363e174e7ebed1a0556e2855fd1707fa2188",
+      "bytes": 5364,
+      "sources": [
+        "https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.10.16/fusion-pixel-font-12px-proportional-ttf.woff2-v2026.10.16.zip"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/fusion-pixel/LICENSES/galmuri/LICENSE.txt",
+      "sha256": "86a3ee9495f942f0243f18c103da9faca27adb88142613edb8bb852e56c892c1",
+      "bytes": 4360,
+      "sources": [
+        "https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.10.16/fusion-pixel-font-12px-proportional-ttf.woff2-v2026.10.16.zip"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/fusion-pixel/OFL.txt",
+      "sha256": "bc518cf64b8032c07690f33cc270c35c179255a6ac8efa7c165ebae7e8f76a63",
+      "bytes": 4418,
+      "sources": [
+        "https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.10.16/fusion-pixel-font-12px-proportional-ttf.woff2-v2026.10.16.zip"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/harmonyos-sans-LICENSE-update.txt",
+      "sha256": "7d7acf8e3ac928ae7f34aaa9f8e348dd0476dbb52caaa058e402894d4f6efe73",
+      "bytes": 32766,
+      "sources": [
+        "https://alliance-communityfile-drcn.dbankcdn.com/FileServer/getFile/cmtyManage/011/111/111/0000000000011111111.20260627152129.89276966309836366526585265125586:50001231000000:2800:A0161E048334FE0271F9F5ECBBD5070D17381C7846125F4D7109DBC7B532C715.zip?needInitFileName=true"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/ibmplexmono-OFL.txt",
+      "sha256": "7e6b2818edbd8f6a01ae80641cc8f16a51080d08fb4e532be3a0b6f74adb07da",
+      "bytes": 4456,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/ibmplexmono/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/instrument-serif-OFL.txt",
+      "sha256": "18aabf190848725e2576eefb5c29ba06aac1029d02132252a7f312eac2e50cf3",
+      "bytes": 4314,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/instrument-serif@5.2.5/LICENSE"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/instrumentserif-OFL.txt",
+      "sha256": "129ed7618959716959f2941fdd5b49e0ad6e6c1d78726761786a00253d865521",
+      "bytes": 4405,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/instrumentserif/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/inter-OFL.txt",
+      "sha256": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57",
+      "bytes": 4377,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/inter/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/jetbrains-mono-OFL.txt",
+      "sha256": "18aabf190848725e2576eefb5c29ba06aac1029d02132252a7f312eac2e50cf3",
+      "bytes": 4314,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.2.5/LICENSE"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/jetbrainsmono-OFL.txt",
+      "sha256": "b2fe5e8987594e9ffd1d2ca52a2f5d73eb8335243893c5d6254b5ad69269591d",
+      "bytes": 4399,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/jetbrainsmono/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/longcang-OFL.txt",
+      "sha256": "603546b7219a94bb59bf8294458194a5010119486354092b66a09a3fd61aeacc",
+      "bytes": 4390,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/longcang/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/luckiestguy-LICENSE.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/apache/luckiestguy/LICENSE.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/lxgwmarkergothic-OFL.txt",
+      "sha256": "58e494ff4a5177d593a97ffc482f4069f59f54a0d4049fd29e531d3b1009e8b4",
+      "bytes": 4401,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/lxgwmarkergothic/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/michroma-OFL.txt",
+      "sha256": "33c39ce59a45bfb0dae3280e98bdb46be59d6d68efc62d4dc5fae90a26d2f393",
+      "bytes": 4395,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/michroma/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/mrdafoe-OFL.txt",
+      "sha256": "0da6a3e5b24a9fa04085c20a2a1d3101eeb1e0bff56a2291f407187e1b2adcf2",
+      "bytes": 4398,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/mrdafoe/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/noto-serif-sc-fontsource-OFL.txt",
+      "sha256": "18aabf190848725e2576eefb5c29ba06aac1029d02132252a7f312eac2e50cf3",
+      "bytes": 4314,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/LICENSE"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/notosanssc-OFL.txt",
+      "sha256": "1c05c68c34f9708415aada51f17e1b0092d2cea709bf4a94cd38114f9e73d7d9",
+      "bytes": 4388,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/notosanssc/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/notoserifsc-OFL.txt",
+      "sha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6",
+      "bytes": 4350,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/notoserifsc/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/outfit-OFL.txt",
+      "sha256": "c676351bf8576b9aba743cd5eaa8c0e7ee0d51f805d720447b4df4ddb6a2e416",
+      "bytes": 4389,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/outfit/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/poppins-OFL.txt",
+      "sha256": "6be04893d770899a015649c7aa3b582f871b272f8747a92b78b17c3e5c8b2573",
+      "bytes": 4385,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/poppins/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/pressstart2p-OFL.txt",
+      "sha256": "705960c3281a5765ecc0b59bd4ed7ca59eed165748076bc2fc3e8fdbfeb944b0",
+      "bytes": 4413,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/pressstart2p/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/rajdhani-OFL.txt",
+      "sha256": "f62ef357d3a1c3d27edd35a6e1ba350e8a8d13499797964eeadefbf0b3b15d1f",
+      "bytes": 4373,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/rajdhani/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/resource-han-rounded-OFL.txt",
+      "sha256": "7abe5f490780cd2fd5a67502b993e244ef87d631fb7b98244e9819ff590da4af",
+      "bytes": 4504,
+      "sources": [
+        "https://raw.githubusercontent.com/CyanoHao/Resource-Han-Rounded/v0.990/LICENSE.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/sora-OFL.txt",
+      "sha256": "ba0b9729c9428ba79a0459ab8ec575791b51509dbec213e383d0316d37fec299",
+      "bytes": 4385,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/sora/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/unbounded-OFL.txt",
+      "sha256": "31e5d4e83955e7103c34570dd49b0570ef490800bd65b42923c0dd02445263b3",
+      "bytes": 4392,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/unbounded/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/vt323-OFL.txt",
+      "sha256": "27d9af34210253e7ca1251fbace86c6f65b40031d6ce1a75493a1b2093631298",
+      "bytes": 4367,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/vt323/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/fonts/licenses/zcoolkuaile-OFL.txt",
+      "sha256": "538078469839b4a2e7ad22bef4ebe41681a4e53749bb2a072144024f1d6d703d",
+      "bytes": 4398,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/zcoolkuaile/OFL.txt"
+      ]
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/alibabapuhuiti3/AlibabaPuHuiTi-3-105-Heavy.ttf",
+      "sha256": "94cbb24e451a68b44d932d343579fb31571c743df2cfcd144ba60e0a9aa86e64",
+      "bytes": 2536300,
+      "sources": [
+        "https://fonts.alibabadesign.com/AlibabaPuHuiTi-3/AlibabaPuHuiTi-3-105-Heavy.zip"
+      ],
+      "family": "Alibaba PuHuiTi",
+      "names": [
+        "105 Heavy",
+        "Alibaba PuHuiTi 3 105 Heavy",
+        "Alibaba PuHuiTi 3 105 Heavy ",
+        "Alibaba PuHuiTi 3.0",
+        "Alibaba PuHuiTi 3.0 105 Heavy",
+        "AlibabaPuHuiTi_3_105_Heavy",
+        "Regular",
+        "\u963f\u91cc\u5df4\u5df4\u666e\u60e0\u4f53 3 105 Heavy",
+        "\u963f\u91cc\u5df4\u5df4\u666e\u60e0\u4f53 3.0",
+        "\u963f\u91cc\u5df4\u5df4\u666e\u60e0\u4f53 3.0 105 Heavy"
+      ],
+      "codepoints": 9638
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/alibabapuhuiti3/AlibabaPuHuiTi-3-115-Black.ttf",
+      "sha256": "9a31c7b28f1debf06bc21b4eb7a098f5c57082ef5707b443f7bce29ef1f8ebdb",
+      "bytes": 2517492,
+      "sources": [
+        "https://fonts.alibabadesign.com/AlibabaPuHuiTi-3/AlibabaPuHuiTi-3-115-Black/AlibabaPuHuiTi-3-115-Black.ttf"
+      ],
+      "family": "Alibaba PuHuiTi",
+      "names": [
+        "115 Black",
+        "Alibaba PuHuiTi 3 115 Black",
+        "Alibaba PuHuiTi 3.0",
+        "Alibaba PuHuiTi 3.0 115 Black",
+        "AlibabaPuHuiTi_3_115_Black",
+        "Regular",
+        "\u963f\u91cc\u5df4\u5df4\u666e\u60e0\u4f53 3 115 Black",
+        "\u963f\u91cc\u5df4\u5df4\u666e\u60e0\u4f53 3.0",
+        "\u963f\u91cc\u5df4\u5df4\u666e\u60e0\u4f53 3.0 115 Black"
+      ],
+      "codepoints": 9638
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/alibabapuhuiti3/AlibabaPuHuiTi-3-55-Regular.ttf",
+      "sha256": "be33bc8d45ced30fa5c542f6f056565baf85003d4e079522110d76016f8a04e2",
+      "bytes": 8532824,
+      "sources": [
+        "https://fonts.alibabadesign.com/AlibabaPuHuiTi-3/AlibabaPuHuiTi-3-55-Regular/AlibabaPuHuiTi-3-55-Regular.ttf"
+      ],
+      "family": "Alibaba PuHuiTi",
+      "names": [
+        "55 Regular",
+        "Alibaba PuHuiTi 3 55 Regular",
+        "Alibaba PuHuiTi 3.0",
+        "Alibaba PuHuiTi 3.0 55 Regular",
+        "AlibabaPuHuiTi_3_55_Regular",
+        "Regular",
+        "\u963f\u91cc\u5df4\u5df4\u666e\u60e0\u4f53 3 55 Regular",
+        "\u963f\u91cc\u5df4\u5df4\u666e\u60e0\u4f53 3.0",
+        "\u963f\u91cc\u5df4\u5df4\u666e\u60e0\u4f53 3.0 55 Regular"
+      ],
+      "codepoints": 29197
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/alibabapuhuiti3/AlibabaPuHuiTi-3-65-Medium.ttf",
+      "sha256": "d92b378a2d08ac1e5c2b87d03b9939fdfae93d3c336b6a13ac4e00ce44f6db9e",
+      "bytes": 8429388,
+      "sources": [
+        "https://fonts.alibabadesign.com/AlibabaPuHuiTi-3/AlibabaPuHuiTi-3-65-Medium/AlibabaPuHuiTi-3-65-Medium.ttf"
+      ],
+      "family": "Alibaba PuHuiTi",
+      "names": [
+        "65 Medium",
+        "Alibaba PuHuiTi 3 65 Medium",
+        "Alibaba PuHuiTi 3 65 Medium ",
+        "Alibaba PuHuiTi 3.0",
+        "Alibaba PuHuiTi 3.0 65 Medium",
+        "AlibabaPuHuiTi_3_65_Medium",
+        "Regular",
+        "\u963f\u91cc\u5df4\u5df4\u666e\u60e0\u4f53 3 65 Medium",
+        "\u963f\u91cc\u5df4\u5df4\u666e\u60e0\u4f53 3.0",
+        "\u963f\u91cc\u5df4\u5df4\u666e\u60e0\u4f53 3.0 65 Medium"
+      ],
+      "codepoints": 29197
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/alibabapuhuiti3/AlibabaPuHuiTi-3-85-Bold.ttf",
+      "sha256": "d50f483fd8d9f95f9edbecdc199aee5fa9ddc5db8027f0d80334c3f502af61c8",
+      "bytes": 8371268,
+      "sources": [
+        "https://fonts.alibabadesign.com/AlibabaPuHuiTi-3/AlibabaPuHuiTi-3-85-Bold/AlibabaPuHuiTi-3-85-Bold.ttf"
+      ],
+      "family": "Alibaba PuHuiTi",
+      "names": [
+        "85 Bold",
+        "Alibaba PuHuiTi 3 85 Bold",
+        "Alibaba PuHuiTi 3.0",
+        "Alibaba PuHuiTi 3.0 55 Regular",
+        "AlibabaPuHuiTi_3_85_Bold",
+        "Bold",
+        "\u963f\u91cc\u5df4\u5df4\u666e\u60e0\u4f53 3 85 Bold",
+        "\u963f\u91cc\u5df4\u5df4\u666e\u60e0\u4f53 3.0",
+        "\u963f\u91cc\u5df4\u5df4\u666e\u60e0\u4f53 3.0 55 Regular"
+      ],
+      "codepoints": 29197
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/alimamashuheiti/AlimamaShuHeiTi-Bold.ttf",
+      "sha256": "6401fd0d82f84efe6040599ae3fb5d7c78fd19e315b2c1884d57ac295f5f1bd8",
+      "bytes": 1375772,
+      "sources": [
+        "https://fonts.alibabadesign.com/AlimamaShuHeiTi/AlimamaShuHeiTi-Bold.zip"
+      ],
+      "family": "Alimama ShuHeiTi",
+      "names": [
+        "Alimama ShuHeiTi",
+        "Alimama ShuHeiTi Bold",
+        "AlimamaShuHeiTi-Bold",
+        "Bold",
+        "\u963f\u91cc\u5988\u5988\u6570\u9ed1\u4f53",
+        "\u963f\u91cc\u5988\u5988\u6570\u9ed1\u4f53 Bold"
+      ],
+      "codepoints": 6993
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/fusionpixel/fusion-pixel-12px-proportional-zh_hans.ttf",
+      "sha256": "d1b40e4cb94a551d9378261fa903e48d49d29591ffff06473c2bcd44270b1795",
+      "bytes": 7187808,
+      "sources": [
+        "https://github.com/TakWolf/fusion-pixel-font/releases/download/2026.10.16/fusion-pixel-font-12px-proportional-ttf.woff2-v2026.10.16.zip"
+      ],
+      "family": "Fusion Pixel 12px Prop zh-Hans",
+      "names": [
+        "Fusion Pixel 12px Prop zh-Hans",
+        "Fusion Pixel 12px Prop zh-Hans Regular",
+        "Fusion-Pixel-12px-Prop-zh-Hans-Regular",
+        "Regular"
+      ],
+      "codepoints": 37689,
+      "transformation": "WOFF2 to TTF decompression only; family/name records preserved",
+      "cssFamily": "Fusion Pixel 12"
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/harmonyossanssc/HarmonyOS_Sans_SC_Black.ttf",
+      "sha256": "8978e05044e7089ad6a9de38c505c8148305607983487435a916d2610700a7ca",
+      "bytes": 20617156,
+      "sources": [
+        "https://alliance-communityfile-drcn.dbankcdn.com/FileServer/getFile/cmtyManage/011/111/111/0000000000011111111.20260627152129.89276966309836366526585265125586:50001231000000:2800:A0161E048334FE0271F9F5ECBBD5070D17381C7846125F4D7109DBC7B532C715.zip?needInitFileName=true"
+      ],
+      "family": "HarmonyOS Sans SC",
+      "names": [
+        "HarmonyOS Sans SC",
+        "HarmonyOS_Sans_SC",
+        "Regular",
+        "\u9e3f\u8499\u9ed1\u4f53"
+      ],
+      "codepoints": 29508,
+      "axes": {
+        "wght": [
+          40.0,
+          400.0,
+          900.0
+        ]
+      },
+      "transformation": "Unmodified upstream variable TTF; existing CSS selects weight; hardlinked when supported",
+      "identicalTo": "vendor/mg-styles-15/assets/fonts/cjk/harmonyossanssc/HarmonyOS_Sans_SC_Regular.ttf"
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/harmonyossanssc/HarmonyOS_Sans_SC_Bold.ttf",
+      "sha256": "8978e05044e7089ad6a9de38c505c8148305607983487435a916d2610700a7ca",
+      "bytes": 20617156,
+      "sources": [
+        "https://alliance-communityfile-drcn.dbankcdn.com/FileServer/getFile/cmtyManage/011/111/111/0000000000011111111.20260627152129.89276966309836366526585265125586:50001231000000:2800:A0161E048334FE0271F9F5ECBBD5070D17381C7846125F4D7109DBC7B532C715.zip?needInitFileName=true"
+      ],
+      "family": "HarmonyOS Sans SC",
+      "names": [
+        "HarmonyOS Sans SC",
+        "HarmonyOS_Sans_SC",
+        "Regular",
+        "\u9e3f\u8499\u9ed1\u4f53"
+      ],
+      "codepoints": 29508,
+      "axes": {
+        "wght": [
+          40.0,
+          400.0,
+          900.0
+        ]
+      },
+      "transformation": "Unmodified upstream variable TTF; existing CSS selects weight; hardlinked when supported",
+      "identicalTo": "vendor/mg-styles-15/assets/fonts/cjk/harmonyossanssc/HarmonyOS_Sans_SC_Regular.ttf"
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/harmonyossanssc/HarmonyOS_Sans_SC_Light.ttf",
+      "sha256": "8978e05044e7089ad6a9de38c505c8148305607983487435a916d2610700a7ca",
+      "bytes": 20617156,
+      "sources": [
+        "https://alliance-communityfile-drcn.dbankcdn.com/FileServer/getFile/cmtyManage/011/111/111/0000000000011111111.20260627152129.89276966309836366526585265125586:50001231000000:2800:A0161E048334FE0271F9F5ECBBD5070D17381C7846125F4D7109DBC7B532C715.zip?needInitFileName=true"
+      ],
+      "family": "HarmonyOS Sans SC",
+      "names": [
+        "HarmonyOS Sans SC",
+        "HarmonyOS_Sans_SC",
+        "Regular",
+        "\u9e3f\u8499\u9ed1\u4f53"
+      ],
+      "codepoints": 29508,
+      "axes": {
+        "wght": [
+          40.0,
+          400.0,
+          900.0
+        ]
+      },
+      "transformation": "Unmodified upstream variable TTF; existing CSS selects weight; hardlinked when supported",
+      "identicalTo": "vendor/mg-styles-15/assets/fonts/cjk/harmonyossanssc/HarmonyOS_Sans_SC_Regular.ttf"
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/harmonyossanssc/HarmonyOS_Sans_SC_Medium.ttf",
+      "sha256": "8978e05044e7089ad6a9de38c505c8148305607983487435a916d2610700a7ca",
+      "bytes": 20617156,
+      "sources": [
+        "https://alliance-communityfile-drcn.dbankcdn.com/FileServer/getFile/cmtyManage/011/111/111/0000000000011111111.20260627152129.89276966309836366526585265125586:50001231000000:2800:A0161E048334FE0271F9F5ECBBD5070D17381C7846125F4D7109DBC7B532C715.zip?needInitFileName=true"
+      ],
+      "family": "HarmonyOS Sans SC",
+      "names": [
+        "HarmonyOS Sans SC",
+        "HarmonyOS_Sans_SC",
+        "Regular",
+        "\u9e3f\u8499\u9ed1\u4f53"
+      ],
+      "codepoints": 29508,
+      "axes": {
+        "wght": [
+          40.0,
+          400.0,
+          900.0
+        ]
+      },
+      "transformation": "Unmodified upstream variable TTF; existing CSS selects weight; hardlinked when supported",
+      "identicalTo": "vendor/mg-styles-15/assets/fonts/cjk/harmonyossanssc/HarmonyOS_Sans_SC_Regular.ttf"
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/harmonyossanssc/HarmonyOS_Sans_SC_Regular.ttf",
+      "sha256": "8978e05044e7089ad6a9de38c505c8148305607983487435a916d2610700a7ca",
+      "bytes": 20617156,
+      "sources": [
+        "https://alliance-communityfile-drcn.dbankcdn.com/FileServer/getFile/cmtyManage/011/111/111/0000000000011111111.20260627152129.89276966309836366526585265125586:50001231000000:2800:A0161E048334FE0271F9F5ECBBD5070D17381C7846125F4D7109DBC7B532C715.zip?needInitFileName=true"
+      ],
+      "family": "HarmonyOS Sans SC",
+      "names": [
+        "HarmonyOS Sans SC",
+        "HarmonyOS_Sans_SC",
+        "Regular",
+        "\u9e3f\u8499\u9ed1\u4f53"
+      ],
+      "codepoints": 29508,
+      "axes": {
+        "wght": [
+          40.0,
+          400.0,
+          900.0
+        ]
+      },
+      "transformation": "Unmodified upstream variable TTF; existing CSS selects weight 400"
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/longcang/LongCang-Regular.ttf",
+      "sha256": "e5bf2c3f24ef2327c6f136d8f73e2f9dfdf44896fdbeb35a9515f44777bb91bc",
+      "bytes": 5162508,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/longcang/LongCang-Regular.ttf"
+      ],
+      "family": "Long Cang",
+      "names": [
+        "Long Cang",
+        "Long Cang Regular",
+        "LongCang-Regular",
+        "Regular",
+        "\u6709\u5b57\u5e93\u9f99\u85cf\u4f53"
+      ],
+      "codepoints": 7015
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/lxgwmarkergothic/LXGWMarkerGothic-Regular.ttf",
+      "sha256": "e6a55cfd5f18dc393f92670a164397a69242cb4eabe1d3feb5dc22fc4947a8ba",
+      "bytes": 3187360,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/lxgwmarkergothic/LXGWMarkerGothic-Regular.ttf"
+      ],
+      "family": "LXGW Marker Gothic",
+      "names": [
+        "LXGW Marker Gothic",
+        "LXGW Marker Gothic Regular",
+        "LXGWMarkerGothic-Regular",
+        "Regular",
+        "\u971e\u9e5c\u6f2b\u9ed1"
+      ],
+      "codepoints": 15285
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/notosanssc/NotoSansSC-VF.ttf",
+      "sha256": "a3041811a78c361b1de50f953c805e0244951c21c5bd412f7232ef0d899af0da",
+      "bytes": 17772300,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/notosanssc/NotoSansSC%5Bwght%5D.ttf"
+      ],
+      "family": "Noto Sans SC",
+      "names": [
+        "Noto Sans SC",
+        "Noto Sans SC Thin",
+        "NotoSansSC-Thin",
+        "Regular",
+        "Thin"
+      ],
+      "codepoints": 30890,
+      "axes": {
+        "wght": [
+          100.0,
+          100.0,
+          900.0
+        ]
+      }
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/notoserifsc/NotoSerifSC-VF.ttf",
+      "sha256": "050080d9255a86808f2945bffac582b31ef32bc36411ce29563b4961670c66f9",
+      "bytes": 25125512,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/notoserifsc/NotoSerifSC%5Bwght%5D.ttf"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "ExtraLight",
+        "Noto Serif SC",
+        "Noto Serif SC ExtraLight",
+        "NotoSerifSC-ExtraLight",
+        "Regular"
+      ],
+      "codepoints": 30928,
+      "axes": {
+        "wght": [
+          200.0,
+          200.0,
+          900.0
+        ]
+      }
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/resourcehanrounded/ResourceHanRoundedCN-Bold.ttf",
+      "sha256": "f713907a21a10701cd68a7ce3e345ccdce46c789e1809d65ace54e095d7107c3",
+      "bytes": 13978508,
+      "sources": [
+        "https://github.com/CyanoHao/Resource-Han-Rounded/releases/download/v0.990/RHR-CN-0.990.7z"
+      ],
+      "family": "Resource Han Rounded",
+      "names": [
+        "Bold",
+        "Resource Han Rounded CN",
+        "Resource Han Rounded CN Bold",
+        "Resource-Han-Rounded-CN-Bold"
+      ],
+      "codepoints": 30887,
+      "transformation": "Unchanged original TTF extracted from ResourceHanRoundedCN-Bold.ttf"
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/resourcehanrounded/ResourceHanRoundedCN-Heavy.ttf",
+      "sha256": "dfc757d9c5ae597cac15b12a51a1cee07af500cc8cf7439b243e1bb94b2b1f83",
+      "bytes": 13688972,
+      "sources": [
+        "https://github.com/CyanoHao/Resource-Han-Rounded/releases/download/v0.990/RHR-CN-0.990.7z"
+      ],
+      "family": "Resource Han Rounded",
+      "names": [
+        "Heavy",
+        "Regular",
+        "Resource Han Rounded CN",
+        "Resource Han Rounded CN Heavy",
+        "Resource-Han-Rounded-CN-Heavy"
+      ],
+      "codepoints": 30887,
+      "transformation": "Unchanged original TTF extracted from ResourceHanRoundedCN-Heavy.ttf"
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/cjk/zcoolkuaile/ZCOOLKuaiLe-Regular.ttf",
+      "sha256": "812a6fc1fe54b6d73a419245c32dfeba8aa33104d5be90d1cf6af082007cb71d",
+      "bytes": 1514968,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/zcoolkuaile/ZCOOLKuaiLe-Regular.ttf"
+      ],
+      "family": "ZCOOL KuaiLe",
+      "names": [
+        "Regular",
+        "ZCOOL KuaiLe",
+        "ZCOOL KuaiLe Regular",
+        "ZCOOLKuaiLe-Regular"
+      ],
+      "codepoints": 7053
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/anton/Anton-Regular.ttf",
+      "sha256": "a4ba3a92350ebb031da0cb47630ac49eb265082ca1bc0450442f4a83ab947cab",
+      "bytes": 170812,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/anton/Anton-Regular.ttf"
+      ],
+      "family": "Anton",
+      "names": [
+        "Anton",
+        "Anton Regular",
+        "Anton-Regular",
+        "Regular"
+      ],
+      "codepoints": 978
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/archivo/Archivo-Italic-VF.ttf",
+      "sha256": "305d13b4eb80e62f7d517f78d7c045250d977552a420f2dbed906f314e761305",
+      "bytes": 741368,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/archivo/Archivo-Italic%5Bwdth%2Cwght%5D.ttf"
+      ],
+      "family": "Archivo",
+      "names": [
+        "Archivo",
+        "Archivo SemiBold",
+        "Archivo SemiBold Italic",
+        "Archivo-SemiBoldItalic",
+        "Italic",
+        "SemiBold Italic"
+      ],
+      "codepoints": 653,
+      "axes": {
+        "wght": [
+          100.0,
+          600.0,
+          900.0
+        ],
+        "wdth": [
+          62.0,
+          100.0,
+          125.0
+        ]
+      }
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/bebasneue/BebasNeue-Regular.ttf",
+      "sha256": "08e4623805102d819f58601e46e345648846075e363b2ceb23313c2d1c83ec73",
+      "bytes": 61400,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/bebasneue/BebasNeue-Regular.ttf"
+      ],
+      "family": "Bebas Neue",
+      "names": [
+        "Bebas Neue",
+        "Bebas Neue Regular",
+        "BebasNeue-Regular",
+        "Regular"
+      ],
+      "codepoints": 461
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/caveat/Caveat-VF.ttf",
+      "sha256": "0bdb6b660482d31531b3945849fba5916b3ef8695da7024a9e6b9ee3c4157988",
+      "bytes": 403648,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/caveat/Caveat%5Bwght%5D.ttf"
+      ],
+      "family": "Caveat",
+      "names": [
+        "Caveat",
+        "Caveat Regular",
+        "Caveat-Regular",
+        "Regular"
+      ],
+      "codepoints": 753,
+      "axes": {
+        "wght": [
+          400.0,
+          400.0,
+          700.0
+        ]
+      }
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/chakrapetch/ChakraPetch-SemiBold.ttf",
+      "sha256": "45264de3204ddbd5fb3e14a2402acd5c630d16650ae5fc221d2c52da46a6734b",
+      "bytes": 78604,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/chakrapetch/ChakraPetch-SemiBold.ttf"
+      ],
+      "family": "Chakra Petch",
+      "names": [
+        "Chakra Petch",
+        "Chakra Petch SemiBold",
+        "ChakraPetch-SemiBold",
+        "Regular",
+        "SemiBold"
+      ],
+      "codepoints": 725
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/cormorantgaramond/CormorantGaramond-VF.ttf",
+      "sha256": "b20b7d9626dd956b2c5e558692ad328b1f19e3275e2782db4fa07670d83f35e0",
+      "bytes": 1195560,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/cormorantgaramond/CormorantGaramond%5Bwght%5D.ttf"
+      ],
+      "family": "Cormorant Garamond",
+      "names": [
+        "Cormorant Garamond",
+        "Cormorant Garamond Light",
+        "CormorantGaramond-Light",
+        "Light",
+        "Regular"
+      ],
+      "codepoints": 974,
+      "axes": {
+        "wght": [
+          300.0,
+          300.0,
+          700.0
+        ]
+      }
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/dmsans/DMSans-VF.ttf",
+      "sha256": "8cd08d97e89c24d0aa92edd2f0f4c8ee6195eee9b7c9f154865a58b02f0c1c0d",
+      "bytes": 240164,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/dmsans/DMSans%5Bopsz%2Cwght%5D.ttf"
+      ],
+      "family": "DM Sans",
+      "names": [
+        "9pt Regular",
+        "DM Sans",
+        "DM Sans 9pt",
+        "DM Sans 9pt Regular",
+        "DMSans-9ptRegular",
+        "Regular"
+      ],
+      "codepoints": 403,
+      "axes": {
+        "opsz": [
+          9.0,
+          9.0,
+          40.0
+        ],
+        "wght": [
+          100.0,
+          400.0,
+          1000.0
+        ]
+      }
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/fredoka/Fredoka-VF.ttf",
+      "sha256": "2ba02e68b152868aef9ba28e24b3648c7d457fe6f25c761f2c2c53fb61a73fc8",
+      "bytes": 159184,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/fredoka/Fredoka%5Bwdth%2Cwght%5D.ttf"
+      ],
+      "family": "Fredoka",
+      "names": [
+        "Fredoka",
+        "Fredoka Light",
+        "Fredoka-Light",
+        "Light",
+        "Regular"
+      ],
+      "codepoints": 320,
+      "axes": {
+        "wght": [
+          300.0,
+          300.0,
+          700.0
+        ],
+        "wdth": [
+          75.0,
+          100.0,
+          125.0
+        ]
+      }
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/ibmplexmono/IBMPlexMono-Medium.ttf",
+      "sha256": "a9b4c49bb299e05b5f6c481e7fb5e78943d2793249a0c8874ab574a2d1ea6755",
+      "bytes": 136704,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/ibmplexmono/IBMPlexMono-Medium.ttf"
+      ],
+      "family": "IBM Plex Mono",
+      "names": [
+        "IBM Plex Mono",
+        "IBM Plex Mono Medium",
+        "IBMPlexMono-Medium",
+        "Medium",
+        "Regular"
+      ],
+      "codepoints": 930
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/ibmplexmono/IBMPlexMono-SemiBold.ttf",
+      "sha256": "d3c38e55c78f5b0f28009fddba4834ec503278936a5986032424c9bd2d23aa46",
+      "bytes": 140216,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/ibmplexmono/IBMPlexMono-SemiBold.ttf"
+      ],
+      "family": "IBM Plex Mono",
+      "names": [
+        "IBM Plex Mono",
+        "IBM Plex Mono SemiBold",
+        "IBMPlexMono-SemiBold",
+        "Regular",
+        "SemiBold"
+      ],
+      "codepoints": 930
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/instrumentserif/InstrumentSerif-Italic.ttf",
+      "sha256": "08939b8bdf534afec24ae0ef5e03f948940cd9a8fe08e7fecbad040e62327385",
+      "bytes": 71592,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/instrumentserif/InstrumentSerif-Italic.ttf"
+      ],
+      "family": "Instrument Serif",
+      "names": [
+        "Instrument Serif",
+        "Instrument Serif Italic",
+        "InstrumentSerif-Italic",
+        "Italic"
+      ],
+      "codepoints": 333
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/instrumentserif/InstrumentSerif-Regular.ttf",
+      "sha256": "498efd461f6ddfcb7a111bf9a565709d2085d48201d501ead960d93e84ffbb88",
+      "bytes": 70012,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/instrumentserif/InstrumentSerif-Regular.ttf"
+      ],
+      "family": "Instrument Serif",
+      "names": [
+        "Instrument Serif",
+        "Instrument Serif Regular",
+        "InstrumentSerif-Regular",
+        "Regular"
+      ],
+      "codepoints": 333
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/inter/Inter-VF.ttf",
+      "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031",
+      "bytes": 876576,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf"
+      ],
+      "family": "Inter",
+      "names": [
+        "Inter",
+        "Inter Regular",
+        "Inter-Regular",
+        "Regular"
+      ],
+      "codepoints": 2849,
+      "axes": {
+        "opsz": [
+          14.0,
+          14.0,
+          32.0
+        ],
+        "wght": [
+          100.0,
+          400.0,
+          900.0
+        ]
+      }
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/jetbrainsmono/JetBrainsMono-VF.ttf",
+      "sha256": "48715a42ec242c21e9f02692891e147d022299a52e48d5e413e1a942193ffeda",
+      "bytes": 187208,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/jetbrainsmono/JetBrainsMono%5Bwght%5D.ttf"
+      ],
+      "family": "JetBrains Mono",
+      "names": [
+        "JetBrains Mono",
+        "JetBrains Mono Regular",
+        "JetBrainsMono-Regular",
+        "Regular"
+      ],
+      "codepoints": 976,
+      "axes": {
+        "wght": [
+          100.0,
+          400.0,
+          800.0
+        ]
+      }
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/luckiestguy/LuckiestGuy-Regular.ttf",
+      "sha256": "cfbdd68a039f92df51cf3721506af6242e64594c6325fe0bedbeff3fe385d980",
+      "bytes": 73320,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/apache/luckiestguy/LuckiestGuy-Regular.ttf"
+      ],
+      "family": "Luckiest Guy",
+      "names": [
+        "Luckiest Guy",
+        "Luckiest Guy Regular",
+        "LuckiestGuy-Regular",
+        "Regular"
+      ],
+      "codepoints": 367
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/michroma/Michroma-Regular.ttf",
+      "sha256": "b62301163788bc5b7f8fcac0b74b184e34e1827e577b499ecb724da065098f87",
+      "bytes": 64344,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/michroma/Michroma-Regular.ttf"
+      ],
+      "family": "Michroma",
+      "names": [
+        "Michroma",
+        "Michroma Regular",
+        "Michroma-Regular",
+        "Regular"
+      ],
+      "codepoints": 485
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/poppins/Poppins-Black.ttf",
+      "sha256": "d82aaaf98a9283f9a8edd24e51173337d8eaf09e25cd3d98831f8ec8461748a1",
+      "bytes": 153440,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/poppins/Poppins-Black.ttf"
+      ],
+      "family": "Poppins",
+      "names": [
+        "Black",
+        "Poppins",
+        "Poppins Black",
+        "Poppins-Black",
+        "Regular"
+      ],
+      "codepoints": 471
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/poppins/Poppins-SemiBold.ttf",
+      "sha256": "d3bf1bdaf0550e83da9ac0b1d1d9fe6db086835a83aa28578e609a394b9a0286",
+      "bytes": 157312,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/poppins/Poppins-SemiBold.ttf"
+      ],
+      "family": "Poppins",
+      "names": [
+        "Poppins",
+        "Poppins SemiBold",
+        "Poppins-SemiBold",
+        "Regular",
+        "SemiBold"
+      ],
+      "codepoints": 471
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/pressstart2p/PressStart2P-Regular.ttf",
+      "sha256": "034c77f1f05ec89421e4a63f0e3a4ca1ecf852cc6d2bf611f126f275728e017d",
+      "bytes": 118204,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/pressstart2p/PressStart2P-Regular.ttf"
+      ],
+      "family": "Press Start 2P",
+      "names": [
+        "Press Start 2P",
+        "Press Start 2P Regular",
+        "PressStart2P-Regular",
+        "Regular"
+      ],
+      "codepoints": 656
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/rajdhani/Rajdhani-Bold.ttf",
+      "sha256": "691470dd3286a14e9677940d0bf75796179841ba5215cbda1a2c8910a3226afd",
+      "bytes": 400680,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/rajdhani/Rajdhani-Bold.ttf"
+      ],
+      "family": "Rajdhani",
+      "names": [
+        "Bold",
+        "Rajdhani",
+        "Rajdhani Bold",
+        "Rajdhani-Bold"
+      ],
+      "codepoints": 465
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/rajdhani/Rajdhani-SemiBold.ttf",
+      "sha256": "94bbd25a18ca665999feb05a537de9fd2b860dcfb78bbe9ca00270825bf235da",
+      "bytes": 390340,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/rajdhani/Rajdhani-SemiBold.ttf"
+      ],
+      "family": "Rajdhani",
+      "names": [
+        "Rajdhani",
+        "Rajdhani SemiBold",
+        "Rajdhani-SemiBold",
+        "Regular",
+        "SemiBold"
+      ],
+      "codepoints": 465
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/sora/Sora-VF.ttf",
+      "sha256": "84ff7096ae3ec6c8be47d906d1a0ba4de7f2ce78c615275c77301964a316e16c",
+      "bytes": 111400,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/sora/Sora%5Bwght%5D.ttf"
+      ],
+      "family": "Sora",
+      "names": [
+        "Regular",
+        "Sora",
+        "Sora Regular",
+        "Sora-Regular"
+      ],
+      "codepoints": 378,
+      "axes": {
+        "wght": [
+          100.0,
+          400.0,
+          800.0
+        ]
+      }
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/unbounded/Unbounded-VF.ttf",
+      "sha256": "323b511be380c8d474ef030686b71aedde501f8d9cd46da558b7c40454372c3f",
+      "bytes": 778272,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/unbounded/Unbounded%5Bwght%5D.ttf"
+      ],
+      "family": "Unbounded",
+      "names": [
+        "Regular",
+        "Unbounded",
+        "Unbounded Regular",
+        "Unbounded-Regular"
+      ],
+      "codepoints": 1138,
+      "axes": {
+        "wght": [
+          200.0,
+          400.0,
+          900.0
+        ]
+      }
+    },
+    {
+      "path": "vendor/mg-styles-15/assets/fonts/latin/vt323/VT323-Regular.ttf",
+      "sha256": "cf4de751ada78ceac033dbe16a687742939995b77bc2a052ae17a4957958594d",
+      "bytes": 153116,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/vt323/VT323-Regular.ttf"
+      ],
+      "family": "VT323",
+      "names": [
+        "Regular",
+        "VT323",
+        "VT323 Regular",
+        "VT323-Regular"
+      ],
+      "codepoints": 568
+    },
+    {
+      "path": "vendor/mg-styles-15/demos/03-isometric/assets/fonts/Unbounded-800-static.ttf",
+      "sha256": "5c51f13dd26f912e890611c3dba6f091fbccf7be31cef0565938fdf5ea592bab",
+      "bytes": 423680,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/unbounded/Unbounded%5Bwght%5D.ttf"
+      ],
+      "family": "Unbounded",
+      "names": [
+        "Regular",
+        "Unbounded",
+        "Unbounded Regular",
+        "Unbounded-Regular"
+      ],
+      "codepoints": 1138,
+      "transformation": "fontTools static instance {'wght': 800}; original family/name records preserved"
+    },
+    {
+      "path": "vendor/mg-styles-15/demos/07-liquid/assets/Fraunces-Liquid-72-900-Soft.ttf",
+      "sha256": "3462b0c2a15b1b7dd48f2d15ea81f73217af45e6a45c0b72192b1e79dbc3b8fd",
+      "bytes": 72920,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/fraunces/Fraunces%5BSOFT%2CWONK%2Copsz%2Cwght%5D.ttf"
+      ],
+      "family": "Fraunces",
+      "names": [
+        "Black",
+        "Fraunces",
+        "Fraunces 9pt Black",
+        "Fraunces-9ptBlack",
+        "Regular"
+      ],
+      "codepoints": 624,
+      "transformation": "fontTools static instance {'SOFT': 100, 'WONK': 1, 'opsz': 72, 'wght': 900}; original family/name records preserved"
+    },
+    {
+      "path": "vendor/mg-styles-15/demos/08-morph/assets/fonts/Outfit-SemiBold.ttf",
+      "sha256": "6d2ba45801a26c64a741bd8fb86f04ff9acefa35fadb41f1ccbd1e43ff5f25b4",
+      "bytes": 55384,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/outfit/Outfit%5Bwght%5D.ttf"
+      ],
+      "family": "Outfit",
+      "names": [
+        "Outfit",
+        "Outfit Thin",
+        "Outfit-Thin",
+        "Regular",
+        "Thin"
+      ],
+      "codepoints": 360,
+      "transformation": "fontTools static instance {'wght': 600}; original family/name records preserved"
+    },
+    {
+      "path": "vendor/mg-styles-15/demos/10-synthwave/assets/fonts/MrDafoe-Regular.ttf",
+      "sha256": "a42a3c66a709927f358243fdfcbc437bd8eb188e2ee6a680c52f5be12c670fd2",
+      "bytes": 47976,
+      "sources": [
+        "https://raw.githubusercontent.com/google/fonts/47d54ca1ebb14fd864695f1d39dc734f39017c33/ofl/mrdafoe/MrDafoe-Regular.ttf"
+      ],
+      "family": "Mr Dafoe",
+      "names": [
+        "Mr Dafoe",
+        "Mr Dafoe Regular",
+        "MrDafoe-Regular",
+        "Regular"
+      ],
+      "codepoints": 232
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/instrument-serif-latin-400-italic.woff2",
+      "sha256": "1d6e1bd7bc12e2920ed13edb467b8a5ec4a344e6fb78eb9e302ad9ab00981b9c",
+      "bytes": 22184,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/instrument-serif@5.2.5/files/instrument-serif-latin-400-italic.woff2"
+      ],
+      "family": "Instrument Serif",
+      "names": [
+        "Instrument Serif",
+        "Instrument Serif Italic",
+        "InstrumentSerif-Italic",
+        "Italic"
+      ],
+      "codepoints": 206
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/instrument-serif-latin-400-normal.woff2",
+      "sha256": "7796998dac1ab02b98c32b6e2babbd56255ff3b4e9681d9c7c608530d9033eb6",
+      "bytes": 21036,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/instrument-serif@5.2.5/files/instrument-serif-latin-400-normal.woff2"
+      ],
+      "family": "Instrument Serif",
+      "names": [
+        "Instrument Serif",
+        "Instrument Serif Regular",
+        "InstrumentSerif-Regular",
+        "Regular"
+      ],
+      "codepoints": 206
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/jetbrains-mono-latin-400-normal.woff2",
+      "sha256": "14425ba9c695763c1547f48a206b7aa60350a33ae23de09f0407877f3fcd89eb",
+      "bytes": 21168,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.2.5/files/jetbrains-mono-latin-400-normal.woff2"
+      ],
+      "family": "JetBrains Mono",
+      "names": [
+        "JetBrains Mono",
+        "JetBrains Mono Regular",
+        "JetBrainsMono-Regular",
+        "Regular"
+      ],
+      "codepoints": 229
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/jetbrains-mono-latin-700-normal.woff2",
+      "sha256": "d0d4e818808f2a0ba39b2b09d1989366f63494e295f003c7ef436697378507e8",
+      "bytes": 21908,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.2.5/files/jetbrains-mono-latin-700-normal.woff2"
+      ],
+      "family": "JetBrains Mono",
+      "names": [
+        "Bold",
+        "JetBrains Mono",
+        "JetBrains Mono Bold",
+        "JetBrainsMono-Bold"
+      ],
+      "codepoints": 229
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/notoserifsc.css",
+      "sha256": "015043caad7a146330ce6786d44b0f6113d7ad559e0ffa1c06a9aca5843fc8b9",
+      "bytes": 64766,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/400.css",
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css"
+      ],
+      "transformation": "Unicode-range subset selection; weights and font names unchanged"
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-100-400-normal.woff2",
+      "sha256": "56cb49ae9271e89fb0103e8676da8b264eb4ba61448fc8213c9bd871830dad1b",
+      "bytes": 44668,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-100-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-100-700-normal.woff2",
+      "sha256": "ac29c0725506bce44c0a85a07f668580315b665c03b7f1dcd3b5ab24c5655ab0",
+      "bytes": 45612,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-100-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-101-400-normal.woff2",
+      "sha256": "6c574faa473824f5922527af279f5510e62c0946079a97485393a43ee17bdaf1",
+      "bytes": 41124,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-101-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 175
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-101-700-normal.woff2",
+      "sha256": "bb0ab7d0372b30d36a6872cdc0c011f93614fee60936783434d055ba8e730bd9",
+      "bytes": 42072,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-101-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 175
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-103-400-normal.woff2",
+      "sha256": "1c2b9bde25957d2144519b8afd7edcde9ab11882c487ef1476f12bd30496fe1f",
+      "bytes": 44452,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-103-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-103-700-normal.woff2",
+      "sha256": "bfb87c34e384390623914ca9352fefa5c24d1d6f06475f418ffe4f563ba6171d",
+      "bytes": 45604,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-103-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-104-400-normal.woff2",
+      "sha256": "736f1e790cd9ee0dcd12efab900546e3a4428db603ee4630a1b43585c1a0b791",
+      "bytes": 42648,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-104-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 189
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-104-700-normal.woff2",
+      "sha256": "9d3c9333163f7ce381712607ed5f0227ecf19844764784ce37dc9a6e3965d45b",
+      "bytes": 43696,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-104-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 189
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-105-400-normal.woff2",
+      "sha256": "4e2d04186bde9c704697e716a76c0b84929683aeb6e397c0a3a6ab5a167ab968",
+      "bytes": 42880,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-105-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 189
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-105-700-normal.woff2",
+      "sha256": "ceefdb929b6220f41c20cc7317532656a63e45b65b1ae54eaf5a09f4fb107a4f",
+      "bytes": 43980,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-105-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 189
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-106-400-normal.woff2",
+      "sha256": "804b813482d83b9b8539b4a0173bf681cc3529f456a9c983f90f58e1617adbbf",
+      "bytes": 43156,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-106-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 191
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-106-700-normal.woff2",
+      "sha256": "8b9f7681bf3bd2b7405c3f279ab882874be96729772832070996e7b45da965b6",
+      "bytes": 44228,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-106-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 191
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-107-400-normal.woff2",
+      "sha256": "8ac9fe5a3b825b24d89bb8ace16cbc6eab37b36c9783e578ba75bec0a48d3cf5",
+      "bytes": 41932,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-107-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 187
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-107-700-normal.woff2",
+      "sha256": "e591ba761990098d85c859d839c7c4857742147192acc2b5bd48b890e2c73f5e",
+      "bytes": 43012,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-107-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 187
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-108-400-normal.woff2",
+      "sha256": "fff36e90be88e692bed7d6fd2f0ddcdbeb87be2421382ab11f5f5fb779f3b22b",
+      "bytes": 43968,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-108-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 191
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-108-700-normal.woff2",
+      "sha256": "30bff4ec55e45147ecbe7c3b22a8296e386ad79fb91b7589d55f66d020da5821",
+      "bytes": 44928,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-108-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 191
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-109-400-normal.woff2",
+      "sha256": "987e6e9204d1c34fda8f53b31ded1637d6f056b3b24a44e8566b8b85a040824b",
+      "bytes": 41796,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-109-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-109-700-normal.woff2",
+      "sha256": "396d696faabcb6f7a739b9c4825530e6f734449c4ede40026a55a6f08edb16f9",
+      "bytes": 42724,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-109-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-110-400-normal.woff2",
+      "sha256": "1004f6329bf8e116889149de865c84fc5b35e59f688f5758d0b1686ff33daadb",
+      "bytes": 41872,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-110-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 191
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-110-700-normal.woff2",
+      "sha256": "7dce3bc5bbdc165bb51024bd42e01b966202bbe0313a6ae3d93747e8ec37ebcf",
+      "bytes": 42888,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-110-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 191
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-111-400-normal.woff2",
+      "sha256": "fa5bf2e42c5a4805381c1d8f7c4beb4f0d30f2525068b015d56ea8a97ca2c364",
+      "bytes": 42864,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-111-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-111-700-normal.woff2",
+      "sha256": "ce1f349434e354fbeb1e38a334e5ae3aac07f2b02636934ca9a3fbadbc1fe85c",
+      "bytes": 43744,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-111-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-112-400-normal.woff2",
+      "sha256": "cc08d5476f107e89b4597a97c9f6f91e945c09cd17c5910ee6606f77d6528249",
+      "bytes": 40016,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-112-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-112-700-normal.woff2",
+      "sha256": "7e7b4a1b21626941bffed883eafa4381b36785ccab05ec4bc361657653dc3a28",
+      "bytes": 40956,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-112-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-113-400-normal.woff2",
+      "sha256": "3ef60ddb5d922d2bfc5d824fdfda2e670a5209ada3ec24a4a3dbb0165bb38f63",
+      "bytes": 39832,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-113-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-113-700-normal.woff2",
+      "sha256": "59d2b0aae35d849ac46315ae93017fa980c0816eae263e056e68e3a4f216a417",
+      "bytes": 40908,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-113-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-114-400-normal.woff2",
+      "sha256": "fa35f9857271207d950697a344d1e3624069b735c7be2cdcc52d6d6c2851b678",
+      "bytes": 39460,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-114-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-114-700-normal.woff2",
+      "sha256": "91c6c30154b1445f21b56dfdb8b16c1bc669e6a2a2b2e41f690fe6524bcb16e0",
+      "bytes": 40448,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-114-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-115-400-normal.woff2",
+      "sha256": "f46dd32fe0e97121f27a8df5921b45cf93a96a7c697ed516e1bd83ebd3dd22b3",
+      "bytes": 38188,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-115-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-115-700-normal.woff2",
+      "sha256": "20c0032b081f6359580deba4e3e7f323a281f068fbcb19ca4650a3ba02c69502",
+      "bytes": 39036,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-115-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-116-400-normal.woff2",
+      "sha256": "24b25a8cf7656b7f97cd85a053b8c650cbfdf0f1fceac4aa71ac116c30670524",
+      "bytes": 35468,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-116-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-116-700-normal.woff2",
+      "sha256": "af7e0e48cc94125c0a7480a6d5fd477e9ec7116270b2b6ba6d020f4fff38f32e",
+      "bytes": 36360,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-116-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-117-400-normal.woff2",
+      "sha256": "e04e6854f00bfe5fcb2cfb90b193be0592eb54368cb710f0f4c2c58785004a6c",
+      "bytes": 35116,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-117-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-117-700-normal.woff2",
+      "sha256": "e6a69a16bd356a5d1cd6226b321581b9b1ceb4b072095f7d31239834f4c307f2",
+      "bytes": 35796,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-117-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-118-400-normal.woff2",
+      "sha256": "a95263ffdeb04f135785fafabb3bab408dab6bb5e71e92e287ec5e160dc08a92",
+      "bytes": 30616,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-118-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-118-700-normal.woff2",
+      "sha256": "61d6e648075044a37312b1a977fb8955114059e5058ba8f8f124dd1b86e6622e",
+      "bytes": 31468,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-118-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-119-400-normal.woff2",
+      "sha256": "e313549dbb0b4c567ce2105fce8364e6d971b5dd0be8c90351799edc1296f854",
+      "bytes": 53816,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-119-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 277
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-119-700-normal.woff2",
+      "sha256": "e99d308aa9edadcc567dd52f6519c1bb90d866789e693205244c76cd62d2ee78",
+      "bytes": 54672,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-119-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 277
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-28-400-normal.woff2",
+      "sha256": "034ca3c5272128d9a21cc301d2b8e5232169b98dfd0437fbf1c0314fa91e288b",
+      "bytes": 35612,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-28-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 142
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-28-700-normal.woff2",
+      "sha256": "a7c0d3eb810aa74e61d401bd4fb3452fe179e655745825ff7a6b6f3a742b4bd6",
+      "bytes": 36704,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-28-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 142
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-4-400-normal.woff2",
+      "sha256": "275c9b0b6cb07900387f1b938e593857fdc29986c7d32cbe577f488dac4f9f0d",
+      "bytes": 2792,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-4-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 12
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-4-700-normal.woff2",
+      "sha256": "760838f8248b50cfcb9a37afde6abd3fda6a208fa60da7cd4045bb7a9a200ae4",
+      "bytes": 2824,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-4-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 12
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-87-400-normal.woff2",
+      "sha256": "9aefe6029e95940af407feb74a7ba8a0827b9dd3a4cfd828ca9e16a80021f077",
+      "bytes": 5432,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-87-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 46
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-87-700-normal.woff2",
+      "sha256": "e33b41a144ebabebf24c005d64850e6261e5cbea26f8f70f030b37205e3031c0",
+      "bytes": 5484,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-87-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 46
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-88-400-normal.woff2",
+      "sha256": "bdec889204d4e798a5dff2872d1c37cf08a240c4b7cc63f76bc7eddb84b9899f",
+      "bytes": 6248,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-88-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 86
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-88-700-normal.woff2",
+      "sha256": "dfc0fcb3cf144ee09eb708d3e099dde8666fa9685cf7a22bf7ee8fd97c568b72",
+      "bytes": 6236,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-88-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 86
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-89-400-normal.woff2",
+      "sha256": "c0f551c263cf0045a91c21365629cfe7e0bae71f266cc45bb9a17b91293e276e",
+      "bytes": 6988,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-89-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 139
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-89-700-normal.woff2",
+      "sha256": "a7e69c6bf3e6384d303a062bd7d64020b26df42831785862552741713a9129dd",
+      "bytes": 6992,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-89-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 139
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-90-400-normal.woff2",
+      "sha256": "74cda1cd91320c0b5c23894d0eabd9f41cb80a12005794bb5f310a2ecec7d639",
+      "bytes": 5988,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-90-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 77
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-90-700-normal.woff2",
+      "sha256": "1651967f37f22f3b5dbd232fe019adc70fc6f2f337d7c0408a14557931240a07",
+      "bytes": 5908,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-90-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 77
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-99-400-normal.woff2",
+      "sha256": "09c05a4ac7d568eda8106359287844bbe41a066e0b9f34a07acbeb550bb4eda5",
+      "bytes": 6944,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-99-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 85
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-99-700-normal.woff2",
+      "sha256": "ffe2cfdcde20005c8439b016da7bbb2661c981a4665c8b1900361d309b63be45",
+      "bytes": 6956,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-99-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 85
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-latin-400-normal.woff2",
+      "sha256": "b33070205f40df26518977f3d8037feddb35dac8cb02c376f220c663b309481e",
+      "bytes": 18624,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-latin-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 219
+    },
+    {
+      "path": "vendor/motion-promo-film-v2/references/fonts/nscs/noto-serif-sc-latin-700-normal.woff2",
+      "sha256": "dc83b2195d8488176f5a0bb0699f2f4716a36a608177cbb97efc0072d2489215",
+      "bytes": 18676,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-latin-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 219
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/instrument-serif-latin-400-italic.woff2",
+      "sha256": "1d6e1bd7bc12e2920ed13edb467b8a5ec4a344e6fb78eb9e302ad9ab00981b9c",
+      "bytes": 22184,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/instrument-serif@5.2.5/files/instrument-serif-latin-400-italic.woff2"
+      ],
+      "family": "Instrument Serif",
+      "names": [
+        "Instrument Serif",
+        "Instrument Serif Italic",
+        "InstrumentSerif-Italic",
+        "Italic"
+      ],
+      "codepoints": 206
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/instrument-serif-latin-400-normal.woff2",
+      "sha256": "7796998dac1ab02b98c32b6e2babbd56255ff3b4e9681d9c7c608530d9033eb6",
+      "bytes": 21036,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/instrument-serif@5.2.5/files/instrument-serif-latin-400-normal.woff2"
+      ],
+      "family": "Instrument Serif",
+      "names": [
+        "Instrument Serif",
+        "Instrument Serif Regular",
+        "InstrumentSerif-Regular",
+        "Regular"
+      ],
+      "codepoints": 206
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/jetbrains-mono-latin-400-normal.woff2",
+      "sha256": "14425ba9c695763c1547f48a206b7aa60350a33ae23de09f0407877f3fcd89eb",
+      "bytes": 21168,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.2.5/files/jetbrains-mono-latin-400-normal.woff2"
+      ],
+      "family": "JetBrains Mono",
+      "names": [
+        "JetBrains Mono",
+        "JetBrains Mono Regular",
+        "JetBrainsMono-Regular",
+        "Regular"
+      ],
+      "codepoints": 229
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/jetbrains-mono-latin-700-normal.woff2",
+      "sha256": "d0d4e818808f2a0ba39b2b09d1989366f63494e295f003c7ef436697378507e8",
+      "bytes": 21908,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.2.5/files/jetbrains-mono-latin-700-normal.woff2"
+      ],
+      "family": "JetBrains Mono",
+      "names": [
+        "Bold",
+        "JetBrains Mono",
+        "JetBrains Mono Bold",
+        "JetBrainsMono-Bold"
+      ],
+      "codepoints": 229
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/notoserifsc.css",
+      "sha256": "015043caad7a146330ce6786d44b0f6113d7ad559e0ffa1c06a9aca5843fc8b9",
+      "bytes": 64766,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/400.css",
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/700.css"
+      ],
+      "transformation": "Unicode-range subset selection; weights and font names unchanged"
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-100-400-normal.woff2",
+      "sha256": "56cb49ae9271e89fb0103e8676da8b264eb4ba61448fc8213c9bd871830dad1b",
+      "bytes": 44668,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-100-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-100-700-normal.woff2",
+      "sha256": "ac29c0725506bce44c0a85a07f668580315b665c03b7f1dcd3b5ab24c5655ab0",
+      "bytes": 45612,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-100-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-101-400-normal.woff2",
+      "sha256": "6c574faa473824f5922527af279f5510e62c0946079a97485393a43ee17bdaf1",
+      "bytes": 41124,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-101-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 175
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-101-700-normal.woff2",
+      "sha256": "bb0ab7d0372b30d36a6872cdc0c011f93614fee60936783434d055ba8e730bd9",
+      "bytes": 42072,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-101-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 175
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-103-400-normal.woff2",
+      "sha256": "1c2b9bde25957d2144519b8afd7edcde9ab11882c487ef1476f12bd30496fe1f",
+      "bytes": 44452,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-103-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-103-700-normal.woff2",
+      "sha256": "bfb87c34e384390623914ca9352fefa5c24d1d6f06475f418ffe4f563ba6171d",
+      "bytes": 45604,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-103-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-104-400-normal.woff2",
+      "sha256": "736f1e790cd9ee0dcd12efab900546e3a4428db603ee4630a1b43585c1a0b791",
+      "bytes": 42648,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-104-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 189
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-104-700-normal.woff2",
+      "sha256": "9d3c9333163f7ce381712607ed5f0227ecf19844764784ce37dc9a6e3965d45b",
+      "bytes": 43696,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-104-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 189
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-105-400-normal.woff2",
+      "sha256": "4e2d04186bde9c704697e716a76c0b84929683aeb6e397c0a3a6ab5a167ab968",
+      "bytes": 42880,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-105-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 189
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-105-700-normal.woff2",
+      "sha256": "ceefdb929b6220f41c20cc7317532656a63e45b65b1ae54eaf5a09f4fb107a4f",
+      "bytes": 43980,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-105-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 189
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-106-400-normal.woff2",
+      "sha256": "804b813482d83b9b8539b4a0173bf681cc3529f456a9c983f90f58e1617adbbf",
+      "bytes": 43156,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-106-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 191
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-106-700-normal.woff2",
+      "sha256": "8b9f7681bf3bd2b7405c3f279ab882874be96729772832070996e7b45da965b6",
+      "bytes": 44228,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-106-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 191
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-107-400-normal.woff2",
+      "sha256": "8ac9fe5a3b825b24d89bb8ace16cbc6eab37b36c9783e578ba75bec0a48d3cf5",
+      "bytes": 41932,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-107-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 187
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-107-700-normal.woff2",
+      "sha256": "e591ba761990098d85c859d839c7c4857742147192acc2b5bd48b890e2c73f5e",
+      "bytes": 43012,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-107-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 187
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-108-400-normal.woff2",
+      "sha256": "fff36e90be88e692bed7d6fd2f0ddcdbeb87be2421382ab11f5f5fb779f3b22b",
+      "bytes": 43968,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-108-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 191
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-108-700-normal.woff2",
+      "sha256": "30bff4ec55e45147ecbe7c3b22a8296e386ad79fb91b7589d55f66d020da5821",
+      "bytes": 44928,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-108-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 191
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-109-400-normal.woff2",
+      "sha256": "987e6e9204d1c34fda8f53b31ded1637d6f056b3b24a44e8566b8b85a040824b",
+      "bytes": 41796,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-109-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-109-700-normal.woff2",
+      "sha256": "396d696faabcb6f7a739b9c4825530e6f734449c4ede40026a55a6f08edb16f9",
+      "bytes": 42724,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-109-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-110-400-normal.woff2",
+      "sha256": "1004f6329bf8e116889149de865c84fc5b35e59f688f5758d0b1686ff33daadb",
+      "bytes": 41872,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-110-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 191
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-110-700-normal.woff2",
+      "sha256": "7dce3bc5bbdc165bb51024bd42e01b966202bbe0313a6ae3d93747e8ec37ebcf",
+      "bytes": 42888,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-110-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 191
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-111-400-normal.woff2",
+      "sha256": "fa5bf2e42c5a4805381c1d8f7c4beb4f0d30f2525068b015d56ea8a97ca2c364",
+      "bytes": 42864,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-111-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-111-700-normal.woff2",
+      "sha256": "ce1f349434e354fbeb1e38a334e5ae3aac07f2b02636934ca9a3fbadbc1fe85c",
+      "bytes": 43744,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-111-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-112-400-normal.woff2",
+      "sha256": "cc08d5476f107e89b4597a97c9f6f91e945c09cd17c5910ee6606f77d6528249",
+      "bytes": 40016,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-112-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-112-700-normal.woff2",
+      "sha256": "7e7b4a1b21626941bffed883eafa4381b36785ccab05ec4bc361657653dc3a28",
+      "bytes": 40956,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-112-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-113-400-normal.woff2",
+      "sha256": "3ef60ddb5d922d2bfc5d824fdfda2e670a5209ada3ec24a4a3dbb0165bb38f63",
+      "bytes": 39832,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-113-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-113-700-normal.woff2",
+      "sha256": "59d2b0aae35d849ac46315ae93017fa980c0816eae263e056e68e3a4f216a417",
+      "bytes": 40908,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-113-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-114-400-normal.woff2",
+      "sha256": "fa35f9857271207d950697a344d1e3624069b735c7be2cdcc52d6d6c2851b678",
+      "bytes": 39460,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-114-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-114-700-normal.woff2",
+      "sha256": "91c6c30154b1445f21b56dfdb8b16c1bc669e6a2a2b2e41f690fe6524bcb16e0",
+      "bytes": 40448,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-114-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-115-400-normal.woff2",
+      "sha256": "f46dd32fe0e97121f27a8df5921b45cf93a96a7c697ed516e1bd83ebd3dd22b3",
+      "bytes": 38188,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-115-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-115-700-normal.woff2",
+      "sha256": "20c0032b081f6359580deba4e3e7f323a281f068fbcb19ca4650a3ba02c69502",
+      "bytes": 39036,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-115-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-116-400-normal.woff2",
+      "sha256": "24b25a8cf7656b7f97cd85a053b8c650cbfdf0f1fceac4aa71ac116c30670524",
+      "bytes": 35468,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-116-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-116-700-normal.woff2",
+      "sha256": "af7e0e48cc94125c0a7480a6d5fd477e9ec7116270b2b6ba6d020f4fff38f32e",
+      "bytes": 36360,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-116-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-117-400-normal.woff2",
+      "sha256": "e04e6854f00bfe5fcb2cfb90b193be0592eb54368cb710f0f4c2c58785004a6c",
+      "bytes": 35116,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-117-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-117-700-normal.woff2",
+      "sha256": "e6a69a16bd356a5d1cd6226b321581b9b1ceb4b072095f7d31239834f4c307f2",
+      "bytes": 35796,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-117-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 192
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-118-400-normal.woff2",
+      "sha256": "a95263ffdeb04f135785fafabb3bab408dab6bb5e71e92e287ec5e160dc08a92",
+      "bytes": 30616,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-118-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-118-700-normal.woff2",
+      "sha256": "61d6e648075044a37312b1a977fb8955114059e5058ba8f8f124dd1b86e6622e",
+      "bytes": 31468,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-118-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 190
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-119-400-normal.woff2",
+      "sha256": "e313549dbb0b4c567ce2105fce8364e6d971b5dd0be8c90351799edc1296f854",
+      "bytes": 53816,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-119-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 277
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-119-700-normal.woff2",
+      "sha256": "e99d308aa9edadcc567dd52f6519c1bb90d866789e693205244c76cd62d2ee78",
+      "bytes": 54672,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-119-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 277
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-28-400-normal.woff2",
+      "sha256": "034ca3c5272128d9a21cc301d2b8e5232169b98dfd0437fbf1c0314fa91e288b",
+      "bytes": 35612,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-28-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 142
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-28-700-normal.woff2",
+      "sha256": "a7c0d3eb810aa74e61d401bd4fb3452fe179e655745825ff7a6b6f3a742b4bd6",
+      "bytes": 36704,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-28-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 142
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-4-400-normal.woff2",
+      "sha256": "275c9b0b6cb07900387f1b938e593857fdc29986c7d32cbe577f488dac4f9f0d",
+      "bytes": 2792,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-4-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 12
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-4-700-normal.woff2",
+      "sha256": "760838f8248b50cfcb9a37afde6abd3fda6a208fa60da7cd4045bb7a9a200ae4",
+      "bytes": 2824,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-4-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 12
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-87-400-normal.woff2",
+      "sha256": "9aefe6029e95940af407feb74a7ba8a0827b9dd3a4cfd828ca9e16a80021f077",
+      "bytes": 5432,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-87-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 46
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-87-700-normal.woff2",
+      "sha256": "e33b41a144ebabebf24c005d64850e6261e5cbea26f8f70f030b37205e3031c0",
+      "bytes": 5484,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-87-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 46
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-88-400-normal.woff2",
+      "sha256": "bdec889204d4e798a5dff2872d1c37cf08a240c4b7cc63f76bc7eddb84b9899f",
+      "bytes": 6248,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-88-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 86
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-88-700-normal.woff2",
+      "sha256": "dfc0fcb3cf144ee09eb708d3e099dde8666fa9685cf7a22bf7ee8fd97c568b72",
+      "bytes": 6236,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-88-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 86
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-89-400-normal.woff2",
+      "sha256": "c0f551c263cf0045a91c21365629cfe7e0bae71f266cc45bb9a17b91293e276e",
+      "bytes": 6988,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-89-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 139
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-89-700-normal.woff2",
+      "sha256": "a7e69c6bf3e6384d303a062bd7d64020b26df42831785862552741713a9129dd",
+      "bytes": 6992,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-89-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 139
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-90-400-normal.woff2",
+      "sha256": "74cda1cd91320c0b5c23894d0eabd9f41cb80a12005794bb5f310a2ecec7d639",
+      "bytes": 5988,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-90-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 77
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-90-700-normal.woff2",
+      "sha256": "1651967f37f22f3b5dbd232fe019adc70fc6f2f337d7c0408a14557931240a07",
+      "bytes": 5908,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-90-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 77
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-99-400-normal.woff2",
+      "sha256": "09c05a4ac7d568eda8106359287844bbe41a066e0b9f34a07acbeb550bb4eda5",
+      "bytes": 6944,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-99-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 85
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-99-700-normal.woff2",
+      "sha256": "ffe2cfdcde20005c8439b016da7bbb2661c981a4665c8b1900361d309b63be45",
+      "bytes": 6956,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-99-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 85
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-latin-400-normal.woff2",
+      "sha256": "b33070205f40df26518977f3d8037feddb35dac8cb02c376f220c663b309481e",
+      "bytes": 18624,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-latin-400-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Regular",
+        "NotoSerifSCExtraLight-Regular",
+        "Regular"
+      ],
+      "codepoints": 219
+    },
+    {
+      "path": "vendor/motion-promo-film/templates/fonts/nscs/noto-serif-sc-latin-700-normal.woff2",
+      "sha256": "dc83b2195d8488176f5a0bb0699f2f4716a36a608177cbb97efc0072d2489215",
+      "bytes": 18676,
+      "sources": [
+        "https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.2.5/files/noto-serif-sc-latin-700-normal.woff2"
+      ],
+      "family": "Noto Serif SC",
+      "names": [
+        "Bold",
+        "Noto Serif SC ExtraLight",
+        "Noto Serif SC ExtraLight Bold",
+        "NotoSerifSCExtraLight-Bold"
+      ],
+      "codepoints": 219
+    }
+  ]
+}

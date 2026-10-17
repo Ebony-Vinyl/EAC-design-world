@@ -1,0 +1,54 @@
+{
+  "name": "open-design",
+  "source": {
+    "repo": "nexu-io/open-design",
+    "url": "https://github.com/nexu-io/open-design",
+    "version": "0.25.1",
+    "commit": null,
+    "commitNote": "Upstream snapshot ships no .git; revision is pinned by package version plus a content digest over every imported file.",
+    "revision": "sha256:6cb6bbca75b4c1da6e34254eb01ab507575d9c1f3ea490e12e57a79147a105c5",
+    "digest": "6cb6bbca75b4c1da6e34254eb01ab507575d9c1f3ea490e12e57a79147a105c5",
+    "importedAt": "2026-10-17T02:54:59.877Z",
+    "license": "Apache-2.0",
+    "licenseNote": "OpenDesign repository is Apache-2.0; individual items carry their own licenses recorded per entry.",
+    "licenseSummary": {
+      "MIT": 431,
+      "Apache-2.0": 288,
+      "CC-BY-4.0": 144,
+      "Original X post": 2
+    }
+  },
+  "stats": {
+    "designSystems": 152,
+    "templates": 517,
+    "templatesBySet": {
+      "examples": 188,
+      "design-templates": 115,
+      "video-templates": 63,
+      "image-templates": 45,
+      "prompt-templates/video": 58,
+      "prompt-templates/image": 48
+    },
+    "templatesByKind": {
+      "document": 13,
+      "website": 191,
+      "deck": 81,
+      "motion": 79,
+      "image": 47,
+      "prompt": 106
+    },
+    "runtime": {
+      "source-ready": 303,
+      "external-generation-required": 205,
+      "reference-only": 9
+    },
+    "skills": 169,
+    "atoms": 13,
+    "scenarios": 14,
+    "total": 865,
+    "uniqueIds": 865
+  },
+  "target": "vendor/open-design",
+  "files": 865,
+  "digest": "6cb6bbca75b4c1da6e34254eb01ab507575d9c1f3ea490e12e57a79147a105c5"
+}
