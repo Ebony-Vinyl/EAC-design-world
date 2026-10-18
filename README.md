@@ -23,7 +23,26 @@ EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-
 
 当前版本为 **v0.4.0 开发预览版**。本版新增 150 个 Shotcraft 镜头、动态选片与项目素材导入，重做模板预览播放器并优化状态轮询，详见 [发布说明](docs/release-v0.4.0.md)。保留插件维护、签名更新与回滚、草稿恢复和隔离预览。Windows 上的录屏、语音、转录和渲染流程已执行测试；其他平台的桌面录制与本地语音未实现。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
 
-<p align="center"><img src="docs/assets/templates.png" alt="EAC design world 两行模板推荐与真实页面封面" width="960" /><br /><sub>按创作类型推荐模板，保留真实封面与可移除的选择标签。</sub></p>
+<p align="center"><b>以下两条宣传片均为 deepseek harness + EAC design world + deepseek v4.1 flash（非 1017）一轮出的结果</b></p>
+
+<table align="center">
+  <tr>
+    <td align="center" width="50%">
+      <a href="docs/assets/showcase/eac-design-world-rush-60s.mp4" title="播放 EAC design world · RUSH 60s">
+        <img src="docs/assets/showcase/eac-design-world-rush-60s-poster.jpg" alt="EAC design world · RUSH 60s 宣传片，点击播放" width="100%" />
+      </a>
+      <br />
+      <sub><b>EAC design world · RUSH 60s</b><br />▶ 点击封面播放</sub>
+    </td>
+    <td align="center" width="50%">
+      <a href="docs/assets/showcase/our-free-model-65s.mp4" title="播放 Our Free Model · 65s">
+        <img src="docs/assets/showcase/our-free-model-65s-poster.jpg" alt="Our Free Model · 65s 宣传片，点击播放" width="100%" />
+      </a>
+      <br />
+      <sub><b>Our Free Model · 65s</b><br />▶ 点击封面播放</sub>
+    </td>
+  </tr>
+</table>
 
 ## 目录
 
@@ -46,6 +65,8 @@ EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-
 | 创建网站和演示稿 | HTML、SVG、Markdown 编辑、隔离预览、不可变修订与源文件下载 |
 | 检查与导出作品 | Harness 原生右侧作品画布、HTML 幻灯片分页、PDF / PNG / PPTX 整页图像导出 |
 | 维护插件 | 顶部导航中的独立维护中心：运行/安装版本、签名更新、本地更新、备份回滚、宿主热重载、公告与已读记录 |
+
+<p align="center"><img src="docs/assets/templates.png" alt="EAC design world 两行模板推荐与真实页面封面" width="960" /><br /><sub>按创作类型推荐模板，保留真实封面与可移除的选择标签。</sub></p>
 
 ### 设计内容库
 
