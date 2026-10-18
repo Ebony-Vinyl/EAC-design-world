@@ -28,6 +28,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "files": [
+    "npm-asset-map.json",
     "plugin",
     "locale",
     "src",
@@ -44,6 +45,7 @@
     "THIRD_PARTY_NOTICES.md"
   ],
   "scripts": {
+    "postinstall": "node src/npm-assets-restore.mjs",
     "dev": "node src/server.mjs --dev",
     "start": "node src/server.mjs",
     "build": "vite build",

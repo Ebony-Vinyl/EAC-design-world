@@ -130,6 +130,8 @@ node node_modules/eac-design-world/scripts/install-harness.mjs --dry-run
 node node_modules/eac-design-world/scripts/install-harness.mjs
 ```
 
+npm 版对完全相同的二进制资源进行无损去重，安装时从包内恢复原始文件；禁用安装脚本时，首次启动也会补齐。恢复不下载媒体、不覆盖已有文件，并按版本隔离，模板和镜头内容保持不变。GitHub ZIP 保留完整文件布局。
+
 自定义宿主 profile：
 
 ```powershell

@@ -9,6 +9,7 @@ import { buildManifest, copyRelease } from './build-update-manifest.mjs';
 import { isExcludedPath, listPackageFiles, verifyManifestSignature } from '../src/maintenance-updater.mjs';
 import { RELEASE_PUBLIC_KEY } from '../src/maintenance-key.mjs';
 import { VERSION } from '../src/version.mjs';
+import { packNpmRuntime } from './pack-npm-runtime.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 async function sha256File(path) {
@@ -64,9 +65,9 @@ const oldMedia = join(root, 'release/publish-v0.3.0/eac-design-world-v0.3.0-medi
 assert.equal(await sha256File(oldMedia), 'e25eaa79f91b030f2f5028d6b3515b9c1c4332303aa38086477f1d5fabb98166', 'Reused media must match the published 0.3.0 asset');
 await cp(oldMedia, join(output, `eac-design-world-v${VERSION}-media.zip`));
 await cp(join(root, `docs/release-v${VERSION}.md`), join(output, 'RELEASE_NOTES.md'));
-const [npmPackage] = JSON.parse(execFileSync(process.execPath, [
-  process.env.npm_execpath, 'pack', packageRoot, '--pack-destination', output, '--json', '--ignore-scripts',
-], { cwd: root, encoding: 'utf8', windowsHide: true, timeout: 600000, maxBuffer: 16 * 1024 * 1024 }));
+const npmOutput = join(output, 'npm');
+const npmPackage = await packNpmRuntime({ source: packageRoot, output: npmOutput, npmCli: process.env.npm_execpath });
+await cp(join(npmOutput, npmPackage.filename), join(output, npmPackage.filename));
 assert.equal(npmPackage.name, 'eac-design-world');
 assert.equal(npmPackage.version, VERSION);
 const packed = new Set(npmPackage.files.map(item => item.path));
@@ -79,9 +80,9 @@ for (const name of [`eac-design-world-v${VERSION}-plugin.zip`, `eac-design-world
 }
 await writeFile(join(output, 'release-manifest.json'), `${JSON.stringify({
   version: VERSION, sourceCommit: commit, assets,
-  verification: { tests: 210, passed: 210, failed: 0, skipped: 0 },
+  verification: { status: 'pending', note: 'Run tests and package verification before publication.' },
   update: { signed: local.signed, algorithm: 'Ed25519', files: local.files, bytes: local.bytes },
-  npm: { name: npmPackage.name, version: npmPackage.version, filename: npmPackage.filename, integrity: npmPackage.integrity, shasum: npmPackage.shasum, files: npmPackage.entryCount },
+  npm: { name: npmPackage.name, version: npmPackage.version, filename: npmPackage.filename, integrity: npmPackage.integrity, shasum: npmPackage.shasum, files: npmPackage.entryCount, deduplication: npmPackage.deduplication },
   media: { reusedFrom: 'v0.3.0', sha256: assets[1].sha256 },
 }, null, 2)}\n`);
 await writeFile(join(output, 'SHA256SUMS.txt'), assets.map(item => `${item.sha256}  ${item.file}\n`).join('')
