@@ -9,6 +9,7 @@ import { designArtifactKinds } from './design-store.mjs';
 import { VERSION } from './version.mjs';
 import { createMaintenance } from './maintenance.mjs';
 import { RELEASE_PUBLIC_KEY } from './maintenance-key.mjs';
+import { injectPreviewBridge, previewConfig } from './template-preview-bridge.mjs';
 
 const mime = {
   '.html': 'text/html; charset=utf-8', '.htm': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -191,7 +192,7 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
           if (!exposedTools.has(name)) return json(response, 404, { error: '接口不存在' });
           return json(response, 200, await engine.handle(name, await body(request)));
         }
-        if (url.pathname === '/api/state' && request.method === 'GET') return json(response, 200, await engine.state());
+        if (url.pathname === '/api/state' && request.method === 'GET') return json(response, 200, await engine.state({ includeTemplates: url.searchParams.get('templates') !== '0' }));
         if (url.pathname === '/api/settings' && request.method === 'PUT') return json(response, 200, await engine.settingsUpdate(await body(request)));
         if (url.pathname === '/api/files' && ['GET', 'HEAD'].includes(request.method)) {
           const path = url.searchParams.get('path') || '';
@@ -223,11 +224,24 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
         const vendor = await realpath(join(ROOT, 'vendor'));
         const path = await realpath(resolve(ROOT, `.${decodeURIComponent(url.pathname)}`));
         if (!inside(vendor, path) || /(^|[\\/])\.git([\\/]|$)/.test(path)) return json(response, 403, { error: 'Forbidden' });
-        // Imported OpenDesign HTML/SVG is untrusted third-party content: serve it in an opaque
-        // sandbox so it cannot share the app origin or reach the writable API. Legacy MotionPreview
-        // templates keep the same-origin access they need for __seek and stay unscoped.
+        // Preview HTML keeps its real document URL so opaque frames can load local assets.
+        // Only validated preview requests get the bridge; the sandbox policy stays intact.
         const openDesign = inside(join(vendor, 'open-design'), path);
         const extension = extname(path).toLowerCase();
+        if (['.html', '.htm'].includes(extension)) {
+          const documentOrigin = host === 'localhost' ? origin.replace('127.0.0.1', 'localhost') : origin;
+          const config = previewConfig(url.searchParams, documentOrigin);
+          if (config) {
+            const html = injectPreviewBridge(await readFile(path, 'utf8'), config);
+            response.writeHead(200, {
+              'content-type': mime[extension], 'content-length': Buffer.byteLength(html),
+              'content-security-policy': previewCsp('html', origin),
+              'x-content-type-options': 'nosniff', 'cache-control': 'no-store',
+            });
+            response.end(request.method === 'HEAD' ? undefined : html);
+            return;
+          }
+        }
         const optionalMotion = ['motion-web', 'onetake', 'eac-motion'].some(name => inside(join(vendor, name), path));
         const untrusted = (openDesign || optionalMotion) && ['.html', '.htm', '.svg'].includes(extension);
         if (untrusted) return await serveUntrusted(request, response, path, extension === '.svg' ? 'svg' : 'html', origin);

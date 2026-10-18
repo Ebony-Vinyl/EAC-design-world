@@ -6,9 +6,11 @@ import { once } from 'node:events';
 import { MaintenanceUpdater } from '../src/maintenance-updater.mjs';
 import { RELEASE_PUBLIC_KEY } from '../src/maintenance-key.mjs';
 import { ROOT } from '../src/catalog.mjs';
+import { VERSION } from '../src/version.mjs';
 
-const manifestPath = resolve(process.argv[2] || 'release/v0.3.0/update/manifest.json');
-const originalArchive = resolve(process.argv[3] || 'release/publish-v0.1.0/eac-design-world-v0.1.0-plugin.zip');
+const manifestPath = resolve(process.argv[2] || `release/publish-v${VERSION}/update/manifest.json`);
+const originalArchive = resolve(process.argv[3] || 'release/publish-v0.3.0/eac-design-world-v0.3.0-plugin.zip');
+const targetVersion = JSON.parse(await readFile(manifestPath, 'utf8')).version;
 const outDir = resolve('artifacts/maintenance-qa');
 await mkdir(outDir, { recursive: true });
 const directory = await mkdtemp(join(outDir, 'package-proof-'));
@@ -36,7 +38,7 @@ const boot = async expected => {
     try {
       const health=await(await fetch(app.url+'/api/health')).json();
       const result={version:health.version,templates:(await engine.state()).templates.length};
-      if(health.version==='0.3.0'){
+      if(health.version===process.env.EAC_PROOF_TARGET){
         const tools=createToolRegistrations(engine,toolDefinitions);
         const list=await tools.find(t=>t.name==='eac_library_list').execute({kind:'template',query:'05-cel-boil'});
         const source=await tools.find(t=>t.name==='eac_library_read').execute({kind:'template',id:'05-cel-boil',source:true});
@@ -45,10 +47,11 @@ const boot = async expected => {
         result.sourceBytes=source.entry.text.length;
         result.skillBytes=skill.content.length;
         result.versionApi=(await(await fetch(app.url+'/api/maintenance')).json()).runningVersion;
+        result.shots=(await engine.library()).templates.filter(item=>item.source==='video-shotcraft'&&item.preview).length;
       }
       process.stdout.write(JSON.stringify(result));
     } finally {await app.close();await engine.close();}
-  `], { env: { ...process.env, EAC_PROOF_ROOT: install.replaceAll('\\', '/'), EAC_PROOF_DATA: join(directory, 'proof-data') } });
+  `], { env: { ...process.env, EAC_PROOF_ROOT: install.replaceAll('\\', '/'), EAC_PROOF_DATA: join(directory, 'proof-data'), EAC_PROOF_TARGET: targetVersion } });
   const result = JSON.parse(value);
   assert.equal(result.version, expected);
   return result;
@@ -60,19 +63,21 @@ try {
   await writeFile(join(install, '.eac/user-project.json'), '{"title":"must survive"}');
   await cp(join(ROOT, 'vendor/onetake'), join(install, 'vendor/onetake'), { recursive: true });
   await cp(join(ROOT, 'vendor/motion-web'), join(install, 'vendor/motion-web'), { recursive: true });
-  const before = await boot('0.1.0');
-  checks.push('Original 0.1.0 release archive boots before upgrade');
-  const updater = new MaintenanceUpdater({ pkgDir: install, dataDir: join(directory, 'maintenance'), runningVersion: '0.1.0', settings: () => ({}), manifestPublicKey: RELEASE_PUBLIC_KEY });
+  const previousVersion = JSON.parse(await readFile(join(install, 'package.json'), 'utf8')).version;
+  const before = await boot(previousVersion);
+  checks.push(`Original ${previousVersion} release archive boots before upgrade`);
+  const updater = new MaintenanceUpdater({ pkgDir: install, dataDir: join(directory, 'maintenance'), runningVersion: previousVersion, settings: () => ({}), manifestPublicKey: RELEASE_PUBLIC_KEY });
   const upgraded = await updater.applyLocal({ manifestPath, activate: async result => {
     const loaded = await boot(result.version);
     assert.equal(loaded.sourceBytes > 1000, true);
     assert.equal(loaded.skillBytes > 1000, true);
-    assert.equal(loaded.versionApi, '0.3.0');
+    assert.equal(loaded.versionApi, targetVersion);
+    assert.equal(loaded.shots, 150);
     return { ok: true, version: loaded.version };
   } });
   assert.equal(upgraded.signed, true);
-  assert.equal(upgraded.version, '0.3.0');
-  checks.push('Full signed local release installs, boots real 0.3.0 server, and executes native library tools');
+  assert.equal(upgraded.version, targetVersion);
+  checks.push(`Signed release boots ${targetVersion}, executes native tools and finds all 150 Shotcraft videos`);
   assert.equal(await readFile(join(install, '.eac/user-project.json'), 'utf8'), '{"title":"must survive"}');
   assert.ok((await readFile(join(install, 'vendor/onetake/lib/motion.js'))).length > 1000);
   checks.push('User project data, node_modules junction, and both optional motion libraries survive upgrade');
@@ -80,7 +85,7 @@ try {
   assert.equal(rollback.ok, true);
   assert.equal(rollback.version, before.version);
   assert.ok((await readFile(join(install, 'vendor/onetake/lib/motion.js'))).length > 1000);
-  checks.push('Rollback restores original 0.1.0 runtime and preserves optional libraries');
+  checks.push(`Rollback restores ${previousVersion} and preserves optional libraries`);
   const report = { ok: true, checks, signed: upgraded.signed, files: upgraded.files, bytes: upgraded.bytes, from: before.version, to: upgraded.version, rollback: rollback.version };
   await writeFile(join(outDir, 'package-verification.json'), JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify(report, null, 2));

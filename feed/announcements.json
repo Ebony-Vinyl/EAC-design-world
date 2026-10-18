@@ -1,6 +1,15 @@
 {
   "announcements": [
     {
+      "id": "eac-040-shotcraft",
+      "title": "0.4.0：Shotcraft 镜头库与动态选片",
+      "level": "update",
+      "pinned": true,
+      "createdAt": "2026-10-18T03:00:00Z",
+      "html": "<p>新增 150 个 Shotcraft 镜头、10 类动效、59 个精选，包含本地视频、封面、124 张配方与真实源码。</p><p>模板库支持分类搜索、可见区域动态预览、持久化选片单、名单复制下载与项目素材导入。预览播放器支持播放、暂停、重播和进度控制，修复窄屏显示、选择取消及 Edge 本地脚本加载问题。</p><p>模板库加载后使用轻量状态轮询。Shotcraft 视频可直接剪辑；源码定制需使用 Remotion 或适配 HTML 时间线。npm 包与 GitHub 发布产物提供相同核心内容。</p>",
+      "link": { "url": "https://github.com/Ebony-Vinyl/EAC-design-world/releases/tag/v0.4.0", "label": "查看发布与下载" }
+    },
+    {
       "id": "eac-030-maintenance",
       "title": "0.3.0：工具修复与插件维护中心",
       "level": "update",

@@ -372,7 +372,7 @@ test('plugin host entry advertises the reload version contract the maintenance l
   assert.match(host, /selfReload\(ctx,/, 'host wires the harness-mode reload callback');
   assert.match(host, /entryUrl: new URL\('\.\/host\.mjs', import\.meta\.url\)\.href/, 'the reload entry is the real host module');
   const { VERSION } = await import('../src/version.mjs');
-  assert.equal(VERSION, '0.3.0', 'running version is the expected 0.3.0');
+  assert.equal(VERSION, JSON.parse(await readFile(join(process.cwd(), 'package.json'), 'utf8')).version, 'running and package versions agree');
 });
 
 test('real kernel: the actual EAC host activates, serves, and hot-reloads in place', { skip: skipReal }, async (t) => {
@@ -382,6 +382,7 @@ test('real kernel: the actual EAC host activates, serves, and hot-reloads in pla
   const { Context } = await import(pathToFileURL(cordisPath).href);
   const { Loader } = await import(pathToFileURL(loaderPath).href);
   const root = process.cwd();
+  const { VERSION } = await import('../src/version.mjs');
   const packageUrl = `${pathToFileURL(root).href}/`;
   const hostUrl = pathToFileURL(join(root, 'plugin', 'host.mjs')).href;
 
@@ -416,7 +417,7 @@ test('real kernel: the actual EAC host activates, serves, and hot-reloads in pla
 
   const before = await (await fetch(`http://127.0.0.1:${port}/api/health`)).json();
   assert.equal(before.ok, true);
-  assert.equal(before.version, '0.3.0');
+  assert.equal(before.version, VERSION);
   assert.equal(tools.size, 15, 'all native EAC tools registered');
 
   // Native tool output is strict, lossless JSON on the real engine.
@@ -438,11 +439,11 @@ test('real kernel: the actual EAC host activates, serves, and hot-reloads in pla
   }
   assert.equal(finished.operation.id, operationId);
   assert.equal(finished.operation.status, 'completed', finished.operation.error);
-  assert.equal(finished.operation.result.version, '0.3.0');
+  assert.equal(finished.operation.result.version, VERSION);
 
   const after = await (await fetch(`http://127.0.0.1:${port}/api/health`)).json();
   assert.equal(after.ok, true, 'the reloaded host serves again on the same port');
-  assert.equal(after.version, '0.3.0');
+  assert.equal(after.version, VERSION);
   assert.notEqual(after.instanceId, before.instanceId, 'the old service was disposed and a fresh runtime owns the port');
   assert.equal(tools.size, 15, 'the new activation re-registered every native tool');
   assert.equal(globalThis[Symbol.for('eac-design-world.last-reload')] !== undefined, true);

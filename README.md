@@ -21,7 +21,7 @@ DeepSeek Harness 的本地视频制作与设计工作室
 
 EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 提供原生创作模式、模板选择和右侧作品画布，同时拥有可独立运行的本地工作台。视频录制、配音、配乐、字幕、编码与检查产生真实文件；网站、幻灯片、SVG 和文档保留源文件及版本历史。
 
-当前版本为 **v0.3.0 开发预览版**。本版包含独立的插件维护导航、签名更新与回滚、编辑草稿恢复和预览安全修复，详见 [发布说明](docs/release-v0.3.0.md)。Windows 上的录屏、语音、转录和渲染流程已执行测试；其他平台的桌面录制与本地语音未实现。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
+当前版本为 **v0.4.0 开发预览版**。本版新增 150 个 Shotcraft 镜头、动态选片与项目素材导入，重做模板预览播放器并优化状态轮询，详见 [发布说明](docs/release-v0.4.0.md)。保留插件维护、签名更新与回滚、草稿恢复和隔离预览。Windows 上的录屏、语音、转录和渲染流程已执行测试；其他平台的桌面录制与本地语音未实现。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
 
 <p align="center"><img src="docs/assets/templates.png" alt="EAC design world 两行模板推荐与真实页面封面" width="960" /><br /><sub>按创作类型推荐模板，保留真实封面与可移除的选择标签。</sub></p>
 
@@ -37,6 +37,7 @@ EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-
 | --- | --- |
 | 从对话开始创作 | 正常、剪辑、Design 三种模式；模板区独立铺开，选择状态不覆盖正文；重复点击或标签上的 × 可取消 |
 | 找到合适的视觉风格 | 152 套设计体系与 517 个 OpenDesign 模板条目，另有原有 17 个视频选项；按类型搜索、分类和分页 |
+| 浏览与挑选动效镜头 | Shotcraft 本地快照含 150 个镜头、10 类动效、59 个精选；可见视频预览、选片单、名单复制与下载、导入项目素材 |
 | 录下真实产品 | Edge 网页操作录制；Windows 桌面录制；原素材不被改写 |
 | 编排实际镜头 | 多轨时间线，调整开始时间、素材入点、时长、音量和轨道；带修订号保存 |
 | 处理语音与字幕 | 本地语音转录、去停顿初稿、SRT、时间线字幕与 ASS 烧录；转录需自行准备本地模型 |
@@ -62,6 +63,14 @@ EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-
 
 <p align="center"><img src="docs/assets/design-systems.png" alt="设计体系的真实色板、字体与令牌" width="960" /></p>
 
+### Shotcraft 镜头库
+
+视觉模板页提供 Shotcraft 来源入口、分类与用途搜索、精选筛选和持久化选片单。预览只加载正在浏览的镜头，同时最多播放 3 个；离屏、切换到后台或打开详情时暂停。详情支持真实视频播放，以及可驱动 HTML 模板的播放、暂停、重播和时间进度。
+
+在独立工作台创建项目后，可从选片单将 Shotcraft 镜头导入项目素材，继续使用时间线剪辑和视频导出。Harness 中仍通过模板选择附加当前创作参考，输入正文不受影响。
+
+Shotcraft 的 124 张配方、React/TSX 实现及共享素材可以通过 `library_read` 和 `template_read` 读取。原始 TSX 需要在 Remotion 项目中注册或定制成 HTML 时间线，当前不直接交给 HTML 渲染器运行。导入、来源和复现步骤见 [Shotcraft 接入说明](docs/shotcraft-library.md)。
+
 ### 可选动效来源：Motion Web / Onetake
 
 支持从已取得的本地仓库导入 [motion-web](https://github.com/feitangyuan/motion-web) 的 7 个交互案例及制作指南，以及 [onetake](https://github.com/feitangyuan/onetake) 的 OM 动效函数库与制作指南。模板统一进入搜索、源码读取和隔离预览；Onetake 示例可逐帧导出，Motion Web 实时页面可录制为视频。
@@ -79,9 +88,9 @@ npm run motion:verify
 
 | 文件 | 用途 |
 | --- | --- |
-| `eac-design-world-v0.3.0-plugin.zip` | 插件源码、预构建 Web UI、模板源码、设计体系、封面、安装脚本及许可说明；不包含 Node 依赖 |
-| `eac-design-world-v0.3.0-media.zip` | 可选大媒体包：MG 原始预览视频、字体、渲染素材及宣传片素材 |
-| `eac-design-world-v0.3.0-update.zip` | 维护中心使用的签名本地更新包，解压后选择其中 `manifest.json` |
+| `eac-design-world-v0.4.0-plugin.zip` | 插件源码、预构建 Web UI、Shotcraft 镜头视频与源码、设计体系、封面、安装脚本及许可说明；不包含 Node 依赖 |
+| `eac-design-world-v0.4.0-media.zip` | 可选大媒体包：MG 原始预览视频、字体、渲染素材及宣传片素材 |
+| `eac-design-world-v0.4.0-update.zip` | 维护中心使用的签名本地更新包，解压后选择其中 `manifest.json` |
 | `SHA256SUMS.txt` | 发布产物的 SHA-256 校验值 |
 | GitHub 自动生成的 Source code | 与仓库提交对应的源码快照，不含预构建 `dist` 和可选大媒体 |
 
@@ -112,6 +121,14 @@ node scripts/install-harness.mjs
 ```
 
 重新加载 Harness 后，即可在输入框工具栏选择剪辑或 Design 模式，在设置中进入 EAC 工作台。安装器会备份宿主配置，只增加当前插件的包链接和组合包选择，不覆盖其他插件。
+
+也可通过 npm 安装同一版本，再运行包内安装器：
+
+```powershell
+npm install eac-design-world@0.4.0
+node node_modules/eac-design-world/scripts/install-harness.mjs --dry-run
+node node_modules/eac-design-world/scripts/install-harness.mjs
+```
 
 自定义宿主 profile：
 

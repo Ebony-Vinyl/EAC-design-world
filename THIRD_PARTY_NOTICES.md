@@ -60,6 +60,29 @@ Release media assets. Their license records remain under `vendor/fonts/licenses/
 obtain those optional fonts from the official providers using the provisioning script.
 OFL/HarmonyOS fonts retain the original notices shipped with their source records.
 
+## Video Shotcraft
+
+- Source: https://github.com/Vincentwei1021/video-shotcraft
+- Pinned revision: `43bd349a136651865ecfa6ea1cf012f6e957d304`.
+- Code and documentation: Apache-2.0, copyright 2026 Wei Yihao.
+  Full license: `vendor/video-shotcraft/LICENSE`.
+- Upstream recipes, Remotion TSX implementations, shared fixtures and textures
+  are copied unchanged. EAC's catalog and integration are separate additions.
+  `vendor/video-shotcraft/references/shots/ATTRIBUTION.md` retains the upstream
+  research attribution and its distinction between techniques and original works.
+- Preview MP4s and JPG posters are user-supplied local gallery exports. Their
+  original relative filenames and individual SHA-256 hashes are recorded in
+  `vendor/video-shotcraft/EAC-PROVENANCE.json`, alongside upstream file hashes,
+  the picker digest and pinned revision. They were not downloaded from a release.
+  These previews depict the upstream examples; they are reference material, not
+  a grant of rights to third-party brands or source films.
+- Upstream audio binaries, publishing tools and the Remotion runtime are not
+  bundled. Remotion has separate terms; EAC does not relicense it. Imported TSX
+  is marked `requires-dependencies` and is not advertised as an EAC HTML render
+  entry. Local preview playback does not require Remotion.
+- Importer: `scripts/import-shotcraft.mjs`; integration and usage:
+  `docs/shotcraft-library.md`.
+
 ## Other Inspiration
 
 Video-Use, HyperFrames, Manim, Remotion, OpenMontage and FFmpeg are referenced for

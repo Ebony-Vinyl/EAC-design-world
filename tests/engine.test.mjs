@@ -31,6 +31,22 @@ async function finished(engine, id) {
   throw new Error('Job deadline exceeded');
 }
 
+test('compact state polling preserves project data and leaves the catalog to the library endpoint', () => setup(async engine => {
+  const project = await engine.handle('project_create', { title: 'Compact state' });
+  const compact = await engine.state({ includeTemplates: false });
+  assert.deepEqual(compact.templates, []);
+  assert.equal(compact.projects[0].id, project.id);
+  assert.ok(compact.capabilities.length > 0);
+  const app = await startServer({ engine, port: 0 });
+  try {
+    const response = await fetch(`${app.url}/api/state?templates=0`);
+    assert.deepEqual((await response.json()).templates, []);
+    const full = await fetch(`${app.url}/api/state`);
+    assert.ok((await full.json()).templates.length >= 17);
+    assert.ok((await engine.library()).templates.length >= 17);
+  } finally { await app.close(); }
+}));
+
 test('project edits reject stale revisions and preserve the previous cut', () => setup(async (engine, dir) => {
   const path = join(dir, 'source.mp4');
   await fixture(path);
@@ -128,7 +144,7 @@ test('storage persists projects and only accepts production settings', () => set
   await engine.handle('project_create', { title: 'Persistent' });
   await engine.settingsUpdate({ quality: 'draft', ttsVoice: '' });
   const state = await engine.state();
-  assert.equal(state.templates.filter(item => !['motion-web', 'onetake'].includes(item.source)).length, 17);
+  assert.equal(state.templates.filter(item => !['motion-web', 'onetake', 'video-shotcraft'].includes(item.source)).length, 17);
   assert.deepEqual(Object.keys(state.settings).sort(), ['outputRoot', 'quality', 'ttsVoice']);
   const disk = JSON.parse(await readFile(engine.store.file, 'utf8'));
   assert.equal(disk.projects[0].title, 'Persistent');
