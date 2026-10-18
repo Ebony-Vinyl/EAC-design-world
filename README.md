@@ -25,6 +25,8 @@ EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-
 
 <p align="center"><b>以下两条宣传片均为 deepseek harness + EAC design world + deepseek v4.1 flash（非 1017）一轮出的结果</b></p>
 
+<p align="center"><b>AI 全程自己录制素材和制作音乐</b></p>
+
 <p align="center"><b>EAC design world · RUSH 60s</b></p>
 
 https://github.com/user-attachments/assets/3f6641e0-e803-48cf-b61a-2baa57f2c088
