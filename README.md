@@ -25,24 +25,13 @@ EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-
 
 <p align="center"><b>以下两条宣传片均为 deepseek harness + EAC design world + deepseek v4.1 flash（非 1017）一轮出的结果</b></p>
 
-<table align="center">
-  <tr>
-    <td align="center" width="50%">
-      <a href="docs/assets/showcase/eac-design-world-rush-60s.mp4" title="播放 EAC design world · RUSH 60s">
-        <img src="docs/assets/showcase/eac-design-world-rush-60s-poster.jpg" alt="EAC design world · RUSH 60s 宣传片，点击播放" width="100%" />
-      </a>
-      <br />
-      <sub><b>EAC design world · RUSH 60s</b><br />▶ 点击封面播放</sub>
-    </td>
-    <td align="center" width="50%">
-      <a href="docs/assets/showcase/our-free-model-65s.mp4" title="播放 Our Free Model · 65s">
-        <img src="docs/assets/showcase/our-free-model-65s-poster.jpg" alt="Our Free Model · 65s 宣传片，点击播放" width="100%" />
-      </a>
-      <br />
-      <sub><b>Our Free Model · 65s</b><br />▶ 点击封面播放</sub>
-    </td>
-  </tr>
-</table>
+<p align="center"><b>EAC design world · RUSH 60s</b></p>
+
+https://github.com/user-attachments/assets/3f6641e0-e803-48cf-b61a-2baa57f2c088
+
+<p align="center"><b>Our Free Model · 65s</b></p>
+
+https://github.com/user-attachments/assets/ca081273-1061-4656-a1b7-41d50af0aec7
 
 ## 目录
 
