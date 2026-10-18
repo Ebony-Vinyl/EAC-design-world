@@ -1,6 +1,6 @@
 {
   "name": "eac-design-world",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "EAC design world: autonomous video production for DeepSeek Harness",
   "type": "module",
   "main": "./plugin/host.mjs",
@@ -11,6 +11,38 @@
     "./package.json": "./package.json"
   },
   "license": "AGPL-3.0-or-later",
+  "author": "Ebony-Vinyl",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ebony-Vinyl/EAC-design-world.git"
+  },
+  "homepage": "https://github.com/Ebony-Vinyl/EAC-design-world#readme",
+  "bugs": {
+    "url": "https://github.com/Ebony-Vinyl/EAC-design-world/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "files": [
+    "plugin",
+    "locale",
+    "src",
+    "dist",
+    "vendor",
+    "scripts",
+    "feed",
+    "docs",
+    "ui",
+    "public",
+    "index.html",
+    "vite.config.mjs",
+    "cordis.patch.yml",
+    "THIRD_PARTY_NOTICES.md"
+  ],
   "scripts": {
     "dev": "node src/server.mjs --dev",
     "start": "node src/server.mjs",
@@ -21,6 +53,7 @@
     "smoke": "node scripts/smoke.mjs",
     "motion:import": "node scripts/import-motion-libraries.mjs",
     "motion:verify": "node scripts/verify-motion-libraries.mjs",
+    "release:prepare": "node scripts/prepare-release.mjs",
     "update:manifest": "node scripts/build-update-manifest.mjs",
     "verify:maintenance": "node scripts/verify-maintenance-package.mjs"
   },

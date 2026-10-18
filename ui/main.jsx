@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   ArrowDownToLine, ArrowRight, AudioLines, Captions, Check, CheckCheck,
@@ -13,6 +13,7 @@ import { kindLabel, localTemplates, resolveDesignSystems, resolveTemplates, sour
 import DesignWorkspace, { DesignCanvas } from './DesignWorkspace';
 import TimelineEditor from './TimelineEditor';
 import TemplatePickerGallery from './TemplatePickerGallery';
+import { TemplateDetail } from './TemplatePreview';
 import MaintenancePanel from './MaintenancePanel';
 import Dialog from './Dialog';
 import './styles.css';
@@ -96,77 +97,13 @@ function Empty({ icon: Icon = Layers3, title, description, action }) {
   return <div className="empty"><Icon size={27} strokeWidth={1.4} /><strong>{title}</strong>{description && <p>{description}</p>}{action}</div>;
 }
 
-function MotionPreview({ template }) {
-  const frame = useRef(null);
-  const container = useRef(null);
-  const [scale, setScale] = useState(0);
-  const [ready, setReady] = useState(false);
-  const [failed, setFailed] = useState(false);
-  useEffect(() => {
-    const observer = new ResizeObserver(([entry]) => setScale(entry.contentRect.width / 1920));
-    if (container.current) observer.observe(container.current);
-    return () => observer.disconnect();
-  }, []);
-  useEffect(() => {
-    setReady(false);
-    setFailed(false);
-    let animation;
-    let start;
-    let last = 0;
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const render = now => {
-      try {
-        const source = frame.current?.contentWindow;
-        if (!document.hidden && source?.__ready && typeof source.__seek === 'function' && now - last > 33) {
-          start ??= now;
-          source.__seek(reducedMotion.matches ? 0 : ((now - start) / 1000) % (source.__DUR || template.duration || 12));
-          last = now;
-          setReady(true);
-          if (reducedMotion.matches) return;
-        }
-      } catch { setFailed(true); return; }
-      animation = requestAnimationFrame(render);
-    };
-    const restart = () => { cancelAnimationFrame(animation); start = undefined; animation = requestAnimationFrame(render); };
-    reducedMotion.addEventListener('change', restart);
-    animation = requestAnimationFrame(render);
-    const timeout = setTimeout(() => {
-      try { if (typeof frame.current?.contentWindow?.__seek !== 'function') setFailed(true); }
-      catch { setFailed(true); }
-    }, 15000);
-    return () => { cancelAnimationFrame(animation); clearTimeout(timeout); reducedMotion.removeEventListener('change', restart); };
-  }, [template.id]);
-  return <div ref={container} className="motion-preview">
-    {(!ready || failed) && <Thumbnail template={template} />}
-    {!failed && <iframe ref={frame} title={`${template.name}原始动态预览`} src={`/${template.entry.replace(/^\/+/, '')}`} sandbox="allow-scripts allow-same-origin" tabIndex={-1} className={ready ? 'ready' : ''} style={{ transform: `scale(${scale})` }} />}
-    {failed && <span className="media-note">当前显示模板原始画面</span>}
-  </div>;
-}
-
-function TemplateDetail({ template, onClose, onSelect }) {
-  const [mediaError, setMediaError] = useState(false);
-  return <Dialog title="模板预览" className="template-dialog" onClose={onClose}>
-    <div className="detail-media">
-      {template.preview && !mediaError
-        ? <video key={template.id} controls playsInline preload="metadata" poster={template.thumbnail} src={fileUrl(template.preview)} onError={() => setMediaError(true)} />
-        : template.entry && (template.source === 'open-design' || ['motion-web', 'onetake'].includes(template.source)) ? <iframe title={`${template.name}模板源码预览`} src={`/${template.entry}`} sandbox="allow-scripts" className="upstream-source-preview" /> : template.entry && template.id.startsWith('motion-promo-film') ? <MotionPreview template={template} /> : <Thumbnail template={template} />}
-      {mediaError && <span className="media-note">视频暂不可用，当前显示模板参考图</span>}
-    </div>
-    <div className="detail-body"><div><span className="eyebrow">{template.source}</span><h2>{template.name}</h2><p>{template.description}</p></div>
-      <span className="tag">{template.category}</span>
-    </div>
-    {['open-design', 'motion-web', 'onetake'].includes(template.source) && <div className="template-runtime-note"><span>{template.license} · {template.author || sourceLabel(template.source)}</span><p>{template.requirements?.join('；') || (template.renderable === false ? '参考模板：需外部生成或补充素材后制作' : '已导入本地源文件，可定制后制作')}。</p>{template.homepage && <a href={template.homepage} target="_blank" rel="noreferrer">查看原始来源</a>}</div>}
-    <footer className="dialog-footer"><span>{template.subtitle || template.id}</span><Button variant="primary" icon={Check} onClick={() => onSelect(template)}>使用此模板</Button></footer>
-  </Dialog>;
-}
-
-function TemplateGallery({ templates, selectedId, onSelect, compact = false, inline = false, onBrowseAll, designSystems = [], mode = 'edit', kind = 'website', selectedSystemId = '', onSelectSystem, onKindChange }) {
+function TemplateGallery({ templates, selectedId, onSelect, compact = false, inline = false, onBrowseAll, designSystems = [], mode = 'edit', kind = 'website', selectedSystemId = '', onSelectSystem, onKindChange, onImportShots }) {
   const [detail, setDetail] = useState(null);
   return <>
     <TemplatePickerGallery templates={templates} selectedId={selectedId} onSelect={onSelect} inline={inline}
       onBrowseAll={onBrowseAll} designSystems={designSystems} mode={mode} kind={kind} selectedSystemId={selectedSystemId}
-      onSelectSystem={onSelectSystem} onKindChange={onKindChange} onPreview={setDetail} />
-    {detail && <TemplateDetail template={detail} onClose={() => setDetail(null)} onSelect={template => { onSelect(template); setDetail(null); }} />}
+      onSelectSystem={onSelectSystem} onKindChange={onKindChange} onPreview={setDetail} previewOpen={Boolean(detail)} onImportShots={onImportShots} />
+    {detail && <TemplateDetail template={detail} selectedId={selectedId} onClose={() => setDetail(null)} onSelect={template => { onSelect(template); setDetail(null); }} />}
   </>;
 }
 
@@ -363,7 +300,7 @@ function CapabilityList({ capabilities, connected }) {
   return <div className="capabilities">{capabilities.map(capability => <div className="capability" key={capability.id}><div><span className={`availability ${capability.available ? 'available' : ''}`} /><strong>{capability.name}</strong><span>{capability.available ? '可用' : '不可用'}</span></div>{capability.detail && <p>{capability.detail}</p>}</div>)}</div>;
 }
 
-function WorkflowView({ project, busy, onJob, onPlan, jobs, capabilities, connected }) {
+function WorkflowView({ project, busy, onJob, onPlan, jobs, capabilities, connected, template }) {
   const [url, setUrl] = useState('');
   const [actions, setActions] = useState('');
   const [duration, setDuration] = useState(15);
@@ -434,7 +371,7 @@ function WorkflowView({ project, busy, onJob, onPlan, jobs, capabilities, connec
     <section className="workflow-step"><div className="step-heading"><span>04</span><div><h2>旁白与素材分析</h2><p>为镜头准备音轨和素材信息</p></div><AudioLines size={20} /></div><form onSubmit={event => { event.preventDefault(); onJob('voice', { text: voiceText }); }}><label>旁白文案<textarea required rows={3} placeholder="输入需要生成的旁白内容…" value={voiceText} onChange={event => setVoiceText(event.target.value)} /></label><div className="button-row"><Button icon={AudioLines} busy={busy === 'voice'} disabled={!project} type="submit">生成旁白</Button></div></form><div className="analysis-controls"><label>分析素材<select aria-label="分析素材" value={analysisAssetId} onChange={event => setAssetId(event.target.value)} disabled={!project?.assets?.length}>{project?.assets?.length ? project.assets.map(asset => <option key={asset.id} value={asset.id}>{asset.name || asset.path?.split(/[\\/]/).pop() || asset.id}</option>) : <option value="">暂无项目素材</option>}</select></label><div className="button-row"><Button type="button" icon={Search} busy={busy === 'analyze'} disabled={!analysisAssetId || !connected || Boolean(busy)} onClick={() => onJob('analyze', { assetId: analysisAssetId })}>分析素材</Button><Button type="button" icon={AudioLines} busy={busy === 'beats'} disabled={!analysisAsset || !hasAudio(analysisAsset) || !connected || Boolean(busy)} onClick={() => onJob('beats', { assetId: analysisAssetId })}>分析节拍</Button></div></div>
       {analysisAsset?.beats && <p className="beat-result" role="status">{analysisAsset.beats.bpm ? `${analysisAsset.beats.bpm} BPM · ${analysisAsset.beats.beats?.length ?? 0} 个节拍` : '未检测到稳定节拍'}</p>}
     </section>
-    <section className="workflow-step"><div className="step-heading"><span>05</span><div><h2>配乐与渲染</h2></div><Film size={20} /></div><div className="music-controls"><label>用户配乐路径 <span className="muted">可选</span><input value={musicPath} placeholder="D:\assets\music.wav" onChange={event => setMusicPath(event.target.value)} /></label>{musicPath.trim() && <label className="checkbox-label"><input type="checkbox" checked={followMusic} onChange={event => setFollowMusic(event.target.checked)} />一键制作跟随配乐节拍</label>}</div><div className="button-row"><Button icon={AudioLines} busy={busy === 'compose'} disabled={!project || !duration || !bpm} onClick={() => onJob('compose', { duration: Number(duration), bpm: Number(bpm) })}>生成原创配乐</Button><Button icon={Play} variant="primary" busy={busy === 'render'} disabled={!project} onClick={() => onJob('render')}>渲染项目</Button><Button icon={Clapperboard} busy={busy === 'render-template'} disabled={!project} onClick={() => onJob('render-template')}>渲染所选模板</Button></div><Warnings messages={resultWarnings(project?.lastOutput)} /></section>
+    <section className="workflow-step"><div className="step-heading"><span>05</span><div><h2>配乐与渲染</h2></div><Film size={20} /></div><div className="music-controls"><label>用户配乐路径 <span className="muted">可选</span><input value={musicPath} placeholder="D:\assets\music.wav" onChange={event => setMusicPath(event.target.value)} /></label>{musicPath.trim() && <label className="checkbox-label"><input type="checkbox" checked={followMusic} onChange={event => setFollowMusic(event.target.checked)} />一键制作跟随配乐节拍</label>}</div><div className="button-row"><Button icon={AudioLines} busy={busy === 'compose'} disabled={!project || !duration || !bpm} onClick={() => onJob('compose', { duration: Number(duration), bpm: Number(bpm) })}>生成原创配乐</Button><Button icon={Play} variant="primary" busy={busy === 'render'} disabled={!project} onClick={() => onJob('render')}>渲染项目</Button><Button icon={Clapperboard} busy={busy === 'render-template'} disabled={!project || !template || template.renderable === false} title={template?.renderable === false ? '此镜头需定制源码；可先从选片单导入视频素材' : undefined} onClick={() => onJob('render-template')}>渲染所选模板</Button></div><Warnings messages={resultWarnings(project?.lastOutput)} /></section>
   </div><aside className="capability-panel"><div className="section-title"><Radio size={16} /><h2>制作环境</h2></div><CapabilityList capabilities={capabilities} connected={connected} /></aside></div>;
 }
 
@@ -481,10 +418,13 @@ function App() {
   const requestInFlight = useRef(false);
   const mounted = useRef(true);
   const stateController = useRef(null);
+  const libraryLoaded = useRef(false);
   const appSessionId = pickerQuery.get('sessionId') || '';
-  const allTemplates = resolveTemplates(library.templates.length ? library.templates : data.templates);
-  const templates = picker && pickerModeState === 'design' ? allTemplates : allTemplates.filter(item => !item.kind || item.kind === 'motion');
-  const designSystems = resolveDesignSystems(library.designSystems);
+  const catalogTemplates = library.templates.length ? library.templates : data.templates;
+  const allTemplates = useMemo(() => resolveTemplates(catalogTemplates), [catalogTemplates]);
+  const templates = useMemo(() => picker && pickerModeState === 'design' ? allTemplates
+    : allTemplates.filter(item => !item.kind || item.kind === 'motion'), [allTemplates, picker, pickerModeState]);
+  const designSystems = useMemo(() => resolveDesignSystems(library.designSystems), [library.designSystems]);
   const project = data.projects.find(item => item.id === selectedId);
   const selectedTemplate = templates.find(item => item.id === templateId) || templates[0] || localTemplates[0];
   const activeJobs = data.jobs.filter(isActive);
@@ -497,7 +437,7 @@ function App() {
     stateController.current = controller;
     const timeout = setTimeout(() => controller.abort(), 12000);
     try {
-      const state = await api('/state', { signal: controller.signal });
+      const state = await api(libraryLoaded.current ? '/state?templates=0' : '/state', { signal: controller.signal });
       if (!state || !Array.isArray(state.projects) || !Array.isArray(state.jobs)) throw new Error('API 状态格式不正确。');
       if (mounted.current) {
         setData(current => ({ projects: state.projects.map(item => {
@@ -527,7 +467,10 @@ function App() {
   useEffect(() => {
     let active = true;
     api('/library').then(result => {
-      if (active) setLibrary({ templates: result?.templates || [], designSystems: result?.designSystems || [] });
+      if (active) {
+        libraryLoaded.current = Array.isArray(result?.templates) && result.templates.length > 0;
+        setLibrary({ templates: result?.templates || [], designSystems: result?.designSystems || [] });
+      }
     }).catch(() => { /* The catalog may be unavailable; the local template list still renders. */ });
     return () => { active = false; };
   }, []);
@@ -556,13 +499,13 @@ function App() {
     finally { setBusy(''); }
   };
   const selectTemplate = template => {
-    const nextId = picker && templateId === template.id ? '' : template.id;
+    const nextId = templateId === template.id ? '' : template.id;
     setTemplateId(nextId);
-    setForm(current => ({ ...current, templateId: nextId }));
+    setForm(current => ({ ...current, templateId: nextId || initialForm.templateId }));
     if (picker) {
       pickerPost({ type: 'eac:template', templateId: template.id, templateName: template.name, ...(pickerModeState === 'design' ? { kind: template.kind || pickerKindState } : {}) });
     } else {
-      notify(project && project.templateId !== template.id ? `已选「${template.name}」，渲染模板时将使用此风格` : `已选「${template.name}」`);
+      notify(!nextId ? `已取消「${template.name}」` : `已选「${template.name}」`);
     }
   };
   const selectDesignSystem = system => {
@@ -592,11 +535,19 @@ function App() {
   const updateProject = updated => setData(current => ({ ...current, projects: current.projects.map(item => item.id === updated.id && item.revision <= updated.revision ? updated : item) }));
   const cancelJob = id => mutate(`cancel-${id}`, () => api(`/jobs/${encodeURIComponent(id)}/cancel`, { method: 'POST' }), '已请求取消任务');
   const importAsset = path => mutate('asset', () => api(`/projects/${encodeURIComponent(project.id)}/assets`, { method: 'POST', body: { path } }), '素材已导入');
+  const importShots = items => mutate('shotlist', async () => {
+    let updated;
+    for (const item of items) {
+      updated = await api(`/projects/${encodeURIComponent(project.id)}/assets`, { method: 'POST', body: { templateId: item.id } });
+    }
+    if (updated) updateProject(updated);
+    return updated;
+  }, `已将 ${items.length} 个镜头加入项目素材`);
   const changeView = value => setView(value);
   const title = { studio: '制作工作台', templates: '视觉模板', design: '设计工作台', workflow: '制作流程', jobs: '任务队列', assets: '素材与输出', maintenance: '插件维护', settings: '工作空间设置' }[view];
   const subtitle = { studio: '从一份简报，开始下一支作品。', templates: '找到适合表达的视觉语言。', design: '从设计库选择体系与模板，创作网站、幻灯片、文档与图片。', workflow: '连接素材、镜头、声音与最终成片。', jobs: '追踪每一次录制、生成与渲染。', assets: '项目素材与真实制作输出。', maintenance: '版本、更新、热重载与公告。', settings: '设置输出目录、制作画质与旁白声音。' }[view];
   const eyebrow = { studio: 'PRODUCTION STUDIO', templates: 'VISUAL LIBRARY', design: 'DESIGN WORKSPACE', workflow: 'PRODUCTION CONTROL', jobs: 'PRODUCTION CONTROL', assets: 'PRODUCTION CONTROL', maintenance: 'PLUGIN MAINTENANCE', settings: 'WORKSPACE PREFERENCES' }[view];
-  const newProject = () => { setForm({ ...initialForm, templateId }); setDialog('project'); };
+  const newProject = () => { setForm({ ...initialForm, templateId: templateId || initialForm.templateId }); setDialog('project'); };
   if (canvasPage) return <DesignCanvas sessionId={canvasSessionId} mode={canvasMode} />;
   if (designPage) return <div className="route-page"><DesignWorkspace sessionId={appSessionId} embedded={window.parent !== window} /></div>;
   if (picker) return <PickerView templates={templates} designSystems={designSystems} selectedId={templateId} connected={connected} mode={pickerModeState} kind={pickerKindState} selectedSystemId={designSystemId}
@@ -624,7 +575,7 @@ function App() {
         {studioTab === 'overview' ? <div className="studio-layout"><div className="studio-main"><Preview project={project} template={selectedTemplate} onPreviewTemplate={() => setPreviewTemplate(selectedTemplate)} /><ClipStrip project={project} onPlan={() => planProject()} busy={busy === 'plan'} />
           <section className="recommendations"><div className="section-toolbar"><div className="section-title"><Grid2X2 size={15} /><h2>视觉风格</h2><span className="count">{templates.length}</span></div><Button icon={ArrowRight} variant="ghost" onClick={() => changeView('templates')}>浏览全部</Button></div><div className="template-strip">{templates.slice(0, 4).map(template => <button key={template.id} className={`mini-template ${template.id === templateId ? 'selected' : ''}`} onClick={() => selectTemplate(template)}><div><Thumbnail template={template} />{template.id === templateId && <span className="selected-mark"><Check size={12} /></span>}</div><span>{template.name}{template.id === templateId && <Check size={12} />}</span></button>)}</div></section>
         </div><aside className="brief-panel"><header><div className="section-title"><FileImage size={16} /><h2>制作简报</h2></div><span className={`tag ${project ? 'teal-tag' : ''}`}>{project ? '已创建' : '新项目'}</span></header>
-          {project ? <><div className="project-summary"><h3>{project.title}</h3><p>{project.brief}</p><dl><div><dt>视觉风格</dt><dd>{templates.find(item => item.id === project.templateId)?.name || project.templateId}</dd></div><div><dt>画面规格</dt><dd>{project.width} × {project.height}</dd></div><div><dt>帧率</dt><dd>{project.fps} fps</dd></div><div><dt>项目素材</dt><dd>{project.assets?.length || 0} 个文件</dd></div><div><dt>更新时间</dt><dd>{displayDate(project.updatedAt) || '—'}</dd></div></dl></div>{templateId !== project.templateId && <div className="template-change"><Sparkles size={15} /><span>模板渲染将使用「{selectedTemplate.name}」</span></div>}<div className="brief-actions"><Button variant="primary" icon={Workflow} onClick={() => changeView('workflow')}>一键制作与工作流<ArrowRight size={14} /></Button><Button icon={Play} busy={busy === 'render'} onClick={() => runJob('render')}>渲染项目</Button><Button icon={Clapperboard} busy={busy === 'render-template'} onClick={() => runJob('render-template')}>渲染所选模板</Button></div></> : <ProjectForm form={form} setForm={setForm} templates={templates} onSubmit={createProject} busy={busy === 'project'} onTemplateChange={setTemplateId} />}
+          {project ? <><div className="project-summary"><h3>{project.title}</h3><p>{project.brief}</p><dl><div><dt>视觉风格</dt><dd>{templates.find(item => item.id === project.templateId)?.name || project.templateId}</dd></div><div><dt>画面规格</dt><dd>{project.width} × {project.height}</dd></div><div><dt>帧率</dt><dd>{project.fps} fps</dd></div><div><dt>项目素材</dt><dd>{project.assets?.length || 0} 个文件</dd></div><div><dt>更新时间</dt><dd>{displayDate(project.updatedAt) || '—'}</dd></div></dl></div>{templateId && templateId !== project.templateId && <div className="template-change"><Sparkles size={15} /><span>{selectedTemplate.renderable === false ? '创作参考' : '模板渲染'}将使用「{selectedTemplate.name}」</span></div>}<div className="brief-actions"><Button variant="primary" icon={Workflow} onClick={() => changeView('workflow')}>一键制作与工作流<ArrowRight size={14} /></Button><Button icon={Play} busy={busy === 'render'} onClick={() => runJob('render')}>渲染项目</Button><Button icon={Clapperboard} busy={busy === 'render-template'} disabled={!templateId || selectedTemplate.renderable === false} title={selectedTemplate.renderable === false ? '此镜头需定制源码；可先从选片单导入视频素材' : undefined} onClick={() => runJob('render-template')}>渲染所选模板</Button></div></> : <ProjectForm form={form} setForm={setForm} templates={templates} onSubmit={createProject} busy={busy === 'project'} onTemplateChange={setTemplateId} />}
           <div className="brief-bottom"><span className="tiny-dot" />{data.settings.quality === 'production' ? '正式制作' : '草稿制作'}<span>本地工作空间</span></div>
         </aside></div> : studioTab === 'timeline' ? (project ? <TimelineEditor key={project.id} project={project} busy={busy === 'timeline'} onSave={async inputs => {
           const saved = await mutate('timeline', () => api(`/projects/${encodeURIComponent(project.id)}/timeline`, { method: 'PUT', body: inputs }), '时间线已保存');
@@ -632,9 +583,9 @@ function App() {
           return saved;
         }} /> : <Empty icon={Scissors} title="先创建制作项目" description="导入素材后可以在此调整每段素材的入点、时长、音量和轨道。" />) : <JobList jobs={projectJobs} onCancel={cancelJob} busy={busy} projects={data.projects} />}
       </>}
-      {view === 'templates' && <TemplateGallery templates={templates} selectedId={templateId} onSelect={selectTemplate} />}
+      {view === 'templates' && <TemplateGallery templates={templates} selectedId={templateId} onSelect={selectTemplate} onImportShots={project ? importShots : undefined} />}
       {view === 'design' && <DesignWorkspace sessionId={appSessionId} initialView="library" embedded={window.parent !== window} library={library} />}
-      {view === 'workflow' && <WorkflowView key={project?.id || 'none'} project={project} busy={busy} onJob={runJob} onPlan={planProject} jobs={projectJobs} capabilities={data.capabilities} connected={connected} />}
+      {view === 'workflow' && <WorkflowView key={project?.id || 'none'} project={project} template={templateId ? selectedTemplate : null} busy={busy} onJob={runJob} onPlan={planProject} jobs={projectJobs} capabilities={data.capabilities} connected={connected} />}
       {view === 'jobs' && <><div className="jobs-toolbar"><div className="filter-tabs">{[['all', '全部任务'], ['active', '进行中'], ['completed', '已完成'], ['failed', '失败']].map(([id, label]) => <button key={id} className={jobFilter === id ? 'selected' : ''} onClick={() => setJobFilter(id)}>{label}{id === 'active' && <span className="count">{activeJobs.length}</span>}</button>)}</div><IconButton icon={RefreshCw} label="刷新任务" onClick={refresh} /></div><JobList jobs={data.jobs.filter(job => jobFilter === 'all' || (jobFilter === 'active' ? isActive(job) : job.status === jobFilter))} onCancel={cancelJob} busy={busy} projects={data.projects} /></>}
       {view === 'assets' && <AssetsView project={project} jobs={data.jobs} onImport={importAsset} busy={busy === 'asset'} />}
       {view === 'settings' && <SettingsView settings={data.settings} capabilities={data.capabilities} connected={connected} onSave={draft => mutate('settings', () => api('/settings', { method: 'PUT', body: draft }), '设置已保存')} busy={busy === 'settings'} />}
@@ -642,7 +593,7 @@ function App() {
       {view !== 'settings' && <footer className="page-footer"><span>EAC design world<span className="footer-divider">/</span>让创作有序发生</span><span><span className={`availability ${connected ? 'available' : ''}`} />{connected ? '工作空间已同步' : loading ? '正在连接' : '离线浏览'}</span></footer>}
     </main>
     {dialog === 'project' && <Dialog title="新建制作项目" onClose={() => setDialog(null)}><div className="project-dialog-body"><ProjectForm form={form} setForm={setForm} templates={templates} onSubmit={createProject} busy={busy === 'project'} existing={false} onTemplateChange={setTemplateId} /></div></Dialog>}
-    {previewTemplate && <TemplateDetail template={previewTemplate} onClose={() => setPreviewTemplate(null)} onSelect={template => { selectTemplate(template); setPreviewTemplate(null); }} />}
+    {previewTemplate && <TemplateDetail template={previewTemplate} selectedId={templateId} onClose={() => setPreviewTemplate(null)} onSelect={template => { selectTemplate(template); setPreviewTemplate(null); }} />}
     {toast && <Toast toast={toast} onClose={() => setToast(null)} />}
   </div>;
 }

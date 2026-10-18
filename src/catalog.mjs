@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { motionTemplates } from './motion-libraries.mjs';
+import { getShotcraftTemplate, shotcraftTemplates } from './shotcraft-library.mjs';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -51,13 +52,14 @@ export const templates = [
 ];
 
 export function getTemplates() {
-  return [...templates, ...motionTemplates()];
+  return [...templates, ...motionTemplates(), ...shotcraftTemplates()];
 }
 
 export function getTemplate(id) {
-  const template = getTemplates().find((item) => item.id === id);
+  const template = typeof id === 'string' && id.startsWith('sc-') ? getShotcraftTemplate(id)
+    : [...templates, ...motionTemplates()].find((item) => item.id === id);
   if (!template) throw new Error(`Unknown template: ${id}`);
-  return { ...template, available: existsSync(resolve(ROOT, template.entry)) };
+  return { ...template, available: Boolean(template.entry) && existsSync(resolve(ROOT, template.entry)) };
 }
 
 // OpenDesign library is owned by src/open-design-library.mjs (content agent). It is loaded
@@ -127,8 +129,9 @@ export function libraryCatalogEntry(item) {
 // Resolve a template ID across the built-in catalog and the OpenDesign library.
 export async function resolveTemplate(id) {
   if (!id) throw new Error('请提供模板 ID');
-  const local = getTemplates().find((item) => item.id === id);
-  if (local) return { ...local, available: existsSync(resolve(ROOT, local.entry)), renderable: local.renderable !== false };
+  const local = typeof id === 'string' && id.startsWith('sc-') ? getShotcraftTemplate(id)
+    : [...templates, ...motionTemplates()].find((item) => item.id === id);
+  if (local) return { ...local, available: Boolean(local.entry) && existsSync(resolve(ROOT, local.entry)), renderable: local.renderable !== false };
   // Only OpenDesign IDs (od- prefix) consult the library; unknown local IDs fail fast without
   // importing the content module, so a missing module never masks an unknown-template error.
   if (!id.startsWith('od-')) throw new Error(`Unknown template: ${id}`);

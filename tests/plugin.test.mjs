@@ -11,6 +11,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { activate, createToolRegistrations, createRemoteEngine, inject } from '../plugin/host.mjs';
 import { installHarness, uninstallHarness } from '../scripts/install-harness.mjs';
 import { toolDefinitions } from '../src/tools.mjs';
+import { VERSION } from '../src/version.mjs';
 
 function hostContext({ failAt } = {}) {
   const tools = new Map();
@@ -180,7 +181,7 @@ test('existing verified EAC server uses a remote tool proxy without a second eng
     request: async (url, options) => {
       requests.push({ url, options });
       return { ok: true, json: async () => url.endsWith('/health')
-        ? { ok: true, name: 'EAC design world', version: '0.3.0' }
+        ? { ok: true, name: 'EAC design world', version: VERSION }
         : { id: 'remote-project' } };
     },
   });

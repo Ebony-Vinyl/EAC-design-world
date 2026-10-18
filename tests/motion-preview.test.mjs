@@ -35,6 +35,29 @@ test('optional templates preview and retain dynamic assets after design project 
         await Promise.all([...document.images].map(image => image.decode()));
         if (window.__probe?.reason) throw new Error(window.__probe.reason);
       });
+      if (item.source === 'onetake') {
+        const iframe = page.locator(`iframe[title="${item.name}模板源码预览"]`);
+        const actualFrame = await (await iframe.elementHandle()).contentFrame();
+        await actualFrame.waitForLoadState('load');
+        assert.equal(await iframe.getAttribute('sandbox'), 'allow-scripts');
+        assert.equal(await iframe.getAttribute('srcdoc'), null);
+        assert.equal(new URL(actualFrame.url()).pathname, `/${item.entry}`);
+        assert.equal(new URL(actualFrame.url()).searchParams.get('eac-preview'), '1');
+        const runtime = await actualFrame.evaluate(() => ({
+          motion: typeof window.OM, seek: typeof window.__seek, ready: window.__ready === true,
+        }));
+        assert.deepEqual(runtime, { motion: 'object', seek: 'function', ready: true });
+        await page.locator('.tp-player[data-preview-status="ready"]').waitFor();
+        const before = await frame.locator('canvas').evaluate(canvas => canvas.toDataURL());
+        await page.getByRole('button', { name: '播放', exact: true }).click();
+        await actualFrame.waitForFunction(() => window.__lastTime > 0.4);
+        await page.getByRole('button', { name: '暂停', exact: true }).click();
+        await page.getByRole('button', { name: '播放', exact: true }).waitFor();
+        const paused = await actualFrame.evaluate(() => window.__lastTime);
+        await page.waitForTimeout(180);
+        assert.equal(await actualFrame.evaluate(() => window.__lastTime), paused);
+        assert.notEqual(await frame.locator('canvas').evaluate(canvas => canvas.toDataURL()), before);
+      }
       await page.getByRole('button', { name: '关闭', exact: true }).click();
     }
     await page.goto(`${app.url}/?view=design`);

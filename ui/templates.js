@@ -54,6 +54,7 @@ const sourceLabels = {
   'open-design': 'OPEN DESIGN',
   'motion-web': 'MOTION WEB',
   'onetake': 'ONETAKE',
+  'video-shotcraft': 'SHOTCRAFT',
 };
 const authorName = author => typeof author === 'string' ? author : author?.name || '';
 const entryPath = entry => typeof entry === 'string' ? entry : entry?.path || '';

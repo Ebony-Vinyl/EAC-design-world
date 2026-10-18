@@ -29,9 +29,13 @@ test('maintenance UI reports versions, persists acknowledgements and detects fai
     await page.getByRole('heading', { name: '插件维护.', exact: true }).waitFor();
     await page.getByText(`运行版本 ${VERSION}`, { exact: true }).waitFor();
     await page.getByText(`磁盘版本 ${VERSION}`, { exact: true }).waitFor();
-    await page.getByRole('heading', { name: '0.3.0：工具修复与插件维护中心', exact: true }).waitFor();
-    await page.getByRole('button', { name: '将公告「0.3.0：工具修复与插件维护中心」标记为已读', exact: true }).click();
-    await page.getByRole('button', { name: '将公告「0.3.0：工具修复与插件维护中心」标记为已读', exact: true }).waitFor({ state: 'detached' });
+    const unread = page.getByRole('button', { name: /^将公告「.+」标记为已读$/ });
+    assert.ok(await unread.count() > 0);
+    while (await unread.count()) {
+      const label = await unread.first().getAttribute('aria-label');
+      await unread.first().click();
+      await page.getByRole('button', { name: label, exact: true }).waitFor({ state: 'detached' });
+    }
     assert.equal(app.maintenance.status().announcements.unread, 0);
     await page.getByRole('button', { name: '热重载插件', exact: true }).click();
     await page.getByText('测试：新模块激活失败，旧模块已保留', { exact: false }).first().waitFor({ timeout: 15000 });

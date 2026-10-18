@@ -186,7 +186,9 @@ window.__ModuleLoader__.load({
           timedOut ? t('unavailable') : t('loading'), timedOut ? h('button', { type: 'button', onClick: () => setAttempt(value => value + 1) }, t('retry')) : null) : null);
     }
     function SelectionChip({ id, name, label, removeLabel, onRemove, onOpen }) {
-      const thumbnail = /^\d{2}-/.test(id) ? `${ORIGIN}/vendor/mg-styles-15/docs/readme/films/${id}.webp` : `${ORIGIN}/library-previews/${id}.jpg`;
+      const thumbnail = /^\d{2}-/.test(id) ? `${ORIGIN}/vendor/mg-styles-15/docs/readme/films/${id}.webp`
+        : /^sc-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id) ? `${ORIGIN}/vendor/video-shotcraft/poster/${id.slice(3)}.jpg`
+          : `${ORIGIN}/library-previews/${id}.jpg`;
       return h('div', { className: 'eac-selection-chip', 'data-eac-selection-id': id },
         h('button', { type: 'button', className: 'eac-selection-open', onClick: onOpen, title: name || id },
           h('img', { src: thumbnail.startsWith('/') ? `${ORIGIN}${thumbnail}` : thumbnail, alt: '', onError: event => { event.currentTarget.style.visibility = 'hidden'; } }),

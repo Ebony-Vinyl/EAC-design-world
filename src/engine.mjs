@@ -7,6 +7,7 @@ import { Store } from './store.mjs';
 import { DesignStore } from './design-store.mjs';
 import { ROOT, getTemplates, resolveTemplate, loadLibrary, libraryCatalogEntry, workflowRecipes } from './catalog.mjs';
 import { motionSkills, readMotionLibraryItem } from './motion-libraries.mjs';
+import { readShotcraftLibraryItem, resolveShotcraftPath, shotcraftLibraryInfo } from './shotcraft-library.mjs';
 import { productionInstructions } from './tools.mjs';
 
 const jobTypes = new Set(['record-browser', 'record-desktop', 'analyze', 'beats', 'transcribe', 'rough-cut', 'captions', 'voice', 'compose', 'render', 'render-template', 'produce']);
@@ -382,14 +383,15 @@ export async function createEngine({ dataDir } = {}) {
       designSystems, creationModes, skills: [...librarySkills, ...motionSkills()], prompts: libraryPrompts,
       atoms: libraryAtoms, scenarios: libraryScenarios, stats: libraryStats,
       provenance: libraryProvenance,
+      sourceLibraries: { 'video-shotcraft': shotcraftLibraryInfo() },
     };
   }
   const engine = {
     store, designStore, capabilities, library,
     setMaintenanceMode(value) { maintenanceMode = value; },
-    async state() {
+    async state({ includeTemplates = true } = {}) {
       const { composer, ...state } = store.snapshot();
-      return { ...state, templates: getTemplates(), recipes: workflowRecipes, capabilities: await capabilities() };
+      return { ...state, templates: includeTemplates ? getTemplates() : [], recipes: workflowRecipes, capabilities: await capabilities() };
     },
     async settingsUpdate(input) {
       const allowed = ['outputRoot', 'ttsVoice', 'quality'];
@@ -419,7 +421,18 @@ export async function createEngine({ dataDir } = {}) {
           return structuredClone(project);
         }
         case 'project_get': return structuredClone(store.project(args.projectId));
-        case 'asset_import': return importAsset(args.projectId, args.path);
+        case 'asset_import': {
+          const hasPath = args.path !== undefined;
+          const hasTemplate = args.templateId !== undefined;
+          if (hasPath === hasTemplate) throw new Error('请仅提供 path 或 templateId 中的一个');
+          if (!hasTemplate) return importAsset(args.projectId, args.path);
+          if (typeof args.templateId !== 'string' || !args.templateId.startsWith('sc-')) throw new Error('仅支持已注册的 Shotcraft 预览素材');
+          const template = await resolveTemplate(args.templateId);
+          if (template.source !== 'video-shotcraft' || typeof template.preview !== 'string') throw new Error('Shotcraft 预览素材不存在');
+          const path = resolveShotcraftPath(template.preview.replace(/^\//, ''));
+          if (!path || extname(path).toLowerCase() !== '.mp4') throw new Error('Shotcraft 本地 MP4 预览素材不存在');
+          return importAsset(args.projectId, path);
+        }
         case 'timeline_plan': return plan(args.projectId, args);
         case 'timeline_update': {
           if (!Array.isArray(args.clips) || args.clips.length > 128 || !Number.isInteger(args.revision)) throw new Error('请提供最多 128 个 clips 与当前 revision');
@@ -473,6 +486,13 @@ export async function createEngine({ dataDir } = {}) {
         }
         case 'template_read': {
           const template = await resolveTemplate(args.templateId);
+          if (template.source === 'video-shotcraft') {
+            const item = await readShotcraftLibraryItem({ kind: 'motion', id: template.id, includeEntry: args.source === true });
+            const source = args.source ? item.sources?.[0] : { path: item.prompt, text: item.content };
+            if (!source) throw new Error(`模板 ${template.id} 没有可读取的源文件`);
+            return { template, path: join(ROOT, source.path), content: source.text,
+              ...(args.source ? { sources: item.sources } : {}), resources: item.resources, instructions: productionInstructions };
+          }
           const target = args.source ? template.entry : template.prompt;
           if (!target) throw new Error(`模板 ${template.id} 没有可读取的${args.source ? '源文件' : '说明'}，请改用 library_read`);
           const path = join(ROOT, target);
@@ -486,11 +506,15 @@ export async function createEngine({ dataDir } = {}) {
           const all = Object.values(collections).flat();
           const pool = args.kind && collections[args.kind] ? collections[args.kind] : args.kind ? all.filter(item => item.kind === args.kind) : all;
           const query = String(args.query || '').toLowerCase();
-          const filtered = pool.filter(item => `${item.id} ${item.name || item.title} ${item.source || ''} ${item.description} ${(item.tags || []).join(' ')}`.toLowerCase().includes(query));
+          const filtered = pool.filter(item => `${item.id} ${item.name || item.title} ${item.source || ''} ${item.description} ${item.category || ''} ${item.recipe || ''} ${item.use || ''} ${item.energy || ''} ${item.recommendedUse || ''} ${(item.tags || []).join(' ')}`.toLowerCase().includes(query));
           const limit = Number.isInteger(args.limit) ? Math.max(1, Math.min(200, args.limit)) : 50;
-          return { total: filtered.length, items: filtered.slice(0, limit).map(item => ({ id: item.id, name: item.name || item.title, kind: item.kind || 'motion', description: item.description, runtime: item.status || item.runtime, license: item.license, source: item.source, renderable: item.renderable ?? null, requirements: item.requirements ?? [] })) };
+          return { total: filtered.length, items: filtered.slice(0, limit).map(item => ({ id: item.id, name: item.name || item.title, kind: item.kind || 'motion', description: item.description, runtime: item.status || item.runtime, license: item.license, source: item.source, renderable: item.renderable ?? null, requirements: item.requirements ?? [],
+            category: item.category, recipe: item.recipe, recommended: item.recommended, recommendedUse: item.recommendedUse,
+            energy: item.energy, use: item.use, duration: item.duration, preview: item.preview, thumbnail: item.thumbnail })) };
         }
         case 'library_read': {
+          const shotcraftItem = await readShotcraftLibraryItem({ kind: args.kind, id: args.id, includeEntry: args.source === true, resource: args.resource });
+          if (shotcraftItem) return shotcraftItem;
           const motionItem = await readMotionLibraryItem({ kind: args.kind, id: args.id, includeEntry: args.source === true, resource: args.resource });
           if (motionItem) return motionItem;
           if (args.resource !== undefined) throw new Error('resource 参数仅适用于可选 Motion Web / Onetake 条目');
