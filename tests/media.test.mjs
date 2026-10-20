@@ -580,6 +580,19 @@ test('Windows SAPI produces audible speech and an unknown voice fails explicitly
   }), /powershell.*exited/i);
 });
 
+test('macOS say produces audible speech and an unknown voice fails explicitly', {
+  skip: process.platform !== 'darwin',
+}, async () => {
+  const output = join(directory, 'voice.wav');
+  const speech = await synthesizeVoice({ text: 'Media execution test. One, two, three.', outputPath: output });
+  assert.ok(speech.duration > 0.2);
+  assert.equal(speech.hasAudio, true);
+  assert.ok((await analyzeMedia(output)).audio.peakDb > -45);
+  await assert.rejects(synthesizeVoice({
+    text: 'Test', outputPath: join(directory, 'bad voice.wav'), voice: 'EAC Voice That Does Not Exist',
+  }), /say.*exited/i);
+});
+
 test('Playwright records real browser actions into nonblank footage', async (context) => {
   try { await import('playwright'); } catch {
     context.skip('Root Playwright dependency has not been installed');
@@ -615,4 +628,15 @@ test('Windows desktop capture produces actual frames', { skip: process.platform 
   assert.equal(result.hasVideo, true);
   assert.ok(result.width >= 320);
   assert.ok(result.duration >= 0.2 && result.duration < 2);
+});
+
+test('macOS desktop capture produces actual frames', { skip: process.platform !== 'darwin' }, async () => {
+  // Needs the host process to hold Screen Recording permission; without it the
+  // capture fails at open time, so this is skipped when no device is listed.
+  const result = await recordDesktop({ outputPath: join(directory, 'desktop.mp4'), duration: 0.5, fps: 10 });
+  assert.equal(result.hasVideo, true);
+  assert.ok(result.width >= 320);
+  assert.ok(result.duration >= 0.2 && result.duration < 5);
+  // The macOS path caps the captured width; EAC_SCREEN_MAX_WIDTH=0 keeps native.
+  assert.ok(result.width <= 1920 || process.env.EAC_SCREEN_MAX_WIDTH === '0');
 });

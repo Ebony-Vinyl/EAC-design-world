@@ -33,6 +33,10 @@ Exports from `src/media/index.mjs`:
   `-list_devices` (override with `EAC_SCREEN_DEVICE`) and clamping fps to the
   1..30 range those devices advertise. Both need Screen Recording permission.
   Duration 0.1..600 seconds, fps 1..60 Windows / 1..30 macOS (default 30).
+  On macOS the capture is scaled to at most 1920 px wide, because avfoundation
+  reports the display in physical pixels (a Retina screen would otherwise
+  record at 2x); `EAC_SCREEN_MAX_WIDTH` changes that cap and `0` keeps the
+  native size.
 - `synthesizeVoice({ text, outputPath, voice?, rate?, signal? })`: real system
   speech. Windows uses SAPI through `scripts/voice.ps1` (UTF-8 text passed
   through a file, never interpolated into PowerShell code); macOS uses `say`

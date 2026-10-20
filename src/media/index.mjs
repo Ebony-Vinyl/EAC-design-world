@@ -317,7 +317,7 @@ export async function recordDesktop({ outputPath, duration, fps = 30, signal } =
   const job = await workspace(outputPath);
   try {
     await ffmpeg([...desktopCaptureInput(fps), '-t', String(duration),
-      '-vf', 'pad=ceil(iw/2)*2:ceil(ih/2)*2', '-an',
+      '-vf', desktopCaptureFilter(), '-an',
       ...videoEncoding(), job.staged], { signal, timeout: duration * 1000 + 60_000 });
     return await publish(job, signal);
   } finally { await rm(job.temporary, { recursive: true, force: true }); }
@@ -354,9 +354,32 @@ function desktopCaptureInput(fps) {
   if (process.platform === 'darwin') {
     const device = avfoundationScreenIndex();
     const rate = Math.min(30, Math.max(1, fps));
-    return ['-v', 'error', '-f', 'avfoundation', '-framerate', String(rate), '-i', device + ':none'];
+    // AVFoundation screen devices expose only uyvy422/yuyv422. FFmpeg answers a
+    // yuv420p request with "Selected pixel format (yuv420p) is not supported" and
+    // then silently overrides it, so ask for uyvy422 explicitly instead of
+    // depending on that fallback staying in place.
+    return ['-v', 'error', '-f', 'avfoundation', '-pixel_format', 'uyvy422',
+      '-framerate', String(rate), '-i', device + ':none'];
   }
   return ['-v', 'error', '-f', 'gdigrab', '-framerate', String(fps), '-i', 'desktop'];
+}
+
+/**
+ * Capture-size filter per platform.
+ *
+ * macOS reports the screen in physical pixels, so a Retina display captures at
+ * 2x its logical size (3456x2234 on a 16" MacBook Pro). Full-size capture is
+ * slow and oversized for the video pipeline, so the width is capped and the
+ * height derived from it. `EAC_SCREEN_MAX_WIDTH` overrides the cap; set it to 0
+ * to keep the native size. The pad filter keeps the result even-dimensioned for
+ * H.264 on any display.
+ */
+function desktopCaptureFilter() {
+  const pad = 'pad=ceil(iw/2)*2:ceil(ih/2)*2';
+  if (process.platform !== 'darwin') return pad;
+  const max = Number(process.env.EAC_SCREEN_MAX_WIDTH ?? 1920);
+  if (!Number.isFinite(max) || max <= 0) return pad;
+  return `scale=w='min(${max},iw)':h=-2,${pad}`;
 }
 
 export async function synthesizeVoice({ text, outputPath, voice, rate = 0, signal } = {}) {
