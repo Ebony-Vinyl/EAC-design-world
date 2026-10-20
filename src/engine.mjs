@@ -58,16 +58,32 @@ export async function createEngine({ dataDir } = {}) {
   const getMedia = async () => media ||= await import('./media/index.mjs');
   const capabilityCache = new Map();
 
+  /** Platform-specific Chromium executables. Playwright falls back to its own
+   * bundled Chromium on every platform, so a missing system browser is not fatal. */
+  function browserCandidates() {
+    if (process.platform === 'darwin') return [
+      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+      '/Applications/Chromium.app/Contents/MacOS/Chromium'
+    ];
+    if (process.platform === 'linux') return [
+      '/usr/bin/google-chrome',
+      '/usr/bin/chromium',
+      '/usr/bin/chromium-browser'
+    ];
+    return [
+      'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+      'C:/Program Files/Google/Chrome/Application/chrome.exe'
+    ];
+  }
+
   async function capabilities() {
     if (!capabilityCache.has('ffmpeg')) {
       for (const name of ['ffmpeg', 'ffprobe']) {
         capabilityCache.set(name, spawnSync(name, ['-version'], { windowsHide: true, timeout: 5000 }).status === 0);
       }
     }
-    const browserPath = process.env.EAC_BROWSER || [
-      'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-      'C:/Program Files/Google/Chrome/Application/chrome.exe'
-    ].find(existsSync);
+    const browserPath = process.env.EAC_BROWSER || browserCandidates().find(existsSync);
     if (!capabilityCache.has('transcript')) {
       const { transcriptCapabilities } = await import('./transcript.mjs');
       capabilityCache.set('transcript', await transcriptCapabilities());
@@ -76,8 +92,8 @@ export async function createEngine({ dataDir } = {}) {
     return [
       { id: 'ffmpeg', name: '剪辑与编码', available: capabilityCache.get('ffmpeg') && capabilityCache.get('ffprobe'), detail: 'FFmpeg / FFprobe 本地执行' },
       { id: 'browser', name: '真实网页录制', available: Boolean(browserPath), detail: browserPath || '配置 EAC_BROWSER 或安装 Edge' },
-      { id: 'desktop', name: '桌面录制', available: process.platform === 'win32' && capabilityCache.get('ffmpeg'), detail: 'Windows gdigrab，按任务时长录制' },
-      { id: 'voice', name: '本地旁白', available: process.platform === 'win32', detail: 'Windows SAPI；声线质量取决于已安装语音' },
+      { id: 'desktop', name: '桌面录制', available: (process.platform === 'win32' || process.platform === 'darwin') && capabilityCache.get('ffmpeg'), detail: process.platform === 'darwin' ? 'macOS avfoundation（需屏幕录制权限），按任务时长录制' : 'Windows gdigrab，按任务时长录制' },
+      { id: 'voice', name: '本地旁白', available: process.platform === 'win32' || process.platform === 'darwin', detail: process.platform === 'darwin' ? 'macOS say；声线取决于已安装语音（say -v ?）' : 'Windows SAPI；声线质量取决于已安装语音' },
       { id: 'music', name: '原创器乐', available: true, detail: '共享节拍网格的本地合成器' },
       { id: 'captions', name: '时间线字幕', available: capabilityCache.get('ffmpeg'), detail: '时间戳映射、中文 ASS 字幕与成片烧录' },
       { id: 'transcription', name: '语音转录', available: transcript.available, detail: transcript.detail },

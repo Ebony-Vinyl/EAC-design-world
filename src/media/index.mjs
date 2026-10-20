@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { createWriteStream } from 'node:fs';
 import { access, mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises';
@@ -309,38 +309,101 @@ export async function recordBrowser({ url, actions = [], outputDir, width = 1280
 
 export async function recordDesktop({ outputPath, duration, fps = 30, signal } = {}) {
   checkAbort(signal);
-  if (process.platform !== 'win32') throw new Error('Desktop recording currently requires Windows gdigrab');
+  if (process.platform !== 'win32' && process.platform !== 'darwin') {
+    throw new Error('Desktop recording requires Windows (gdigrab) or macOS (avfoundation)');
+  }
   number(duration, 'duration', 0.1, 600);
   integer(fps, 'fps', 1, 60);
   const job = await workspace(outputPath);
   try {
-    await ffmpeg(['-v', 'error', '-f', 'gdigrab', '-framerate', String(fps), '-i', 'desktop',
-      '-t', String(duration), '-vf', 'pad=ceil(iw/2)*2:ceil(ih/2)*2', '-an',
+    await ffmpeg([...desktopCaptureInput(fps), '-t', String(duration),
+      '-vf', 'pad=ceil(iw/2)*2:ceil(ih/2)*2', '-an',
       ...videoEncoding(), job.staged], { signal, timeout: duration * 1000 + 60_000 });
     return await publish(job, signal);
   } finally { await rm(job.temporary, { recursive: true, force: true }); }
 }
 
+/**
+ * Screen-capture input arguments per platform.
+ *
+ * Windows uses gdigrab. macOS uses AVFoundation, whose screen devices are
+ * identified by a positional index that depends on the machine (cameras and
+ * Continuity devices are enumerated first), so the index is discovered by
+ * parsing `-list_devices` and cached. `EAC_SCREEN_DEVICE` overrides it.
+ * AVFoundation rejects framerates a device does not advertise, so macOS fps is
+ * clamped to the 1-30 range those screen devices report.
+ *
+ * Both paths need the host process to hold Screen Recording permission
+ * (Windows: normal desktop session; macOS: System Settings > Privacy &
+ * Security > Screen Recording). Without it the capture fails at open time.
+ */
+let macScreenDevice;
+
+function avfoundationScreenIndex() {
+  if (macScreenDevice !== undefined) return macScreenDevice;
+  if (process.env.EAC_SCREEN_DEVICE) return (macScreenDevice = String(process.env.EAC_SCREEN_DEVICE));
+  const listed = spawnSync('ffmpeg', ['-hide_banner', '-f', 'avfoundation', '-list_devices', 'true', '-i', ''],
+    { encoding: 'utf8', timeout: 15_000, windowsHide: true });
+  const text = String(listed.stdout ?? '') + String(listed.stderr ?? '');
+  const match = text.match(/\[(\d+)\]\s+Capture screen\b/);
+  if (!match) throw new Error('No macOS screen capture device found; grant Screen Recording permission and retry');
+  return (macScreenDevice = match[1]);
+}
+
+function desktopCaptureInput(fps) {
+  if (process.platform === 'darwin') {
+    const device = avfoundationScreenIndex();
+    const rate = Math.min(30, Math.max(1, fps));
+    return ['-v', 'error', '-f', 'avfoundation', '-framerate', String(rate), '-i', device + ':none'];
+  }
+  return ['-v', 'error', '-f', 'gdigrab', '-framerate', String(fps), '-i', 'desktop'];
+}
+
 export async function synthesizeVoice({ text, outputPath, voice, rate = 0, signal } = {}) {
   checkAbort(signal);
-  if (process.platform !== 'win32') throw new Error('Voice synthesis currently requires Windows SAPI');
+  if (process.platform !== 'win32' && process.platform !== 'darwin') {
+    throw new Error('Voice synthesis requires Windows SAPI or macOS `say`');
+  }
   if (typeof text !== 'string' || !text.trim() || text.length > 20_000) throw new TypeError('text must contain 1 to 20000 characters');
-  if (voice !== undefined && (typeof voice !== 'string' || !voice.trim())) throw new TypeError('voice must be an installed SAPI voice name');
+  if (voice !== undefined && (typeof voice !== 'string' || !voice.trim())) throw new TypeError('voice must be an installed system voice name');
   integer(rate, 'rate', -10, 10);
   const job = await workspace(outputPath);
   try {
-    const textPath = join(job.temporary, 'speech.txt');
     const wavePath = join(job.temporary, 'speech.wav');
-    await writeFile(textPath, text, { encoding: 'utf8', signal });
-    const script = fileURLToPath(new URL('../../scripts/voice.ps1', import.meta.url));
-    const powershell = join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
-    const args = ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
-      '-File', script, '-TextPath', textPath, '-OutputPath', wavePath, '-Rate', String(rate)];
-    if (voice !== undefined) args.push('-Voice', voice);
-    await run(powershell, args, { signal, timeout: 300_000 });
+    if (process.platform === 'darwin') {
+      await synthesizeVoiceMac(text, wavePath, { voice, rate, signal });
+    } else {
+      const textPath = join(job.temporary, 'speech.txt');
+      await writeFile(textPath, text, { encoding: 'utf8', signal });
+      const script = fileURLToPath(new URL('../../scripts/voice.ps1', import.meta.url));
+      const powershell = join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+      const args = ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+        '-File', script, '-TextPath', textPath, '-OutputPath', wavePath, '-Rate', String(rate)];
+      if (voice !== undefined) args.push('-Voice', voice);
+      await run(powershell, args, { signal, timeout: 300_000 });
+    }
     await ffmpeg(['-v', 'error', '-i', wavePath, '-vn', job.staged], { signal });
     return await publish(job, signal);
   } finally { await rm(job.temporary, { recursive: true, force: true }); }
+}
+
+/**
+ * macOS speech synthesis via `say`, writing an AIFF that FFmpeg then encodes.
+ *
+ * `say` takes words-per-minute through `-r` (default ~175), while the shared
+ * API exposes the Windows SAPI scale of -10..10. Map that scale onto a WPM
+ * range of roughly half to double the default so both platforms feel similar.
+ * `voice` names an installed voice (see `say -v '?'`); an unknown name makes
+ * `say` fail, which surfaces as an explicit error just like SAPI does.
+ */
+async function synthesizeVoiceMac(text, wavePath, { voice, rate, signal }) {
+  const aiff = wavePath.replace(/\.wav$/, '.aiff');
+  const wpm = Math.round(175 * (1 + rate / 10));
+  const args = ['-o', aiff, '-r', String(wpm)];
+  if (voice !== undefined) args.push('-v', voice);
+  args.push('--', text);
+  await run('say', args, { signal, timeout: 300_000 });
+  await ffmpeg(['-v', 'error', '-y', '-i', aiff, '-ac', '2', '-ar', '44100', wavePath], { signal });
 }
 
 function randomGenerator(seed) {
