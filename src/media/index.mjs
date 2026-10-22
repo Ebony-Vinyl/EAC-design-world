@@ -140,16 +140,26 @@ function ffmpeg(args, options) {
 // Reading only stderr made the probe a no-op that always returned the fallback:
 // invisible on a 9.x build (where the fallback happens to be right) and fatal on
 // 8.x (where the option still exists but was never selected).
+/**
+ * Option name for one `ffmpeg -h full` text: a build that still lists
+ * `-filter_complex_script` keeps it, everything else gets the 9.x spelling.
+ * Pure text matching, exported so both branches are testable without a real
+ * binary - a wrong probe on 9.x still renders fine, so only an explicit help
+ * fixture can tell the branches apart.
+ */
+export function filterScriptOption(help) {
+  return /(?:^|\s)-filter_complex_script(?:\s|$)/m.test(String(help ?? ''))
+    ? '-filter_complex_script'
+    : '-/filter_complex';
+}
+
 let filterScriptOptionName = null;
 async function filterScriptArgs(scriptPath, signal) {
   if (filterScriptOptionName === null) {
     const { stdout, stderr } = await run(FFMPEG, ['-hide_banner', '-h', 'full'],
       { signal, timeout: 30_000, maxBytes: 8 * 2 ** 20 });
     checkAbort(signal);
-    const help = `${stdout.toString('utf8')}\n${stderr.toString('utf8')}`;
-    filterScriptOptionName = /(?:^|\s)-filter_complex_script(?:\s|$)/m.test(help)
-      ? '-filter_complex_script'
-      : '-/filter_complex';
+    filterScriptOptionName = filterScriptOption(`${stdout.toString('utf8')}\n${stderr.toString('utf8')}`);
   }
   return [filterScriptOptionName, scriptPath];
 }
@@ -233,6 +243,51 @@ function frameRate(stream) {
   return 0;
 }
 
+// Matroska (and FLV) store each track's length in a tag instead of the stream
+// header, so ffprobe reports `duration: N/A` for every stream there. Matroska
+// writes `DURATION=00:00:02.000000000` per track; that is the only per-stream
+// number in the file, and it is exact. Malformed tags are ignored.
+function tagDuration(stream) {
+  const value = String(stream?.tags?.DURATION ?? stream?.tags?.duration ?? '').trim();
+  const match = /^(\d+):(\d{1,2}):(\d{1,2}(?:\.\d+)?)$/.exec(value);
+  if (!match) return 0;
+  const seconds = Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
+}
+
+function headerDuration(stream) {
+  const own = Number(stream?.duration);
+  if (Number.isFinite(own) && own > 0) return { seconds: own, source: 'header' };
+  const tagged = tagDuration(stream);
+  if (tagged > 0) return { seconds: tagged, source: 'tag' };
+  return null;
+}
+
+// Last resort for a stream that carries no length at all (raw H.264/HEVC
+// elementary streams have neither a container nor a header duration): count
+// packets and divide by the frame rate ffmpeg itself demuxes with. Decode-free
+// and one number on stdout, but it reads the whole file, so it only runs for the
+// single stream that would otherwise have no bound.
+async function countedDuration(stream, path, signal) {
+  const fps = frameRate(stream);
+  if (stream?.codec_type !== 'video' || !(fps > 0)) return null;
+  try {
+    const { stdout } = await run(FFPROBE, ['-v', 'error', '-count_packets',
+      '-select_streams', 'v:0', '-show_entries', 'stream=nb_read_packets', '-of', 'json', path],
+      { signal, timeout: 60_000, maxBytes: 2 ** 20 });
+    checkAbort(signal);
+    const packets = Number(JSON.parse(stdout.toString('utf8'))?.streams?.[0]?.nb_read_packets);
+    if (!Number.isFinite(packets) || packets <= 0) return null;
+    const seconds = packets / fps;
+    return Number.isFinite(seconds) && seconds > 0 ? { seconds, source: 'packets' } : null;
+  } catch (error) {
+    // A failed measurement leaves the stream unknown; it must not fail a probe
+    // that already produced usable metadata.
+    if (signal?.aborted) throw abortError();
+    return null;
+  }
+}
+
 /** Normalized properties plus the complete ffprobe streams and format objects. */
 export async function probeMedia(path, { signal } = {}) {
   checkAbort(signal);
@@ -251,19 +306,36 @@ export async function probeMedia(path, { signal } = {}) {
   // A container's duration is the longest of its streams, so it cannot bound a
   // single stream: a 2 s video track inside a 10 s mux would let a clip seek to
   // 6 s and render pure black. Keep `duration` as the aggregate (callers compare
-  // it with the timeline), and expose per-stream values for clip validation.
+  // it with the timeline), and resolve each stream on its own: header, per-track
+  // tag, then (once, measured) packet count. The container total survives only as
+  // a number flagged `known: false`, so no caller mistakes it for a stream bound.
+  let videoLength = video ? headerDuration(video) : null;
+  let audioLength = audio ? headerDuration(audio) : null;
+  // The picture track decides whether a clip can be bounded at all; measure it
+  // when the headers are silent. Audio is left to the container fallback because
+  // a packet count does not state its own length.
+  const primary = video && !videoLength ? video : (audio && !audioLength ? audio : null);
+  if (primary) {
+    const counted = await countedDuration(primary, path, signal);
+    if (counted) {
+      if (primary === video) videoLength = counted;
+      else audioLength = counted;
+    }
+  }
   const formatDuration = Number(format.duration);
-  const streamDuration = (stream) => {
-    const own = Number(stream?.duration);
-    if (Number.isFinite(own) && own > 0) return own;
-    return Number.isFinite(formatDuration) && formatDuration > 0 ? formatDuration : 0;
-  };
+  const containerFallback = Number.isFinite(formatDuration) && formatDuration > 0 ? formatDuration : 0;
+  const resolve = (length) => (length
+    ? { seconds: length.seconds, known: true }
+    : { seconds: containerFallback, known: false });
+  const videoDuration = video ? resolve(videoLength) : { seconds: 0, known: false };
+  const audioDuration = audio ? resolve(audioLength) : { seconds: 0, known: false };
   return {
-    path, duration: Math.max(0, ...durations), width: video?.width ?? null,
+    path, duration: Math.max(0, ...durations, videoDuration.seconds, audioDuration.seconds),
+    width: video?.width ?? null,
     height: video?.height ?? null, fps: frameRate(video),
     hasVideo: Boolean(video), hasAudio: Boolean(audio),
-    videoDuration: video ? streamDuration(video) : 0,
-    audioDuration: audio ? streamDuration(audio) : 0,
+    videoDuration: videoDuration.seconds, videoDurationKnown: videoDuration.known,
+    audioDuration: audioDuration.seconds, audioDurationKnown: audioDuration.known,
     size: Number(format.size) || 0, streams, format,
   };
 }
@@ -375,13 +447,30 @@ function videoEncoding(quality = 'draft') {
 const ENCODING_TIMEOUT_CEILING = 6 * 60 * 60_000;
 const ENCODING_MS_PER_MEGAPIXEL_SECOND = 1500;
 
-/** Encode budget for a validated timeline: scales with pixels and seconds, still capped. */
-export function encodingTimeout({ width, height, duration, quality = 'draft' }) {
-  const megapixels = (width * height) / 1e6;
+// One scale for every long media step: pixels x seconds, a 2 minute floor for
+// filter-graph init/seek/mux, and a hard ceiling so a hung child cannot hold a
+// queue slot forever. Encoding and decoding used different formulas, which is how
+// a legal render could be allowed hours and then failed by a 15 minute gate.
+function scaledTimeout({ width, height, duration, quality = 'draft' }) {
+  const megapixels = ((Number(width) || 0) * (Number(height) || 0)) / 1e6;
   const perSecond = Math.max(500, ENCODING_MS_PER_MEGAPIXEL_SECOND * megapixels)
     * (quality === 'production' ? 2.5 : 1);
-  // The flat 2 min floor covers filter-graph init, seeking and muxing of short clips.
   return Math.min(ENCODING_TIMEOUT_CEILING, 120_000 + duration * perSecond);
+}
+
+/** Encode budget for a validated timeline: scales with pixels and seconds, still capped. */
+export function encodingTimeout({ width, height, duration, quality = 'draft' }) {
+  return scaledTimeout({ width, height, duration, quality });
+}
+
+/**
+ * Decode budget for validation, on the same scale and ceiling as the encoder.
+ * Decoding is not the expensive direction, so the production cost factor is left
+ * out; everything else matches, because a 1 h 4K production render that the
+ * encoder may spend hours on must not be declared "Decode failed" after 15 min.
+ */
+export function decodeTimeout(media) {
+  return scaledTimeout({ ...media, quality: 'draft' });
 }
 
 /** Capture real browser frames without requiring Playwright's bundled FFmpeg. */
@@ -603,7 +692,16 @@ export async function renderTimeline({ project, outputPath, onProgress, signal }
       // Using the container total let a clip run past the end of a shorter video
       // track: ffmpeg kept encoding black frames and qualityCheck only warned.
       const limit = wants === 'audio' ? info.audioDuration : info.videoDuration;
-      if (limit > 0 && clip.sourceIn + clip.duration > limit + 1 / timeline.fps) {
+      const known = wants === 'audio' ? info.audioDurationKnown : info.videoDurationKnown;
+      // A number inherited from the container bounds only the *longest* track, so
+      // an unknown picture length cannot bound a seek at all - refuse instead of
+      // silently rendering black. Audio keeps the container bound on purpose: it
+      // is still an upper bound there, so the worst case is silence in the tail,
+      // never a fabricated picture.
+      if (!known && (wants === 'video' || limit <= 0)) {
+        throw new Error(`Clip ${clip.id ?? clip.index} cannot be bounded: ${wants} stream duration is unknown`);
+      }
+      if (clip.sourceIn + clip.duration > limit + 1 / timeline.fps) {
         throw new Error(`Clip ${clip.id ?? clip.index} exceeds source duration (${wants} stream is ${limit}s)`);
       }
     }
@@ -718,7 +816,7 @@ export async function qualityCheck({ path, expectedDuration, signal } = {}) {
   const warnings = [];
   try {
     await ffmpeg(['-v', 'error', '-xerror', '-i', media.path, '-map', '0:v?', '-map', '0:a?', '-f', 'null', '-'],
-      { signal, timeout: Math.min(900_000, 30_000 + media.duration * 3000) });
+      { signal, timeout: decodeTimeout(media) });
   } catch (error) {
     checkAbort(signal);
     errors.push(`Decode failed: ${error.message}`);

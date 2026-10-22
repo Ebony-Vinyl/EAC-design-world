@@ -10,7 +10,7 @@ import { after, before, test } from 'node:test';
 import {
   probeMedia, analyzeMedia, analyzeBeats, recordBrowser, recordDesktop,
   synthesizeVoice, composeMusic, renderTimeline, qualityCheck,
-  cleanupStaging, encodingTimeout, randomGenerator,
+  cleanupStaging, encodingTimeout, decodeTimeout, filterScriptOption, randomGenerator,
 } from '../src/media/index.mjs';
 
 let directory;
@@ -802,4 +802,88 @@ test('the music generator keeps 32-bit state past 2^53 samples', () => {
   for (let index = 0; index < 5_000_000; index++) {
     if (actual() !== expected()) assert.fail(`generator diverged from 32-bit state at sample ${index}`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// S2: per-stream lengths, the decode budget and the filter-script probe.
+// ---------------------------------------------------------------------------
+
+test('a matroska picture track keeps its own length instead of the container total', async () => {
+  // ffprobe reports `duration: N/A` for every matroska stream; the only per-track
+  // number is the Matroska DURATION tag (2.000 s here), while the container holds
+  // the 10 s audio track. Falling back to the container let a clip seek to 6 s in
+  // a 2 s picture track, encode pure black and still pass qualityCheck.
+  const mixed = join(directory, 'mixed tracks.mkv');
+  await fixture(['-f', 'lavfi', '-i', 'color=c=red:s=96x64:r=10:d=2',
+    '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=48000:duration=10',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', mixed]);
+  const media = await probeMedia(mixed);
+  const video = media.streams.find((stream) => stream.codec_type === 'video');
+  assert.ok(video.duration === undefined || video.duration === 'N/A',
+    `fixture now reports a stream duration (${video.duration}), so it no longer reproduces the bug`);
+  assert.ok(Math.abs(media.duration - 10.02) < 0.3, `container duration was ${media.duration}`);
+  assert.ok(Math.abs(media.videoDuration - 2) < 0.2, `video duration was ${media.videoDuration}`);
+  assert.equal(media.videoDurationKnown, true, 'the per-track tag is a measured length');
+  assert.ok(Math.abs(media.audioDuration - 10.02) < 0.3, `audio duration was ${media.audioDuration}`);
+  await assert.rejects(renderTimeline({
+    project: { width: 96, height: 64, fps: 10, clips: [
+      { path: mixed, kind: 'video', start: 0, sourceIn: 6, duration: 1 },
+    ] }, outputPath: join(directory, 'past mkv video end.mp4'),
+  }), /exceeds source duration \(video stream is 2(?:\.\d+)?s\)/);
+});
+
+test('a stream that states no length at all is measured instead of skipping the bound', async () => {
+  // Raw H.264: no container duration, no stream duration, no tags - the old
+  // `limit > 0` guard skipped validation entirely for such a file.
+  const raw = join(directory, 'elementary.h264');
+  await fixture(['-f', 'lavfi', '-i', 'testsrc2=s=96x64:r=20:d=2',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-f', 'h264', raw]);
+  const media = await probeMedia(raw);
+  assert.equal(media.videoDurationKnown, true, 'packet count x frame rate bounds the stream');
+  assert.ok(media.videoDuration > 1 && media.videoDuration < 2.6, `raw stream length was ${media.videoDuration}`);
+  await assert.rejects(renderTimeline({
+    project: { width: 96, height: 64, fps: 10, clips: [
+      { path: raw, kind: 'video', start: 0, sourceIn: 6, duration: 1 },
+    ] }, outputPath: join(directory, 'past raw end.mp4'),
+  }), /exceeds source duration \(video stream is [\d.]+s\)/);
+});
+
+test('validation decoding shares the encode budget scale instead of a flat 15 minutes', async () => {
+  // A 1 h 4K production render may legitimately take hours; the decoder gate was
+  // capped at 15 minutes and reported that legal output as "Decode failed".
+  const hourHd = decodeTimeout({ width: 1920, height: 1080, duration: 3600 });
+  const hourUhd = decodeTimeout({ width: 3840, height: 2160, duration: 3600 });
+  assert.ok(hourHd > 900_000, `1 h of 1080p validation was allowed only ${hourHd} ms`);
+  assert.ok(hourUhd >= hourHd, '4K validation needs at least as much time as 1080p');
+  assert.ok(hourUhd <= 6 * 3_600_000, `decode budget is unbounded: ${hourUhd} ms`);
+  assert.ok(decodeTimeout({ width: 1920, height: 1080, duration: 5 }) < hourHd, 'budget grows with duration');
+  // Audio-only media has no pixels to decode.
+  assert.ok(decodeTimeout({ width: null, height: null, duration: 3600 }) > 900_000);
+  const source = await readFile(new URL('../src/media/index.mjs', import.meta.url), 'utf8');
+  assert.ok(source.includes('timeout: decodeTimeout(media)'), 'qualityCheck must use the scaled decode budget');
+  assert.ok(!source.includes('Math.min(900_000'), 'the flat 15 minute decode gate must be gone');
+});
+
+test('the filter-script option is decided by the help text, without a real ffmpeg', async () => {
+  // ffmpeg 8: the option exists and must be used. ffmpeg 9: it was removed and its
+  // help does not advertise a replacement (`-h full` only lists -filter_complex),
+  // so absence selects the `-/filter_complex` spelling. Both branches are
+  // unreachable on a real 9.x build, where the fallback happens to be correct.
+  const legacy = '-filter_complex <graph>\n-filter_complex_script <file>  set the filtergraph script file\n';
+  assert.equal(filterScriptOption(legacy), '-filter_complex_script');
+  const modern = '-filter_complex <graph>\n-filter_complex_threads  number of threads\n-/filter_complex <file>\n';
+  assert.equal(filterScriptOption(modern), '-/filter_complex');
+  assert.equal(filterScriptOption(''), '-/filter_complex', 'an empty probe must not pick the removed option');
+  // Deciding this must not spawn a process: the probe is text matching.
+  const spawned = [];
+  const listener = ({ process: child }) => spawned.push(child.spawnfile);
+  channel('child_process').subscribe(listener);
+  try {
+    filterScriptOption(legacy);
+    filterScriptOption(modern);
+  } finally { channel('child_process').unsubscribe(listener); }
+  assert.deepEqual(spawned, [], 'filterScriptOption must not run ffmpeg');
+  const source = await readFile(new URL('../src/media/index.mjs', import.meta.url), 'utf8');
+  assert.ok(source.includes('filterScriptOptionName = filterScriptOption('),
+    'the cached probe must go through filterScriptOption');
 });
