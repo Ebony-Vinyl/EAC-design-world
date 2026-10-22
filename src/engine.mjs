@@ -576,6 +576,11 @@ export async function createEngine({ dataDir } = {}) {
       await pumpTask;
       await designStore.flush();
       await store.save();
+      // Release the data-directory lock only here, after everything is durable. The stores
+      // expose it separately from flush() so that a plain checkpoint can never hand the
+      // directory to another instance while this engine is still running.
+      await store.release();
+      await designStore.release();
     }
   };
   return engine;
