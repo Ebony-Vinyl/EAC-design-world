@@ -1,11 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { createEngine } from '../src/engine.mjs';
+import { createEngine, templateReadPath } from '../src/engine.mjs';
+import { ROOT, loadLibrary } from '../src/catalog.mjs';
+import { resolveLibraryPath } from '../src/open-design-library.mjs';
 import { startServer } from '../src/server.mjs';
 import { synthesizeVoice, probeMedia } from '../src/media/index.mjs';
 
@@ -171,3 +174,84 @@ test('HTTP rejects remote origins and arbitrary files; serves byte ranges only f
     assert.equal(invalid.status, 416);
   } finally { await app.close(); }
 }));
+
+// `od-*` entries come from vendor/open-design/catalog.json, so template_read has to gate them
+// like library_read. Mutating one already-loaded catalog item is exactly what a tampered data
+// file hands to resolveTemplate, and the mutation is restored so later tests see real data.
+async function readableLibraryTemplate() {
+  const library = await loadLibrary();
+  const item = library.openDesignTemplates.find((candidate) => {
+    if (candidate.kind === 'motion') return false;
+    const entry = typeof candidate.entry === 'string' ? candidate.entry : candidate.entry?.path;
+    const abs = typeof entry === 'string' ? resolveLibraryPath(entry) : null;
+    return Boolean(abs && existsSync(abs));
+  });
+  assert.ok(item, 'the OpenDesign catalog needs one readable template entry for this test');
+  return item;
+}
+
+test('template_read refuses a catalog path that escapes vendor/open-design', () => setup(async (engine) => {
+  const victim = await readableLibraryTemplate();
+  const escaping = 'vendor/open-design/../../package.json'; // stays a real file, but outside the library
+  // Baseline: the untouched data file reads normally through the same call, so the gate below
+  // cannot pass by breaking library reads.
+  const baseline = await engine.handle('template_read', { templateId: victim.id, source: true });
+  assert.ok(baseline.content.length > 0);
+  assert.ok(!relative(join(ROOT, 'vendor', 'open-design'), baseline.path).startsWith('..'));
+  // The prompt/description branch of a real library item is readable too, so the gate is not
+  // only proven against the source-file branch.
+  const withPrompt = (await loadLibrary()).openDesignTemplates.find((candidate) => {
+    const prompt = typeof candidate.prompt === 'string' ? candidate.prompt : candidate.prompt?.path || candidate.promptPath;
+    const abs = typeof prompt === 'string' ? resolveLibraryPath(prompt) : null;
+    return candidate.kind !== 'motion' && Boolean(abs && existsSync(abs));
+  });
+  assert.ok(withPrompt, 'the OpenDesign catalog needs one readable prompt for this test');
+  const described = await engine.handle('template_read', { templateId: withPrompt.id });
+  assert.ok(described.content.length > 0);
+  assert.ok(!relative(join(ROOT, 'vendor', 'open-design'), described.path).startsWith('..'));
+  const originalEntry = victim.entry;
+  const originalPrompt = victim.prompt;
+  try {
+    victim.entry = escaping;
+    await assert.rejects(engine.handle('template_read', { templateId: victim.id, source: true }), /越界/);
+    victim.entry = { path: escaping }; // catalog entries are also allowed to be { path } objects
+    await assert.rejects(engine.handle('template_read', { templateId: victim.id, source: true }), /越界/);
+    victim.prompt = escaping; // the prompt/description branch must be gated too
+    await assert.rejects(engine.handle('template_read', { templateId: victim.id }), /越界/);
+  } finally {
+    victim.entry = originalEntry;
+    victim.prompt = originalPrompt;
+  }
+  // Restoring the catalog restores the read: no refusal is cached against the template.
+  const restored = await engine.handle('template_read', { templateId: victim.id, source: true });
+  assert.equal(restored.content, baseline.content);
+}));
+
+test('template_read still serves built-in templates after the containment gate', () => setup(async (engine) => {
+  const prompt = await engine.handle('template_read', { templateId: 'motion-promo-film-v2' });
+  assert.match(prompt.path.replace(/\\/g, '/'), /vendor\/motion-promo-film-v2\/SKILL\.md$/);
+  assert.ok(prompt.content.length > 0);
+  const source = await engine.handle('template_read', { templateId: '05-cel-boil', source: true });
+  assert.match(source.path.replace(/\\/g, '/'), /vendor\/mg-styles-15\/demos\/05-cel-boil\/index\.html$/);
+  assert.ok(source.content.length > 0);
+}));
+
+test('templateReadPath refuses traversal while accepting every legitimate template root', async () => {
+  assert.ok(await templateReadPath({ id: 'od-article-magazine' }, 'vendor/open-design/catalog.json'));
+  assert.ok(await templateReadPath({ id: 'od-article-magazine' }, '/vendor/open-design/catalog.json'));
+  assert.equal(await templateReadPath({ id: 'od-article-magazine' }, '../../package.json'), null);
+  assert.equal(await templateReadPath({ id: 'od-article-magazine' }, 'vendor/open-design/../../package.json'), null);
+  assert.equal(await templateReadPath({ id: 'od-article-magazine' }, 'vendor\\open-design\\..\\..\\package.json'), null);
+  assert.equal(await templateReadPath({ id: 'od-article-magazine' }, '/etc/passwd'), null);
+  // A data file must not loosen the gate by spoofing `source`: od- ids are always library paths.
+  assert.equal(await templateReadPath({ id: 'od-article-magazine', source: 'mg-styles-15' }, '../../package.json'), null);
+  // Built-in templates are code constants and stay readable, but only inside the repository.
+  assert.ok(await templateReadPath({ id: '05-cel-boil', source: 'mg-styles-15' }, 'vendor/mg-styles-15/prompts/05-cel-boil.md'));
+  assert.equal(await templateReadPath({ id: '05-cel-boil', source: 'mg-styles-15' }, '../../package.json'), null);
+  if (process.platform === 'win32') {
+    assert.equal(await templateReadPath({ id: 'od-article-magazine' }, 'C:\\Windows\\win.ini'), null);
+    assert.equal(await templateReadPath({ id: 'od-article-magazine' }, 'C:/Users/Public'), null);
+    assert.equal(await templateReadPath({ id: 'od-article-magazine' }, '\\\\server\\share\\secret.md'), null);
+    assert.equal(await templateReadPath({ id: '05-cel-boil', source: 'mg-styles-15' }, 'D:\\Windows\\win.ini'), null);
+  }
+});

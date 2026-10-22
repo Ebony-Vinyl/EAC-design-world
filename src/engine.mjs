@@ -23,6 +23,24 @@ const childOf = (root, path) => {
 function safeOutputName(value) {
   return String(value || 'film').replace(/[<>:"/\\|?*\x00-\x1f]/g, '-').slice(0, 80);
 }
+// `template_read` reads two provenance classes. Built-in templates are declared in
+// src/catalog.mjs, so their entry/prompt paths are code constants that only need to stay inside
+// the repository. `od-*` library templates take their paths straight out of
+// vendor/open-design/catalog.json — untrusted data — and therefore pass the exact containment
+// gate `library_read` uses (open-design-library.resolveLibraryPath: normalized through `resolve`,
+// then required to stay under vendor/open-design). Routing on the `od-` id prefix rather than on
+// template.source keeps a data file from loosening the gate by spoofing `source`. Returns null
+// when the path is unsafe; callers must treat null as a refusal, never as "missing file".
+export async function templateReadPath(template, target) {
+  if (typeof target !== 'string' || !target.trim()) return null;
+  if (String(template?.id || '').startsWith('od-')) {
+    const { resolveLibraryPath } = await import('./open-design-library.mjs');
+    return resolveLibraryPath(target);
+  }
+  const candidate = resolve(ROOT, target);
+  const rel = relative(ROOT, candidate);
+  return rel && !rel.startsWith('..') && !isAbsolute(rel) ? candidate : null;
+}
 // Shared by local and remote host paths: builds explicit design context for one session's
 // composer record. Returns null unless that session actually selected design mode, so mode
 // selection never leaks into other conversations and never itself claims produced output.
@@ -495,7 +513,8 @@ export async function createEngine({ dataDir } = {}) {
           }
           const target = args.source ? template.entry : template.prompt;
           if (!target) throw new Error(`模板 ${template.id} 没有可读取的${args.source ? '源文件' : '说明'}，请改用 library_read`);
-          const path = join(ROOT, target);
+          const path = await templateReadPath(template, target);
+          if (!path) throw new Error(`模板 ${template.id} 的${args.source ? '源文件' : '说明'}路径越界，已拒绝读取：${target}`);
           if (!existsSync(path)) throw new Error(`模板文件不存在：${target}`);
           return { template, path, content: await readFile(path, 'utf8'), instructions: productionInstructions };
         }
