@@ -130,6 +130,23 @@ function ffmpeg(args, options) {
   return run(FFMPEG, ['-hide_banner', '-nostdin', '-y', ...args], options);
 }
 
+// ffmpeg 9.0 removed the standalone -filter_complex_script option; the supported
+// spelling is now -/filter_complex (a leading '/' makes the argument a filename).
+// Probe the installed binary instead of guessing from the version string, because
+// custom builds re-add or rename options. Cache only the option name for the process.
+let filterScriptOptionName = null;
+async function filterScriptArgs(scriptPath, signal) {
+  if (filterScriptOptionName === null) {
+    const { stderr } = await run(FFMPEG, ['-hide_banner', '-h', 'full'],
+      { signal, timeout: 30_000, maxBytes: 8 * 2 ** 20 });
+    checkAbort(signal);
+    filterScriptOptionName = /(?:^|\s)-filter_complex_script(?:\s|$)/m.test(stderr.toString('utf8'))
+      ? '-filter_complex_script'
+      : '-/filter_complex';
+  }
+  return [filterScriptOptionName, scriptPath];
+}
+
 async function workspace(outputPath) {
   const output = filePath(outputPath, 'outputPath');
   await mkdir(dirname(output), { recursive: true });
@@ -549,7 +566,7 @@ export async function renderTimeline({ project, outputPath, onProgress, signal }
     }
     const script = join(job.temporary, 'filters.txt');
     await writeFile(script, filters.join(';\n'), { encoding: 'utf8', signal });
-    args.push('-filter_complex_script', script, '-map', `[${previous}]`);
+    args.push(...await filterScriptArgs(script, signal), '-map', `[${previous}]`);
     if (audioLabels.length) args.push('-map', '[audio]', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000');
     else args.push('-an');
     args.push(...videoEncoding(timeline.quality), '-r', String(timeline.fps), '-t', String(timeline.duration));
