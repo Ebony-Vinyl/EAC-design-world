@@ -161,6 +161,9 @@ async function serveFile(request, response, file) {
 export async function startServer({ engine: suppliedEngine, port = Number(process.env.EAC_PORT || 4173), dev = false, maintenanceOptions = {} } = {}) {
   const engine = suppliedEngine || await createEngine();
   const maintenance = createMaintenance({ engine, manifestPublicKey: RELEASE_PUBLIC_KEY, ...maintenanceOptions });
+  // instanceId 每个维护实例固定不变；缓存它供 /api/health 使用，避免健康检查
+  // 每次都走 status() 把本地安装的一次性令牌池冲掉（令牌随每次 status() 发放）。
+  const healthInstanceId = maintenance.status().instanceId;
   const vite = dev ? await (await import('vite')).createServer({ root: ROOT, server: { middlewareMode: true }, appType: 'spa' }) : null;
   let origin;
   const server = http.createServer(async (request, response) => {
@@ -175,7 +178,7 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
         if (requestOrigin && !loopback(requestOrigin) && !(composerRoute && trustedOrigin(requestOrigin))) {
           return json(response, 403, { error: '跨来源请求被拒绝' });
         }
-        if (url.pathname === '/api/health') return json(response, 200, { ok: true, name: 'EAC design world', version: VERSION, instanceId: maintenance.status().instanceId });
+        if (url.pathname === '/api/health') return json(response, 200, { ok: true, name: 'EAC design world', version: VERSION, instanceId: healthInstanceId });
         if (url.pathname === '/api/maintenance' && request.method === 'GET') return json(response, 200, maintenance.status());
         if (url.pathname.startsWith('/api/maintenance/') && ['POST', 'PUT'].includes(request.method)) {
           const input = await body(request);
@@ -294,7 +297,8 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
       return await serveFile(request, response, existsSync(file) && (await stat(file)).isFile() ? file : join(dist, 'index.html'));
     } catch (error) {
       if (response.headersSent) { response.destroy(error); return; }
-      return json(response, error.code === 'ENOENT' ? 404 : 400, { error: error.message });
+      // error.code 一并返回（如本地安装令牌 EAC_LOCAL_TOKEN），前端据此给出可操作提示。
+      return json(response, error.code === 'ENOENT' ? 404 : 400, { error: error.message, ...(error.code ? { code: error.code } : {}) });
     }
   });
   try {
