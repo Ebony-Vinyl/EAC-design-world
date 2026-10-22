@@ -188,10 +188,22 @@ export async function probeMedia(path, { signal } = {}) {
   const [numerator, denominator] = (video?.avg_frame_rate || video?.r_frame_rate || '0/1').split('/').map(Number);
   const durations = [format.duration, ...streams.map((stream) => stream.duration)]
     .map(Number).filter(Number.isFinite);
+  // A container's duration is the longest of its streams, so it cannot bound a
+  // single stream: a 2 s video track inside a 10 s mux would let a clip seek to
+  // 6 s and render pure black. Keep `duration` as the aggregate (callers compare
+  // it with the timeline), and expose per-stream values for clip validation.
+  const formatDuration = Number(format.duration);
+  const streamDuration = (stream) => {
+    const own = Number(stream?.duration);
+    if (Number.isFinite(own) && own > 0) return own;
+    return Number.isFinite(formatDuration) && formatDuration > 0 ? formatDuration : 0;
+  };
   return {
     path, duration: Math.max(0, ...durations), width: video?.width ?? null,
     height: video?.height ?? null, fps: denominator ? numerator / denominator : 0,
     hasVideo: Boolean(video), hasAudio: Boolean(audio),
+    videoDuration: video ? streamDuration(video) : 0,
+    audioDuration: audio ? streamDuration(audio) : 0,
     size: Number(format.size) || 0, streams, format,
   };
 }
@@ -500,10 +512,17 @@ export async function renderTimeline({ project, outputPath, onProgress, signal }
   }
   for (const clip of timeline.clips) {
     const info = media.get(clip.path);
-    if (!hasStream(info, clip.kind === 'audio' ? 'audio' : 'video')) throw new Error(`Clip ${clip.id ?? clip.index} lacks a ${clip.kind === 'audio' ? 'audio' : 'video'} stream`);
+    const wants = clip.kind === 'audio' ? 'audio' : 'video';
+    if (!hasStream(info, wants)) throw new Error(`Clip ${clip.id ?? clip.index} lacks a ${wants} stream`);
     if (clip.kind === 'image' && clip.sourceIn !== 0) throw new Error('Image sourceIn must be zero');
-    if (clip.kind !== 'image' && info.duration && clip.sourceIn + clip.duration > info.duration + 1 / timeline.fps) {
-      throw new Error(`Clip ${clip.id ?? clip.index} exceeds source duration`);
+    if (clip.kind !== 'image') {
+      // Bound the seek with the duration of the stream this clip actually reads.
+      // Using the container total let a clip run past the end of a shorter video
+      // track: ffmpeg kept encoding black frames and qualityCheck only warned.
+      const limit = wants === 'audio' ? info.audioDuration : info.videoDuration;
+      if (limit > 0 && clip.sourceIn + clip.duration > limit + 1 / timeline.fps) {
+        throw new Error(`Clip ${clip.id ?? clip.index} exceeds source duration (${wants} stream is ${limit}s)`);
+      }
     }
   }
   for (const bed of external) if (!media.get(bed.path).hasAudio) throw new Error(`${bed.key} has no audio stream`);

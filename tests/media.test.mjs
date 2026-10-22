@@ -17,6 +17,7 @@ let red;
 let blue;
 let image;
 let tone;
+let mixedDurations;
 
 function command(executable, args, { includeStderr = false } = {}) {
   return new Promise((resolve, reject) => {
@@ -168,6 +169,12 @@ before(async () => {
   await fixture(['-f', 'lavfi', '-i', 'color=c=lime:s=64x32',
     '-frames:v', '1', '-update', '1', image]);
   await fixture(['-f', 'lavfi', '-i', 'sine=frequency=880:sample_rate=48000:duration=0.35', tone]);
+  // A 2 s picture track inside a 10 s container: no -shortest, so the audio
+  // stream keeps running long after the picture ends.
+  mixedDurations = join(directory, 'mixed durations.mp4');
+  await fixture(['-f', 'lavfi', '-i', 'color=c=red:s=96x64:r=10:d=2',
+    '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=48000:duration=10',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', mixedDurations]);
 });
 
 after(async () => {
@@ -258,6 +265,30 @@ test('sourceIn trims real changing source content', async () => {
     ] }, outputPath: output,
   });
   assert.ok((await pixel(output, 0.1))[2] > 200);
+});
+
+test('clip bounds follow the stream a clip reads, not the container duration', async () => {
+  const mixed = await probeMedia(mixedDurations);
+  // The container reports the audio length; the picture track ends at 2 s.
+  assert.ok(Math.abs(mixed.duration - 10) < 0.3, `container duration was ${mixed.duration}`);
+  assert.ok(Math.abs(mixed.videoDuration - 2) < 0.3, `video duration was ${mixed.videoDuration}`);
+  assert.ok(Math.abs(mixed.audioDuration - 10) < 0.3, `audio duration was ${mixed.audioDuration}`);
+
+  // Seeking past the end of the picture track used to render one black second
+  // and still pass quality check (black frames were a warning, not an error).
+  await assert.rejects(renderTimeline({
+    project: { width: 96, height: 64, fps: 10, clips: [
+      { path: mixedDurations, kind: 'video', start: 0, sourceIn: 6, duration: 1 },
+    ] }, outputPath: join(directory, 'past-video-end.mp4'),
+  }), /exceeds source duration \(video stream/);
+
+  // The same offset is legitimate for the audio track, which really is 10 s long.
+  const audioOnly = await renderTimeline({
+    project: { width: 96, height: 64, fps: 10, clips: [
+      { path: mixedDurations, kind: 'audio', start: 0, sourceIn: 6, duration: 1 },
+    ] }, outputPath: join(directory, 'audio-tail.mp4'),
+  });
+  assert.ok(Math.abs(audioOnly.duration - 1) < 0.2, `audio clip duration was ${audioOnly.duration}`);
 });
 
 test('external voice and looped bed mix with original audio; voice does not loop', async () => {
