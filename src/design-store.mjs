@@ -66,30 +66,31 @@ function artifactView(project, artifact) {
 }
 
 /** Writes an immutable revision without ever clobbering an existing file: the bytes land in a
- *  private temporary file first, then a hard link publishes them under the final name, which fails
- *  with EEXIST if anything is already there. A crash mid-write therefore leaves only a temporary
- *  file (discarded on the next start), never a truncated "revision" that looks valid. */
-async function writeImmutable(path, content) {
+ *  private temporary file first (fsync'd, so a power cut cannot leave a half-written file that
+ *  looks like a revision), then a hard link publishes them under the final name, which fails with
+ *  EEXIST if anything is already there. There is deliberately no rename fallback: on a volume
+ *  without hard links a rename would replace an existing revision and break the immutability
+ *  promise, so such a volume fails closed instead of quietly overwriting history. A crash
+ *  mid-write therefore leaves only a temporary file (discarded on the next start). */
+async function writeImmutable(path, content, publish) {
   const temporary = `${path}${temporaryMarker}${randomUUID()}`;
-  await writeFile(temporary, content, { encoding: 'utf8', flag: 'wx' });
+  await writeFile(temporary, content, { encoding: 'utf8', flag: 'wx', flush: true });
   try {
-    try {
-      await link(temporary, path);
-    } catch (error) {
-      if (error.code === 'EEXIST') throw error;
-      // Filesystems without hard links: fall back to a rename, which is at least atomic.
-      await rename(temporary, path);
-    }
+    await publish(temporary, path);
   } finally {
     await unlink(temporary).catch(() => {});
   }
 }
 
 export class DesignStore {
-  constructor(root) {
+  /** `publish` is the hard-link step of an immutable revision write. It is a constructor option so
+   *  a test can simulate a volume without hard-link support, where the old rename fallback
+   *  silently replaced an existing revision. Production never passes it. */
+  constructor(root, { publish = link } = {}) {
     this.root = resolve(root);
     this.file = join(this.root, 'projects.json');
     this.files = join(this.root, 'files');
+    this.publish = publish;
     this.tail = Promise.resolve();
     this.mutations = Promise.resolve();
     this.lock = null;
@@ -134,7 +135,9 @@ export class DesignStore {
     const content = JSON.stringify(this.data, null, 2);
     this.tail = this.tail.catch(() => {}).then(async () => {
       const temporary = `${this.file}.${randomUUID()}.tmp`;
-      await writeFile(temporary, content, 'utf8');
+      // flush: fsync before the rename publishes the new metadata, so a power cut cannot leave a
+      // truncated projects.json behind (same durability contract as the revision writes above).
+      await writeFile(temporary, content, { encoding: 'utf8', flush: true });
       await rename(temporary, this.file);
     });
     return this.tail;
@@ -290,7 +293,7 @@ export class DesignStore {
       const path = resolve(directory, `r${nextRevision}${extensions[kind]}`);
       if (!inside(this.files, path)) throw new Error('成品路径越界');
       try {
-        await writeImmutable(path, content);
+        await writeImmutable(path, content, this.publish);
         written = path;
         break;
       } catch (error) {

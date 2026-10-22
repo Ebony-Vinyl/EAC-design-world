@@ -132,6 +132,35 @@ test('unconfigured model reports a configuration error instead of an invented de
   }), TypeError);
 });
 
+test('an invalid language is a parameter error even on a machine with no model configured', async (t) => {
+  const directory = await workspace(t);
+  const previous = process.env.EAC_WHISPER_MODEL_PATH;
+  // The operator's environment must not decide which error a caller sees: with no model the
+  // pre-fix code answered EAC_WHISPER_MODEL_UNCONFIGURED for any language, hiding the real bug.
+  delete process.env.EAC_WHISPER_MODEL_PATH;
+  try {
+    for (const language of ['--bad', 'english', 'EN', 42, '']) {
+      await assert.rejects(
+        transcribeMedia({
+          path: join(directory, 'unused input.wav'),
+          outputDir: join(directory, 'unused output'),
+          language,
+        }),
+        (error) => {
+          assert.notEqual(error.code, 'EAC_WHISPER_MODEL_UNCONFIGURED',
+            'a missing model must never mask an invalid language argument');
+          assert.match(error.message, /language/);
+          return true;
+        },
+      );
+    }
+    assert.deepEqual(await readdir(directory), [], 'a rejected argument must not touch the filesystem');
+  } finally {
+    if (previous === undefined) delete process.env.EAC_WHISPER_MODEL_PATH;
+    else process.env.EAC_WHISPER_MODEL_PATH = previous;
+  }
+});
+
 test('multibyte JSON split across stdout chunks is decoded once, not per chunk', { timeout: 60_000 }, async (t) => {
   const directory = await workspace(t);
   const shim = join(directory, 'python startup');

@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { mkdtemp, readFile, rm, mkdir, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, mkdir, writeFile, link } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createEngine, designContextFor } from '../src/engine.mjs';
+import { DesignStore } from '../src/design-store.mjs';
 import { startServer } from '../src/server.mjs';
 import { loadLibrary, resolveTemplate, libraryCatalogEntry } from '../src/catalog.mjs';
 
@@ -335,6 +336,42 @@ test('an untracked revision file that appears at runtime is adopted instead of f
   assert.equal((await engine.designStore.readContent(saved.id, 2)).content, '# stray');
   assert.equal((await engine.designStore.readContent(saved.id, 3)).content, '# two');
 }));
+
+test('a volume without hard links fails the save instead of overwriting a revision', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'eac-design-nolink-'));
+  let hardLinks = true;
+  // Simulates the volume the old rename fallback was written for: link() fails with a code other
+  // than EEXIST, while a rename would have succeeded and silently replaced r2.html.
+  const store = new DesignStore(directory, {
+    publish: (temporary, path) => (hardLinks
+      ? link(temporary, path)
+      : Promise.reject(Object.assign(new Error('hard links are not supported on this volume'), { code: 'EPERM' }))),
+  });
+  await store.init();
+  try {
+    const project = await store.createProject({ title: 'No links', kind: 'website' });
+    const first = await store.saveArtifact({ projectId: project.id, name: 'index.html', content: '<h1>one</h1>' });
+    assert.equal(first.revision, 1);
+    hardLinks = false;
+    await assert.rejects(
+      store.saveArtifact({ projectId: project.id, name: 'index.html', content: '<h1>two</h1>', revision: 1 }),
+      (error) => {
+        assert.equal(error.code, 'EPERM', 'an unsupported volume must fail closed, not publish by rename');
+        return true;
+      },
+    );
+    assert.equal(existsSync(join(directory, 'files', first.id, 'r2.html')), false,
+      'no revision may be published when the link step failed');
+    assert.equal((await store.readContent(first.id, 1)).content, '<h1>one</h1>', 'existing revision bytes stay intact');
+    assert.equal(store.snapshot().projects[0].artifacts[0].revision, 1,
+      'metadata must not claim a revision that was never published');
+    // The interrupted attempt must not leave a temporary file behind either.
+    assert.deepEqual((await readdir(join(directory, 'files', first.id))).sort(), ['r1.html']);
+  } finally {
+    await store.release().catch(() => {});
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 
 test('design projects survive engine restart through the local store', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-design-restart-'));

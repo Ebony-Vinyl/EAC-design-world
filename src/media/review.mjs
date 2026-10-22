@@ -2,7 +2,8 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { randomUUID } from 'node:crypto';
 import { dirname, extname, join, resolve } from 'node:path';
-import { mkdir, rename, rm } from 'node:fs/promises';
+import { mkdir, rename } from 'node:fs/promises';
+import { cleanupStaging } from './index.mjs';
 
 const COLUMNS = 4;
 const ROWS = 3;
@@ -73,7 +74,11 @@ export async function createReviewSheet({ path, outputPath, duration, signal }) 
       '-frames:v', '1', staged], { signal });
     await rename(staged, output);
   } finally {
-    await rm(staged, { force: true, maxRetries: 5, retryDelay: 50 });
+    // was: rm(staged, { force: true, maxRetries: 5, retryDelay: 50 }) -- Node's retry backoff
+    // overshoots the documented ~750 ms budget badly (34 s measured) and a throw here would
+    // replace the real ffmpeg/abort error. cleanupStaging removes a plain file path just as it
+    // removes a directory (fs.rm stats first) and never rejects.
+    await cleanupStaging(staged);
   }
   return {
     path: output, sampleCount, columns: COLUMNS, rows: ROWS,

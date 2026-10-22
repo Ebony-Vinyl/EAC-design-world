@@ -1,8 +1,9 @@
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, rename, rm, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rename, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cleanupStaging } from './media/index.mjs';
 
 const SCRIPT = fileURLToPath(new URL('../scripts/transcribe.py', import.meta.url));
 const UNCONFIGURED_MODEL = 'EAC_WHISPER_MODEL_UNCONFIGURED';
@@ -128,10 +129,13 @@ export async function transcribeMedia({ path, outputDir, modelPath, language, si
   checkAbort(signal);
   path = filePath(path, 'path');
   outputDir = filePath(outputDir, 'outputDir');
-  modelPath = selectedModel(modelPath);
+  // Pure argument validation runs before any model/environment probe. Otherwise an operator's
+  // missing EAC_WHISPER_MODEL_PATH would mask a caller bug: an invalid `language` on a machine
+  // without a model used to report "not configured" instead of the actual parameter error.
   if (language !== undefined && (typeof language !== 'string' || !/^[a-z]{2,3}$/.test(language))) {
     throw new TypeError('language must be a two or three letter lowercase Whisper language code');
   }
+  modelPath = selectedModel(modelPath);
   const source = await stat(path);
   if (!source.isFile() || source.size === 0 || source.size > 2 * 1024 ** 3) {
     throw new Error('Transcription input must be a nonempty file of at most 2 GiB');
@@ -175,11 +179,14 @@ export async function transcribeMedia({ path, outputDir, modelPath, language, si
     success = true;
     return { segments: result.segments, language: result.language, srtPath, jsonPath, modelPath };
   } finally {
+    // This block is a finally: a throw here would replace the error that actually ended the
+    // transcription (an abort would surface as EPERM and stop being recognisable). cleanupStaging
+    // is bounded, never rejects, and reports through an EacCleanupWarning instead.
     if (!success) {
-      if (publishedSrt) await rm(srtPath, { force: true });
-      if (publishedJson) await rm(jsonPath, { force: true });
+      if (publishedSrt) await cleanupStaging(srtPath);
+      if (publishedJson) await cleanupStaging(jsonPath);
     }
-    await rm(temporary, { recursive: true, force: true });
+    await cleanupStaging(temporary);
   }
 }
 

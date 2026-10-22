@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { channel } from 'node:diagnostics_channel';
-import { mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, open, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, before, test } from 'node:test';
+import { cleanupStaging } from '../src/media/index.mjs';
 import { createReviewSheet } from '../src/media/review.mjs';
 
 const MARGIN = 4;
@@ -178,4 +180,98 @@ test('the sheet is staged beside the target, never written straight to it', asyn
   assert.notEqual(staged, output, 'ffmpeg must write a staging file, never the delivery path');
   assert.equal(dirname(staged), dirname(output), 'staging must sit beside the target so rename stays on one volume');
   assert.equal(await renderedCells(output), 12, 'the staged file still has to be published to the delivery path');
+});
+
+/**
+ * The staging cleanup runs in a `finally`. Node's own `rm({ maxRetries: 5, retryDelay: 50 })` was
+ * argued away in 250fd12 because its backoff overshoots the documented budget and it rejects,
+ * which replaces the error that actually ended the render. This pins the shared contract review.mjs
+ * now delegates to: while another process holds the file, the removal is retried, then reported --
+ * it is never re-raised into the caller.
+ */
+test('staging cleanup retries a held file, reports it, and never rejects', {
+  skip: process.platform !== 'win32' ? 'an exclusive file lock is only enforceable on Windows' : false,
+}, async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), 'eac review lock '));
+  const held = join(directory, 'staged.jpg');
+  await writeFile(held, 'staged bytes');
+  // FileShare.None: unlink is EBUSY and even the chmod Node's own rm retries with cannot run.
+  const holder = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
+    `$f=[IO.File]::Open('${held}','Open','ReadWrite','None'); Start-Sleep -Milliseconds 4000; $f.Dispose()`,
+  ], { windowsHide: true, stdio: 'ignore' });
+  const closed = new Promise((done) => holder.once('close', done));
+  t.after(async () => {
+    holder.kill('SIGKILL');
+    await closed;
+    await rm(directory, { recursive: true, force: true });
+  });
+  // Wait for the exclusive handle to exist; without it the removal would simply succeed.
+  for (let attempt = 0; ; attempt++) {
+    const locked = await open(held, 'r+').then(async (handle) => { await handle.close(); return false; }, () => true);
+    if (locked) break;
+    assert.ok(attempt < 100, 'the exclusive lock was never taken');
+    await new Promise((done) => setTimeout(done, 50));
+  }
+  const failures = [];
+  const started = performance.now();
+  await cleanupStaging(held, { onFailure: (error, path) => failures.push({ code: error.code, path }) });
+  const elapsed = performance.now() - started;
+  assert.equal(failures.length, 1, 'a failed removal is reported through onFailure, not a rejection');
+  assert.equal(failures[0].path, held);
+  assert.match(String(failures[0].code), /^(EPERM|EBUSY|EACCES)$/);
+  assert.ok(elapsed >= 400, `the retry budget has to be exercised, took ${Math.round(elapsed)}ms`);
+  assert.ok(elapsed < 5000, `cleanup must stay near its ~750ms budget, took ${Math.round(elapsed)}ms`);
+  // Only readable once the exclusive handle is gone -- which also proves cleanup did not remove it.
+  holder.kill('SIGKILL');
+  await closed;
+  assert.equal(await readFile(held, 'utf8'), 'staged bytes', 'a failed cleanup must not damage the file it could not remove');
+});
+
+test('a cleanup that cannot remove its staging path never replaces the real error', async () => {
+  const output = join(directory, 'sabotaged sheet.jpg');
+  const events = channel('child_process');
+  let sabotaged = 0;
+  // Take the staging path before ffmpeg writes it: a directory sitting there makes the render
+  // fail, and a plain rm() of a directory throws ERR_FS_EISDIR from the `finally` -- which would
+  // replace the real 成片抽帧失败 error. cleanupStaging() reports it instead of raising.
+  const listener = ({ process: child }) => {
+    // spawnargs is only populated by the time 'spawn' fires, not when the channel publishes.
+    child.once('spawn', () => {
+      if (child.spawnfile !== 'ffmpeg') return;
+      const staged = child.spawnargs.at(-1);
+      if (!staged?.includes('.eac-review-')) return;
+      try { mkdirSync(staged); sabotaged++; } catch { /* ffmpeg got there first */ }
+    });
+  };
+  events.subscribe(listener);
+  try {
+    await assert.rejects(createReviewSheet({ path: red, outputPath: output, duration: 2 }), (error) => {
+      assert.match(error.message, /成片抽帧失败/,
+        `the ffmpeg error must survive the cleanup, got ${error.code}: ${error.message}`);
+      return true;
+    });
+  } finally {
+    events.unsubscribe(listener);
+  }
+  assert.equal(sabotaged, 1, 'the staging path must have been blocked by this test');
+  assert.deepEqual(await stagedLeftovers(), [], 'the blocked staging path is still cleaned up');
+});
+
+test('a publish failure surfaces its own error and never a cleanup error', async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), 'eac review publish '));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  // A non-empty directory where the sheet must land: ffmpeg renders fine, rename cannot replace it.
+  const output = join(directory, 'occupied.jpg');
+  await mkdir(output, { recursive: true });
+  await writeFile(join(output, 'keep.txt'), 'occupied');
+  await assert.rejects(createReviewSheet({ path: red, outputPath: output, duration: 2 }), (error) => {
+    assert.doesNotMatch(error.message, /EAC_CLEANUP|Could not remove staging/,
+      'cleanup must not replace the error that ended the render');
+    assert.match(String(error.code), /^(EPERM|EACCES|EISDIR|ENOTEMPTY|EEXIST|ENOTDIR)$/,
+      `expected the rename failure, got ${error.code}: ${error.message}`);
+    return true;
+  });
+  assert.deepEqual((await readdir(directory)).filter((name) => name.startsWith('.eac-review-')), [],
+    'the failed render must remove its staging file');
+  assert.deepEqual(await readdir(output), ['keep.txt'], 'the occupied target must be untouched');
 });
