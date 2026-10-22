@@ -2,6 +2,7 @@ import http from 'node:http';
 import { createReadStream } from 'node:fs';
 import { mkdir, mkdtemp, stat, writeFile, rm, realpath, rename } from 'node:fs/promises';
 import { resolve, join, dirname, relative, isAbsolute, extname } from 'node:path';
+import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { once } from 'node:events';
@@ -10,7 +11,46 @@ import { chromium } from 'playwright';
 
 const within = (root, file) => { const rel = relative(root, file); return !rel.startsWith('..') && !isAbsolute(rel); };
 const motionAssetRoots = ['vendor/onetake/lib', 'vendor/motion-web', 'vendor/eac-motion'];
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.glb': 'model/gltf-binary', '.mp4': 'video/mp4' };
+const types = { '.html': 'text/html', '.htm': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.glb': 'model/gltf-binary', '.mp4': 'video/mp4' };
+// The render page is local template code running against a throwaway file server. That server has no
+// API and no credentials, but the page still must not phone home, reach another localhost service,
+// submit forms or pull a remote CDN: 'self' is the ephemeral 127.0.0.1 port only. No `sandbox`
+// directive — deterministic frame rendering needs a real origin for canvas/WebGL/blob workers, and an
+// opaque origin would make ordinary template scripts throw on storage access.
+const renderCsp = [
+  "default-src 'none'",
+  "script-src 'unsafe-inline' 'unsafe-eval' 'self'",
+  "style-src 'unsafe-inline' 'self'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  "media-src 'self' data: blob:",
+  "connect-src 'self'",
+  "worker-src 'self' blob:",
+  "frame-src 'self'",
+  "base-uri 'self'",
+  "form-action 'none'",
+].join('; ');
+
+// htmlPath is user-supplied through job_submit, so it must resolve inside a root this renderer is
+// allowed to read: the repository (vendored templates and example films), the working directory,
+// the job/project output directory the MP4 is written to, or the OS temp directory used for
+// throwaway drafts. Symlinks are resolved first so a link inside the tree cannot point outside it.
+// The asset server derives its document root from this path, so containing it also bounds what the
+// page can read.
+async function resolveRenderSource(htmlPath, outputPath) {
+  const real = await realpath(resolve(ROOT, htmlPath)).catch(() => null);
+  if (!real) throw new Error(`htmlPath 不存在：${htmlPath}`);
+  // Repository and working directory cover vended templates and agent-authored films; the job output
+  // directory and its project directory cover drafts kept next to the rendered MP4; the OS temp
+  // directory covers throwaway fixtures.
+  const candidates = [ROOT, process.cwd(), dirname(resolve(outputPath)), dirname(dirname(resolve(outputPath))), tmpdir()];
+  const roots = await Promise.all([...new Set(candidates)]
+    .map(candidate => realpath(candidate).catch(() => resolve(candidate))));
+  if (!roots.some(root => within(root, real))) {
+    throw new Error(`htmlPath 必须位于仓库/工作目录、项目输出目录或系统临时目录内：${real}`);
+  }
+  return real;
+}
 
 async function assetServer(root, entry) {
   const server = http.createServer(async (req, res) => {
@@ -25,7 +65,14 @@ async function assetServer(root, entry) {
       if (resolved !== entry && !within(root, resolved) && !within(join(ROOT, 'node_modules'), resolved)
         && !motionAssetRoots.some(directory => within(join(ROOT, directory), resolved))) throw new Error('Path outside template');
       if (!(await stat(resolved)).isFile()) throw new Error('Not a file');
-      res.writeHead(200, { 'content-type': types[extname(resolved)] || 'application/octet-stream' });
+      const extension = extname(resolved).toLowerCase();
+      const type = types[extension] || 'application/octet-stream';
+      const document = extension === '.html' || extension === '.htm';
+      res.writeHead(200, {
+        'content-type': type,
+        ...(document ? { 'content-security-policy': renderCsp, 'cache-control': 'no-store' } : {}),
+        ...(type === 'application/octet-stream' ? {} : { 'x-content-type-options': 'nosniff' }),
+      });
       createReadStream(resolved).pipe(res);
     } catch { res.writeHead(404); res.end(); }
   });
@@ -45,13 +92,15 @@ export async function renderTemplate({ templateId, htmlPath, outputPath, duratio
   outputPath = resolve(outputPath);
   if (extname(outputPath).toLowerCase() !== '.mp4') throw new Error('模板输出必须是 MP4 文件');
   const template = await resolveTemplate(templateId);
-  if (template.previewMode === 'interactive' && htmlPath && resolve(ROOT, htmlPath) === resolve(ROOT, template.entry)) {
-    throw new Error(`模板 ${template.id} 是原始实时交互页面；请用 record-browser 录制，或将定制合成另存为支持 __seek(t) 的 htmlPath`);
-  }
-  if (!htmlPath && !template.entry) throw new Error(`模板 ${template.id} 只有提示词或示例，没有可渲染的源文件；请提交 htmlPath 或改用其它模板`);
+  const entry = template.entry ? resolve(ROOT, template.entry) : null;
+  const entryReal = entry ? await realpath(entry).catch(() => entry) : null;
+  if (!htmlPath && !entry) throw new Error(`模板 ${template.id} 只有提示词或示例，没有可渲染的源文件；请提交 htmlPath 或改用其它模板`);
   if (!htmlPath && template.previewMode === 'interactive') throw new Error(`模板 ${template.id} 是实时交互页面；请用 record-browser 录制实际操作，或先定制为支持 __seek(t) 的 htmlPath 再逐帧渲染`);
   if (!htmlPath && template.renderable === false) throw new Error(`模板 ${template.id} 的运行时依赖不可用（${template.status}），不能直接渲染；请补全依赖或提交定制 htmlPath`);
-  const source = resolve(ROOT, htmlPath || template.entry);
+  const source = htmlPath ? await resolveRenderSource(htmlPath, outputPath) : entryReal;
+  if (htmlPath && template.previewMode === 'interactive' && source === entryReal) {
+    throw new Error(`模板 ${template.id} 是原始实时交互页面；请用 record-browser 录制，或将定制合成另存为支持 __seek(t) 的 htmlPath`);
+  }
   const sourceRoot = htmlPath ? dirname(source) : template.source === 'mg-styles-15' ? join(ROOT, 'vendor/mg-styles-15') : dirname(source);
   if (template.id === '04-3d-render' && !htmlPath) throw new Error('此三维模板依赖预渲染 Blender 资产，请先生成其资产再渲染');
   scale = Number(scale);

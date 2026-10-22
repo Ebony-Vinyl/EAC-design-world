@@ -6,7 +6,8 @@ import { join } from 'node:path';
 import { createEngine } from '../src/engine.mjs';
 import { startServer } from '../src/server.mjs';
 import http from 'node:http';
-import { exportDesignArtifact } from '../src/design-export.mjs';
+import { chromium } from 'playwright';
+import { exportDesignArtifact, exportDocumentCsp, isolatedArtifactDocument } from '../src/design-export.mjs';
 
 test('real HTML deck exports PDF, PNG and a two-slide PowerPoint with explicit image fidelity', { timeout: 120000 }, async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-design-export-'));
@@ -62,8 +63,92 @@ test('export resolves relative vendor assets and blocks requests to the API', { 
     const result = await exportDesignArtifact({ store: engine.designStore, id: artifact.id, format: 'png', origin });
     assert.ok((await readFile(result.path)).length > 500);
     assert.deepEqual(requests, ['/vendor/relative.svg']);
+    // The export page is isolated (opaque origin) and reported that honestly.
+    assert.equal(result.pageSandboxed, true);
+    assert.equal(result.complete, true);
+    assert.equal(result.blockedRequests.count, 0);
   } finally {
     await new Promise(resolve => { server.close(resolve); server.closeAllConnections(); });
     await engine.close(); await rm(directory, { recursive: true, force: true });
   }
 });
+
+test('export reports the resources it refused instead of shipping a silently incomplete file', { timeout: 45000 }, async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'eac-export-missing-'));
+  const engine = await createEngine({ dataDir: directory });
+  const requests = [];
+  const server = http.createServer((request, response) => {
+    requests.push(request.url);
+    response.writeHead(200, { 'content-type': 'image/svg+xml' });
+    response.end('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="red"/></svg>');
+  });
+  try {
+    await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+    const origin = `http://127.0.0.1:${server.address().port}`;
+    const project = await engine.handle('design_project_create', { title: 'Missing assets', kind: 'website' });
+    const artifact = await engine.handle('design_artifact_save', {
+      projectId: project.id, name: 'index.html',
+      // A relative stylesheet, a relative image and an allowed vendor image: the artifact is typical
+      // of a page written against the project folder, where relative paths can never resolve here.
+      content: '<!doctype html><link rel="stylesheet" href="./style.css"><img src="images/photo.svg"><img src="/vendor/allowed.svg">'
+        // Touching storage used to work on the same-origin export page; the isolated page throws and
+        // the export must say so instead of reporting a clean success.
+        + '<script>localStorage.getItem("design-export-probe")</script>',
+    });
+    const result = await exportDesignArtifact({ store: engine.designStore, id: artifact.id, format: 'png', origin });
+    assert.ok((await readFile(result.path)).length > 500, 'the export still produces its file');
+    assert.equal(result.complete, false);
+    assert.equal(result.blockedRequests.count, 2);
+    const blockedUrls = result.blockedRequests.sample.map(item => item.url);
+    assert.ok(blockedUrls.some(url => url.endsWith('/__eac-export/style.css')), blockedUrls.join(', '));
+    assert.ok(blockedUrls.some(url => url.endsWith('/__eac-export/images/photo.svg')), blockedUrls.join(', '));
+    assert.ok(result.blockedRequests.sample.every(item => typeof item.type === 'string'));
+    assert.match(result.warning, /导出缺失 2 个外部资源/);
+    assert.match(result.warning, /__eac-export\/style\.css/);
+    assert.deepEqual(requests, ['/vendor/allowed.svg'], 'refused resources never reach the server');
+    assert.equal(result.pageSandboxed, true);
+    assert.ok(result.pageErrors.count >= 1, JSON.stringify(result.pageErrors));
+    assert.match(result.warning, /导出页脚本报错/);
+  } finally {
+    await new Promise(resolve => { server.close(resolve); server.closeAllConnections(); });
+    await engine.close(); await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('the export page policy runs scripts in an opaque origin and blocks every network egress', { timeout: 45000 }, async () => {
+  const origin = 'http://127.0.0.1:43210';
+  const policy = exportDocumentCsp(origin);
+  assert.match(policy, /default-src 'none'/);
+  assert.match(policy, /connect-src 'none'/);
+  assert.match(policy, /form-action 'none'/);
+  assert.doesNotMatch(policy, /\*/);
+  const hits = [];
+  const spy = http.createServer((request, response) => {
+    hits.push(request.url);
+    response.writeHead(200, { 'content-type': 'image/gif' });
+    response.end('GIF89a');
+  });
+  let browser;
+  try {
+    await new Promise(done => spy.listen(0, '127.0.0.1', done));
+    const spyOrigin = `http://127.0.0.1:${spy.address().port}`;
+    browser = await chromium.launch({ ...(process.env.EAC_BROWSER ? { executablePath: process.env.EAC_BROWSER } : { channel: 'msedge' }), headless: true });
+    const page = await browser.newPage({ viewport: { width: 640, height: 360 }, serviceWorkers: 'block' });
+    await page.setContent(isolatedArtifactDocument(`<!doctype html><html><head><style>body{margin:0;background:#123456}</style></head><body>
+      <div id="mark">pending</div>
+      <script>
+        fetch('${spyOrigin}/beacon', { method: 'POST', body: 'x' }).catch(() => {});
+        new Image().src = '${spyOrigin}/pixel.gif';
+        document.getElementById('mark').textContent = 'script ran';
+      </script></body></html>`, origin), { waitUntil: 'load' });
+    await page.waitForTimeout(600);
+    assert.equal(await page.locator('#mark').textContent(), 'script ran');
+    assert.equal(await page.evaluate(() => document.baseURI), `${origin}/__eac-export/`);
+    assert.equal(await page.evaluate(() => { try { window.localStorage.setItem('probe', '1'); return 'reachable'; } catch { return 'blocked'; } }), 'blocked');
+    assert.deepEqual(hits, []);
+  } finally {
+    await browser?.close();
+    await new Promise(done => { spy.close(done); spy.closeAllConnections(); });
+  }
+});
+
