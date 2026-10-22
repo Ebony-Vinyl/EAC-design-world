@@ -273,3 +273,44 @@ test('import is idempotent: catalog digest is stable across re-reads', () => {
   assert.equal(again.source.digest, catalog.source.digest);
   assert.equal(again.stats.total, catalog.stats.total);
 });
+
+test('a junction inside the library cannot hand out a file from outside it', async () => {
+  // Containment used to be decided on the STRING that names a path: `resolve()` normalises `..` but
+  // never follows a link, while every reader of this value does follow links. One contributed
+  // junction inside the tree was therefore enough to read any file on the machine.
+  const { symlinkSync, unlinkSync } = await import('node:fs');
+  const { execFileSync } = await import('node:child_process');
+  const linkPath = join(ROOT, 'vendor', 'open-design', `probe-junction-${process.pid}`);
+  let created = false;
+  try {
+    // A directory junction is creatable without privileges on Windows; a plain symlink elsewhere.
+    if (process.platform === 'win32') {
+      execFileSync('cmd', ['/c', 'mklink', '/J', linkPath, process.env.SystemRoot || 'C:\Windows'], { stdio: 'ignore' });
+    } else {
+      symlinkSync('/', linkPath);
+    }
+    created = true;
+  } catch { /* an environment that forbids links cannot exercise this; skip below */ }
+  if (!created) {
+    assert.ok(true, 'symbolic links are unavailable here; the realpath gate is covered by the refusal cases');
+    return;
+  }
+  try {
+    const escaping = resolveLibraryPath(`vendor/open-design/${linkPath.split(/[\/]/).pop()}/win.ini`);
+    assert.equal(escaping, null, 'a path that RESOLVES outside the library must be refused');
+    // A real file inside the library is still served.
+    assert.ok(resolveLibraryPath('vendor/open-design/catalog.json'));
+  } finally {
+    try { unlinkSync(linkPath); } catch { /* already gone */ }
+  }
+});
+
+test('a missing catalog file degrades to "not there" instead of throwing', () => {
+  // catalog.json and the vendor tree are third-party contribution, so a listed file can be absent.
+  // Reading it must report absence (callers show exists:false), never abort the whole library read.
+  const absent = resolveLibraryPath('vendor/open-design/definitely-absent-probe.html');
+  assert.ok(absent, 'a missing file still resolves to its intended path');
+  assert.equal(existsSync(absent), false);
+  // Still a refusal when the path itself leaves the tree.
+  assert.equal(resolveLibraryPath('vendor/open-design/../../package.json'), null);
+});

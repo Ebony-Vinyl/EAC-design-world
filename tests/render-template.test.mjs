@@ -8,7 +8,7 @@ import { Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { renderTemplate, sendAssetBody } from '../src/render-template.mjs';
+import { renderTemplate, sendAssetBody, containRenderSource } from '../src/render-template.mjs';
 
 const run = promisify(execFile);
 const renderSource = fileURLToPath(new URL('../src/render-template.mjs', import.meta.url));
@@ -212,5 +212,28 @@ test('the asset server answers 404 for a vanished file instead of crashing the h
   } finally {
     watch.stop();
     await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('a short output path cannot promote the drive root into an allowed render root', async () => {
+  // `dirname(dirname(outputPath))` for C:\x.mp4 is C:\ — treating a whole drive as "project output",
+  // which let an htmlPath of C:\Windows\win.ini pass containment. The walked-up roots must stop
+  // before a filesystem root, and the root is never a legitimate candidate.
+  const winIni = 'C:' + String.fromCharCode(92) + 'Windows' + String.fromCharCode(92) + 'win.ini';
+  for (const outputPath of ['C:' + String.fromCharCode(92) + 'x.mp4', 'C:' + String.fromCharCode(92) + 'dir' + String.fromCharCode(92) + 'x.mp4']) {
+    await assert.rejects(containRenderSource(winIni, outputPath, 'htmlPath'),
+      /必须位于仓库\/工作目录、项目输出目录或系统临时目录内/,
+      `the drive root leaked into the allowed roots for ${outputPath}`);
+  }
+  // A file in a real project directory is still accepted.
+  const project = await mkdtemp(join(tmpdir(), 'eac contain '));
+  try {
+    const film = join(project, 'film.html');
+    await writeFile(film, '<!doctype html><h1>ok</h1>');
+    const accepted = await containRenderSource(film, join(project, 'job', 'film.mp4'), 'htmlPath');
+    const { realpath } = await import('node:fs/promises');
+    assert.equal(accepted, await realpath(film), 'a file in the project directory must still be allowed');
+  } finally {
+    await rm(project, { recursive: true, force: true });
   }
 });

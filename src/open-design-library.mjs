@@ -20,7 +20,7 @@
 // paths are relative to the repository ROOT; `thumbnail` is a `/vendor/...`
 // URL or null (never a fabricated image).
 
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, realpathSync } from 'node:fs';
 import { resolve, join, relative, isAbsolute, extname } from 'node:path';
 import { ROOT } from './catalog.mjs';
 
@@ -107,16 +107,40 @@ export function isOpenDesignLibraryAvailable() {
 
 // Resolve a catalog-relative path to an absolute path, refusing anything that
 // escapes `vendor/open-design`. Returns null when unsafe or non-existent.
+//
+// Containment is decided on the REAL path, not on the string that names it. `resolve()` only
+// normalises `..` textually and never follows links, while every consumer here goes on to read the
+// file with something that does follow them (`readTextFile`, `engine.template_read`, and
+// render-template's entry containment). Since catalog.json and the vendor tree are third-party
+// contribution, a single contributed symlink pointing outside was enough to turn this gate into an
+// arbitrary file read. Symlinks that stay inside the tree are still accepted, which is what the
+// vendor tree legitimately uses.
 export function resolveLibraryPath(relPath) {
   if (typeof relPath !== 'string' || !relPath.trim()) return null;
   const normalized = relPath.replace(/\\/g, '/').replace(/^\.\//, '');
-  if (normalized.startsWith('/vendor/')) {
-    const candidate = resolve(ROOT, `.${normalized}`);
-    const rel = relative(join(ROOT, OPEN_DESIGN_ROOT), candidate);
-    return rel && !rel.startsWith('..') && !isAbsolute(rel) ? candidate : null;
+  const candidate = resolve(ROOT, normalized.startsWith('/vendor/') ? `.${normalized}` : normalized);
+  const libraryRoot = join(ROOT, OPEN_DESIGN_ROOT);
+  const contained = (path) => {
+    const rel = relative(libraryRoot, path);
+    return Boolean(rel) && !rel.startsWith('..') && !isAbsolute(rel);
+  };
+  if (!contained(candidate)) return null;
+  // `fs.realpathSync` has no `throwIfNoEntry` option (that one belongs to statSync/lstatSync), so a
+  // missing path throws instead of returning undefined. A file that is simply ABSENT must read as
+  // "not there" (callers report exists:false and degrade) rather than crashing the whole
+  // library_read. Any other resolution failure means containment cannot be proven — a link loop, an
+  // unreadable directory — and that must be a refusal, not a silent pass.
+  let real;
+  try {
+    real = realpathSync(candidate);
+  } catch (error) {
+    if (error?.code === 'ENOENT' || error?.code === 'ENOTDIR') return candidate;
+    return null;
   }
-  const candidate = resolve(ROOT, normalized);
-  const rel = relative(join(ROOT, OPEN_DESIGN_ROOT), candidate);
+  // The root is resolved too, so a checkout reached through a symlinked directory is compared
+  // against the real tree rather than against the symlinked spelling.
+  const realRoot = (() => { try { return realpathSync(libraryRoot); } catch { return libraryRoot; } })();
+  const rel = relative(realRoot, real);
   return rel && !rel.startsWith('..') && !isAbsolute(rel) ? candidate : null;
 }
 

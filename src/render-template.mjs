@@ -43,15 +43,32 @@ const executableDocuments = new Set(['.html', '.htm', '.svg', '.xhtml']);
 // throwaway drafts. Symlinks are resolved first so a link inside the tree cannot point outside it.
 // The asset server derives its document root from this path, so containing it also bounds what the
 // page can read.
-async function containRenderSource(candidate, outputPath, label) {
+export async function containRenderSource(candidate, outputPath, label) {
   const real = await realpath(resolve(ROOT, candidate)).catch(() => null);
   if (!real) throw new Error(`${label} 不存在：${candidate}`);
   // Repository and working directory cover vended templates and agent-authored films; the job output
   // directory and its project directory cover drafts kept next to the rendered MP4; the OS temp
   // directory covers throwaway fixtures.
-  const candidates = [ROOT, process.cwd(), dirname(resolve(outputPath)), dirname(dirname(resolve(outputPath))), tmpdir()];
-  const roots = await Promise.all([...new Set(candidates)]
-    .map(candidate => realpath(candidate).catch(() => resolve(candidate))));
+  //
+  // A root has to be a real directory, never a drive root reached by walking up too far: with a short
+  // outputPath like C:\x.mp4, `dirname(dirname(outputPath))` is C:\ — and then EVERYTHING on that
+  // drive is "inside the root", so win.ini passed containment.
+  //
+  // Exactly one step up, matching the original `dirname(dirname())` breadth: the output directory plus
+  // its parent (the project directory). Walking two steps instead silently widened the allowance by one
+  // level of ancestor.
+  const output = dirname(resolve(outputPath));
+  const upwardRoots = [output];
+  const parent = dirname(output);
+  if (parent && dirname(parent) !== parent) upwardRoots.push(parent);
+  // Every root is filtered for drive roots, tmpdir() included. On a machine where TEMP is the drive
+  // root, keeping it would re-open exactly the hole this guards: the whole drive would count as
+  // project output and win.ini would pass again. Refusing a throwaway-fixture render on such a
+  // machine (a rare, self-inflicted configuration) is the correct trade against that.
+  const isDriveRoot = (path) => Boolean(path) && dirname(path) === path;
+  const candidates = [ROOT, process.cwd(), ...upwardRoots, tmpdir()];
+  const resolvedRoots = await Promise.all(candidates.map(candidate => realpath(candidate).catch(() => resolve(candidate))));
+  const roots = [...new Set(resolvedRoots)].filter(root => Boolean(root) && !isDriveRoot(root));
   if (!roots.some(root => within(root, real))) {
     throw new Error(`${label} 必须位于仓库/工作目录、项目输出目录或系统临时目录内：${real}`);
   }
@@ -157,12 +174,22 @@ export async function renderTemplate({ templateId, htmlPath, outputPath, duratio
   if (!htmlPath && !entryDeclared) throw new Error(`模板 ${template.id} 只有提示词或示例，没有可渲染的源文件；请提交 htmlPath 或改用其它模板`);
   if (!htmlPath && template.previewMode === 'interactive') throw new Error(`模板 ${template.id} 是实时交互页面；请用 record-browser 录制实际操作，或先定制为支持 __seek(t) 的 htmlPath 再逐帧渲染`);
   if (!htmlPath && template.renderable === false) throw new Error(`模板 ${template.id} 的运行时依赖不可用（${template.status}），不能直接渲染；请补全依赖或提交定制 htmlPath`);
-  // Resolved when it is the actual source, or when the interactive-source guard below has to compare
-  // the two. A supplied htmlPath never uses the entry as a render root, so an unrelated broken catalog
-  // entry must not fail an otherwise valid custom film.
-  const entryReal = !htmlPath || template.previewMode === 'interactive' ? await resolveEntrySource(template, outputPath) : null;
+  // The entry is only needed for two things: as the render root when no htmlPath was supplied, and
+  // as the yardstick for the "you are rendering the untouched interactive original" guard. When a
+  // custom htmlPath owns the render, nothing else may depend on the entry — resolving it eagerly made
+  // an unrelated catalog defect (a missing file, an absolute target another machine left behind)
+  // fail an otherwise valid custom film, which is exactly what this comment used to promise would
+  // not happen. So: resolve it lazily, and only where it is genuinely required. If resolving it is
+  // impossible, the comparison simply cannot prove "same file" and the render proceeds — the guard
+  // is a usability warning, and it must never be able to break a render it was meant to guide.
+  const entryReal = await (async () => {
+    if (!htmlPath) return resolveEntrySource(template, outputPath);
+    if (template.previewMode !== 'interactive') return null;
+    return resolveEntrySource(template, outputPath).catch(() => null);
+  })();
   const source = htmlPath ? await resolveRenderSource(htmlPath, outputPath) : entryReal;
-  if (htmlPath && template.previewMode === 'interactive' && source === entryReal) {
+  if (!source) throw new Error(`模板 ${template.id} 没有可渲染的源文件；请提交 htmlPath 或改用其它模板`);
+  if (htmlPath && template.previewMode === 'interactive' && entryReal && source === entryReal) {
     throw new Error(`模板 ${template.id} 是原始实时交互页面；请用 record-browser 录制，或将定制合成另存为支持 __seek(t) 的 htmlPath`);
   }
   const sourceRoot = htmlPath ? dirname(source) : template.source === 'mg-styles-15' ? join(ROOT, 'vendor/mg-styles-15') : dirname(source);

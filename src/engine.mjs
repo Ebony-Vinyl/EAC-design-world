@@ -64,14 +64,16 @@ async function assertUsableOutputRoot(value) {
   const real = await realpath(candidate).catch(() => candidate);
   if (systemDirectories().some((directory) => childOf(directory, real))) throw new Error('无效设置：outputRoot 不能位于系统目录内');
 }
-// `template_read` reads two provenance classes. Built-in templates are declared in
-// src/catalog.mjs, so their entry/prompt paths are code constants that only need to stay inside
-// the repository. `od-*` library templates take their paths straight out of
-// vendor/open-design/catalog.json — untrusted data — and therefore pass the exact containment
-// gate `library_read` uses (open-design-library.resolveLibraryPath: normalized through `resolve`,
-// then required to stay under vendor/open-design). Routing on the `od-` id prefix rather than on
-// template.source keeps a data file from loosening the gate by spoofing `source`. Returns null
-// when the path is unsafe; callers must treat null as a refusal, never as "missing file".
+// Containment must be decided on the REAL path, not the string that names it. This reads two provenance
+// classes and both are attacker-reachable in the threat model this module already assumes: `od-*`
+// entries carry paths straight out of vendor/open-design/catalog.json, and catalog.json together with
+// the vendor tree is third-party contribution. A contribution that adds one symlink inside the tree
+// plus one tiny entry pointing at it therefore used to read any file on the machine: `resolve()` only
+// normalises `..` textually, it never follows links, and `readFile` follows them happily. Compare
+// `pathResolver` in shotcraft-library.mjs, which has always resolved symlinks before comparing.
+// Routing on the `od-` id prefix rather than on template.source keeps a data file from loosening the
+// gate by spoofing `source`. Returns null when the path is unsafe; callers must treat null as a
+// refusal, never as "missing file".
 export async function templateReadPath(template, target) {
   if (typeof target !== 'string' || !target.trim()) return null;
   if (String(template?.id || '').startsWith('od-')) {
@@ -80,7 +82,20 @@ export async function templateReadPath(template, target) {
   }
   const candidate = resolve(ROOT, target);
   const rel = relative(ROOT, candidate);
-  return rel && !rel.startsWith('..') && !isAbsolute(rel) ? candidate : null;
+  if (!rel || rel.startsWith('..') || isAbsolute(rel)) return null;
+  // The text stayed inside the root; now prove what it points at also does. "Absent" is allowed to
+  // fall through to the caller's own absence check, but a resolution failure of any other kind means
+  // containment cannot be proven (a link loop, an unreadable directory) — that is a refusal.
+  let real;
+  try {
+    real = await realpath(candidate);
+  } catch (error) {
+    if (error?.code === 'ENOENT' || error?.code === 'ENOTDIR') return candidate;
+    return null;
+  }
+  const root = await realpath(ROOT).catch(() => ROOT);
+  const relReal = relative(root, real);
+  return relReal && !relReal.startsWith('..') && !isAbsolute(relReal) ? candidate : null;
 }
 // Shared by local and remote host paths: builds explicit design context for one session's
 // composer record. Returns null unless that session actually selected design mode, so mode
