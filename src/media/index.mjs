@@ -263,11 +263,23 @@ function headerDuration(stream) {
   return null;
 }
 
-// Last resort for a stream that carries no length at all (raw H.264/HEVC
-// elementary streams have neither a container nor a header duration): count
-// packets and divide by the frame rate ffmpeg itself demuxes with. Decode-free
-// and one number on stdout, but it reads the whole file, so it only runs for the
-// single stream that would otherwise have no bound.
+// Measures how much picture data the file actually holds, by reading the last presentation
+// timestamp instead of trusting any number the file states about itself.
+//
+// Every declaration a container makes about its own length is a claim, not a measurement: a
+// faststart MP4 truncated mid-download keeps an intact moov that still says 4 s while only 1.5 s of
+// pictures survive, and ffprobe happily reports both `duration: 4.0` and "partial file" errors at
+// the same time. Believing the claim let a clip seek past the end and render pure black, which was
+// then published as a success because qualityCheck only warns about black frames.
+//
+// PTS is per-frame by definition, so this is also correct for variable frame rate, where the older
+// `packets / fps` inference reported 2.33 s for a real 5 s track and then refused legitimate clips.
+// Decode-free, one number, and measured to take ~0.1 s on an 8 MB file, ~0.2 s on 112 MB.
+// Raw elementary streams (`.h264`/`.hevc`) carry no timestamps at all — every packet reports
+// `pts_time: N/A` — so there is nothing to read the end from. Their frame rate is constant by
+// construction, which is what makes counting packets and dividing exact, and it stays the only way
+// to bound them. Kept separate from measuredDuration because the two answer different questions:
+// this infers a length from a count, that one reads the real end of the picture data.
 async function countedDuration(stream, path, signal) {
   const fps = frameRate(stream);
   if (stream?.codec_type !== 'video' || !(fps > 0)) return null;
@@ -281,8 +293,75 @@ async function countedDuration(stream, path, signal) {
     const seconds = packets / fps;
     return Number.isFinite(seconds) && seconds > 0 ? { seconds, source: 'packets' } : null;
   } catch (error) {
-    // A failed measurement leaves the stream unknown; it must not fail a probe
-    // that already produced usable metadata.
+    if (signal?.aborted) throw abortError();
+    return null;
+  }
+}
+
+// True when the demuxer itself complains that the byte stream ends early.
+const TRUNCATION_MARKERS = /partial file|Invalid NAL|missing picture|Truncat|truncated|Invalid data found/i;
+
+async function measuredDuration(stream, path, signal) {
+  const fps = frameRate(stream);
+  if (stream?.codec_type !== 'video' || !(fps > 0)) return null;
+  // Read every packet's presentation time and duration, keeping only what the decision needs:
+  // the first PTS (to normalise an absolute timeline), the last two (to know how far apart frames
+  // actually are at the end), and the last packet's own duration. Memory stays flat, and a read that
+  // outgrows maxBytes still yields a usable bound instead of failing back to the header.
+  // The carry buffer is essential, not defensive: a chunk boundary can split "3.933333" into
+  // "3.93" and "3333", and parsing those separately produced a garbage bound (measured: a 500-frame
+  // track reported 9 s instead of 16.63 s).
+  let first = null;
+  let prev = null;
+  let last = null; // { pts, duration }
+  let count = 0;
+  let carry = '';
+  const consider = (pts, duration) => {
+    if (!Number.isFinite(pts)) return;
+    count += 1;
+    if (first === null || pts < first) first = pts;
+    if (last === null || pts >= last.pts) { prev = last?.pts ?? null; last = { pts, duration: Number.isFinite(duration) && duration > 0 ? duration : null }; }
+    else if (prev === null || pts > prev) prev = pts;
+  };
+  const note = (chunk) => {
+    carry += chunk;
+    const lines = carry.split('\n');
+    carry = lines.pop() ?? '';
+    for (const line of lines) {
+      const fields = line.trim().split(',').map(Number);
+      if (fields.length >= 2) consider(fields[0], fields[1]);
+      else consider(fields[0], null);
+    }
+  };
+  try {
+    const { stderr } = await run(FFPROBE, ['-v', 'error', '-select_streams', 'v:0',
+      '-show_entries', 'packet=pts_time,duration_time', '-of', 'csv=p=0', path],
+      { signal, timeout: 60_000, maxBytes: 8 * 2 ** 20, onStdout: (chunk) => { try { note(chunk); } catch { /* ignore */ } } });
+    checkAbort(signal);
+    if (carry.trim()) {
+      const fields = carry.trim().split(',').map(Number);
+      if (fields.length >= 2) consider(fields[0], fields[1]);
+      else consider(fields[0], null);
+    }
+    if (last === null) return null;
+    // Absolute timelines are normal: a Matroska written through a pipe (live capture, an interrupted
+    // recording) starts its PTS at an arbitrary offset — measured 100 s for a 4 s track. The length is
+    // the span between the first and last packet, never the last timestamp itself, or a 4 s clip
+    // becomes a 104 s bound and any seek inside it renders black.
+    const origin = first ?? 0;
+    // A packet's own duration when the container reports one; otherwise infer it from how far apart the
+    // last two frames actually are (not from the average rate: a 1 fps tail in a 10 fps overall track
+    // would be under-counted by 10x).
+    const tailStep = last.pts - (prev ?? last.pts);
+    const frameSpan = last.duration ?? (tailStep > 0 ? tailStep : 1 / fps);
+    const seconds = (last.pts - origin) + frameSpan;
+    const demuxerSaysTruncated = TRUNCATION_MARKERS.test(String(stderr ?? ''));
+    return Number.isFinite(seconds) && seconds > 0
+      ? { seconds, origin, lastPts: last.pts, frameSpan, demuxerSaysTruncated }
+      : null;
+  } catch (error) {
+    // A failed measurement leaves the stream unknown; it must not fail a probe that already
+    // produced usable metadata.
     if (signal?.aborted) throw abortError();
     return null;
   }
@@ -311,17 +390,39 @@ export async function probeMedia(path, { signal } = {}) {
   // a number flagged `known: false`, so no caller mistakes it for a stream bound.
   let videoLength = video ? headerDuration(video) : null;
   let audioLength = audio ? headerDuration(audio) : null;
-  // The picture track decides whether a clip can be bounded at all; measure it
-  // when the headers are silent. Audio is left to the container fallback because
-  // a packet count does not state its own length.
-  const primary = video && !videoLength ? video : (audio && !audioLength ? audio : null);
-  if (primary) {
-    const counted = await countedDuration(primary, path, signal);
-    if (counted) {
-      if (primary === video) videoLength = counted;
-      else audioLength = counted;
+  // Two mistakes are equally real and point in opposite directions, so neither "trust the header"
+  // nor "trust the measurement" is correct on its own:
+  //   - a truncated faststart MP4 keeps an intact moov that still claims its original length while
+  //     holding far less picture data — believing it let a clip seek past the end and render black;
+  //   - a variable-frame-rate file is COMPLETE and its last PTS legitimately sits well before the
+  //     declared end — taking the shorter number there refuses clips that exist.
+  //
+  // The demuxer's own complaints (`partial file`, `Invalid NAL`, `missing picture`) catch most
+  // truncation, but not all: a cut that lands exactly on a packet boundary leaves a byte stream every
+  // demuxer reads without error (measured: a 4 s claim over 2.3 s of packets, stderr empty). So when
+  // the two disagree, look at HOW they disagree: a long last frame leaves a gap comparable to the
+  // spacing of the frames around it, while missing data leaves a gap far larger than any frame there.
+  if (video) {
+    const measured = (await measuredDuration(video, path, signal))
+      ?? (await countedDuration(video, path, signal));
+    if (measured) {
+      const claimed = videoLength && videoLength.seconds > 0 ? videoLength.seconds : 0;
+      const gap = claimed > 0 ? claimed - measured.seconds : 0;
+      // A frame's own spacing at the tail, with latitude for jitter and for a container that reports
+      // no per-packet duration at all.
+      const tolerance = Math.max(0.5, measured.frameSpan * 3);
+      const dataMissing = measured.demuxerSaysTruncated || gap > tolerance;
+      if (claimed === 0) {
+        videoLength = { seconds: measured.seconds, source: measured.source };
+      } else if (dataMissing && gap > 0) {
+        videoLength = { seconds: measured.seconds, source: 'measured' };
+      }
+      // Otherwise the claim stands: it is exact for VFR, and a measurement that stopped reading early
+      // can never loosen a bound.
     }
   }
+  // Audio has no picture to protect: a truncated tail there is silence. Only the aggregate
+  // container bound is used, as before.
   const formatDuration = Number(format.duration);
   const containerFallback = Number.isFinite(formatDuration) && formatDuration > 0 ? formatDuration : 0;
   const resolve = (length) => (length

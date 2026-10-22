@@ -887,3 +887,84 @@ test('the filter-script option is decided by the help text, without a real ffmpe
   assert.ok(source.includes('filterScriptOptionName = filterScriptOption('),
     'the cached probe must go through filterScriptOption');
 });
+
+test('a truncated picture track is bounded by its real data, and a truncation on a packet boundary is still caught', async () => {
+  // Believing a container's own duration let a clip seek past the end of the picture data and render
+  // pure black, which was then published as a success (qualityCheck only warns about black frames).
+  // A faststart MP4 keeps an intact moov when the download is cut, so the file still claims 4 s.
+  const whole = join(directory, 'truncation source.mp4');
+  await fixture(['-f', 'lavfi', '-i', 'color=c=orange:s=96x64:r=30:d=4',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', whole]);
+  const size = (await stat(whole)).size;
+
+  // A plain cut leaves decaying NAL units, which the demuxer reports.
+  const cut = join(directory, 'truncated mid.mp4');
+  await writeFile(cut, (await readFile(whole)).subarray(0, Math.floor(size * 0.55)));
+  const mid = await probeMedia(cut);
+  assert.equal(mid.videoDurationKnown, true);
+  assert.ok(mid.videoDuration < 3, `a cut file was still bounded by its claim: ${mid.videoDuration}`);
+
+  // A cut landing exactly on a packet boundary reads without any demuxer complaint, so the length
+  // must be decided by the gap between the last packet and the claim — not by stderr alone.
+  let packets = [];
+  {
+    const out = await command('ffprobe', ['-v', 'error', '-select_streams', 'v:0',
+      '-show_entries', 'packet=pos,size', '-of', 'csv=p=0', whole]);
+    packets = out.toString('utf8').trim().split('\n').map((line) => {
+      const [pos, packetSize] = line.split(',').map(Number);
+      return { end: pos + packetSize };
+    });
+  }
+  const boundary = join(directory, 'truncated on packet boundary.mp4');
+  await writeFile(boundary, (await readFile(whole)).subarray(0, packets[Math.floor(packets.length * 0.6)].end));
+  const onBoundary = await probeMedia(boundary);
+  assert.equal(onBoundary.videoDurationKnown, true);
+  assert.ok(onBoundary.videoDuration < 3,
+    `a packet-aligned cut was still bounded by its claim: ${onBoundary.videoDuration}`);
+  await assert.rejects(renderTimeline({
+    project: { width: 96, height: 64, fps: 10, clips: [
+      { path: boundary, kind: 'video', start: 0, sourceIn: 3.2, duration: 0.7 },
+    ] }, outputPath: join(directory, 'past truncated end.mp4'),
+  }), /exceeds source duration \(video stream is [\d.]+s\)/);
+
+  // The whole file is untouched by the measurement.
+  const intact = await probeMedia(whole);
+  assert.ok(Math.abs(intact.videoDuration - 4) < 0.2, `intact length moved: ${intact.videoDuration}`);
+});
+
+test('an absolute timeline is normalised, so a pipe-written track is not inflated', async () => {
+  // A Matroska written through a pipe (live capture, an interrupted recording) starts its PTS at an
+  // arbitrary offset - measured 100 s for a 4 s track - and reports no duration. Using the last
+  // timestamp as the length turned 4 s into 104 s, so every seek inside the real content was allowed
+  // and rendered black.
+  const piped = join(directory, 'absolute timeline.mkv');
+  await fixture(['-f', 'lavfi', '-i', 'color=c=teal:s=96x64:r=30:d=4',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-output_ts_offset', '100', '-f', 'matroska', piped]);
+  const media = await probeMedia(piped);
+  assert.ok(Math.abs(media.videoDuration - 4) < 0.5,
+    `an offset timeline inflated the bound to ${media.videoDuration}`);
+  await assert.rejects(renderTimeline({
+    project: { width: 96, height: 64, fps: 10, clips: [
+      { path: piped, kind: 'video', start: 0, sourceIn: 50, duration: 1 },
+    ] }, outputPath: join(directory, 'past absolute end.mp4'),
+  }), /exceeds source duration/);
+});
+
+test('a variable frame rate tail keeps its declared length instead of being measured short', async () => {
+  // The opposite mistake to truncation: the file is complete, but its last frame lasts a second, so
+  // the last PTS sits well before the declared end. Taking the shorter number refused clips that
+  // really exist in the 2.0-3.0 s tail.
+  const vfr = join(directory, 'variable tail.mkv');
+  await fixture(['-f', 'lavfi', '-i', 'color=c=purple:s=96x64:r=10:d=1',
+    '-f', 'lavfi', '-i', 'color=c=olive:s=96x64:r=1:d=2',
+    '-filter_complex', '[0:v][1:v]concat=n=2:v=1:a=0[v]', '-map', '[v]',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-fps_mode', 'vfr', vfr]);
+  const media = await probeMedia(vfr);
+  assert.ok(media.videoDuration >= 2.8,
+    `a complete VFR track was measured short: ${media.videoDuration}`);
+  await assert.doesNotReject(renderTimeline({
+    project: { width: 96, height: 64, fps: 10, clips: [
+      { path: vfr, kind: 'video', start: 0, sourceIn: 2.5, duration: 0.5 },
+    ] }, outputPath: join(directory, 'legit vfr tail.mp4'),
+  }));
+});
