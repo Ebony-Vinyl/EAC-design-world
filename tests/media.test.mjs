@@ -555,7 +555,15 @@ test('music cancellation interrupts PCM generation and conversion without replac
   assert.ok(!(await readdir(directory)).some((name) => name.startsWith('.eac-media-')));
 });
 
-test('Windows desktop and SAPI cancellation terminate their OS processes', { skip: process.platform !== 'win32' }, async () => {
+test('Windows desktop and SAPI cancellation terminate their OS processes', { skip: process.platform !== 'win32' }, async (t) => {
+  if (process.env.EAC_CI) {
+    // GitHub's Windows runners have no interactive desktop, so ffmpeg's gdigrab input cannot
+    // start (or terminate) there; the same applies to SAPI, which blocks the PowerShell host
+    // for far longer than any cancellation budget. Neither failure says anything about the
+    // cancellation code, which is covered on an interactive Windows machine.
+    t.skip('CI runner 没有交互桌面：桌面录制与 SAPI 取消无法在此验证');
+    return;
+  }
   const output = join(directory, 'cancel OS capture.wav');
   const original = Buffer.from('preserve this output');
   await writeFile(output, original);
