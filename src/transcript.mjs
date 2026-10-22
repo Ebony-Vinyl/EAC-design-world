@@ -5,11 +5,20 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SCRIPT = fileURLToPath(new URL('../scripts/transcribe.py', import.meta.url));
-const DEFAULT_MODEL = 'D:\\hf-cache\\hub\\models--Systran--faster-whisper-tiny\\snapshots\\d90ca5fe260221311c53c58e660288d3deb8d356';
+const UNCONFIGURED_MODEL = 'EAC_WHISPER_MODEL_UNCONFIGURED';
 const MAX_JSON_BYTES = 16 * 1024 * 1024;
 
 function abortError() {
   return Object.assign(new Error('Transcription aborted'), { name: 'AbortError', code: 'ABORT_ERR' });
+}
+
+// There is no bundled or machine-specific default: a model that was never configured must never be
+// guessed from someone's disk layout. The distinct code lets callers tell "not configured" apart
+// from "configured but unusable" (a missing directory surfaces as the worker's own ValueError).
+function unconfiguredModelError() {
+  return Object.assign(new Error(
+    'No local Whisper model is configured: set EAC_WHISPER_MODEL_PATH to a local faster-whisper model directory',
+  ), { code: UNCONFIGURED_MODEL });
 }
 
 function checkAbort(signal) {
@@ -24,7 +33,12 @@ function filePath(value, name) {
 }
 
 function selectedModel(modelPath) {
-  return filePath(modelPath ?? process.env.EAC_WHISPER_MODEL_PATH ?? DEFAULT_MODEL, 'modelPath');
+  if (modelPath !== undefined && modelPath !== null) return filePath(modelPath, 'modelPath');
+  // An absent variable means "not configured"; a present but blank one stays an invalid-path
+  // TypeError, so the two failures remain distinguishable.
+  const configured = process.env.EAC_WHISPER_MODEL_PATH;
+  if (configured === undefined) throw unconfiguredModelError();
+  return filePath(configured, 'EAC_WHISPER_MODEL_PATH');
 }
 
 function runPython(args, { signal, timeout = 900_000 } = {}) {
@@ -36,8 +50,8 @@ function runPython(args, { signal, timeout = 900_000 } = {}) {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: { ...process.env, HF_HUB_OFFLINE: '1', TRANSFORMERS_OFFLINE: '1' },
     });
-    let stdout = '';
     let stderr = '';
+    const stdoutChunks = [];
     let bytes = 0;
     let failure;
     let termination;
@@ -74,7 +88,7 @@ function runPython(args, { signal, timeout = 900_000 } = {}) {
     child.stdout.on('data', (chunk) => {
       bytes += chunk.length;
       if (bytes > 1024 * 1024) stop(new Error('Transcription exceeded its process output limit'));
-      else stdout += chunk.toString('utf8');
+      else stdoutChunks.push(chunk);
     });
     child.stderr.on('data', (chunk) => {
       bytes += chunk.length;
@@ -89,7 +103,7 @@ function runPython(args, { signal, timeout = 900_000 } = {}) {
       if (failure) reject(failure);
       else if (code !== 0) reject(new Error(`Local transcription exited with code ${code}: ${stderr.trim()}`));
       else {
-        try { complete(JSON.parse(stdout)); } catch {
+        try { complete(JSON.parse(Buffer.concat(stdoutChunks).toString('utf8'))); } catch {
           reject(new Error('Local transcription returned invalid JSON'));
         }
       }
