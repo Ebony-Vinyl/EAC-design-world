@@ -239,7 +239,10 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
         if (url.pathname === '/api/settings' && request.method === 'PUT') return json(response, 200, await engine.settingsUpdate(await body(request)));
         if (url.pathname === '/api/files' && ['GET', 'HEAD'].includes(request.method)) {
           const path = url.searchParams.get('path') || '';
-          if (!await engine.canServeFile(path)) return json(response, 403, { error: '文件不属于已导入素材或输出目录' });
+          // The gate is two-layered in engine.mjs: containment in outputRoot/project assets AND a
+          // deliverable-extension allowlist. The message names both so a legitimate miss is diagnosable
+          // and a refused .ini/.txt looks like a refusal instead of a bug.
+          if (!await engine.canServeFile(path)) return json(response, 403, { error: '文件不属于已导入素材或输出目录，或不是可交付的文件类型' });
           const extension = extname(path).toLowerCase();
           if (['.html', '.htm', '.svg'].includes(extension)) {
             return await serveUntrusted(request, response, resolve(path), extension === '.svg' ? 'svg' : 'html', origin);

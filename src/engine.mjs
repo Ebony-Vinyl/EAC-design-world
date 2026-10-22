@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile, realpath, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { resolve, join, extname, basename, relative, isAbsolute } from 'node:path';
+import { resolve, join, dirname, extname, basename, relative, isAbsolute } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { Store } from './store.mjs';
@@ -22,6 +22,47 @@ const childOf = (root, path) => {
 };
 function safeOutputName(value) {
   return String(value || 'film').replace(/[<>:"/\\|?*\x00-\x1f]/g, '-').slice(0, 80);
+}
+// /api/files hands the caller the raw bytes of a path, and outputRoot (a user setting) is its
+// containment root. Two separate checks are therefore needed, because either one alone was bypassable:
+//   1. outputRoot itself must be a real, ordinary directory. "Any string" accepted C:\Windows, which
+//      turned the endpoint into an arbitrary local file reader (measured: 200 + win.ini contents).
+//   2. what gets served must be a deliverable type. Containment says "inside a trusted root"; it does
+//      not say "this file is something we produce". A .ini/.txt/extensionless file inside the real
+//      output directory is still refused, and a project asset cannot smuggle one either.
+const servableExtensions = new Set([
+  // video / audio deliverables
+  '.mp4', '.m4v', '.mov', '.webm', '.mkv', '.avi', '.mpg', '.mpeg', '.ts',
+  '.wav', '.mp3', '.m4a', '.aac', '.flac', '.ogg', '.opus', '.aif', '.aiff', '.wma',
+  // stills, previews and 3D/HDR plates
+  '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.bmp', '.tif', '.tiff', '.svg', '.heic', '.glb', '.hdr', '.exr',
+  // subtitles
+  '.srt', '.vtt', '.ass', '.ssa', '.ttml', '.sbv',
+  // document deliverables, page assets and fonts used by a sandboxed preview
+  '.json', '.md', '.markdown', '.pdf', '.pptx', '.html', '.htm', '.css', '.js', '.mjs',
+  '.woff', '.woff2', '.ttf', '.otf',
+]);
+// Directories whose contents are OS installations, never project deliverables. Compared after
+// realpath, and the filesystem root is refused separately.
+function systemDirectories() {
+  const declared = [
+    process.env.SystemRoot, process.env.windir, process.env.winbootdir,
+    process.env.ProgramFiles, process.env['ProgramFiles(x86)'], process.env['ProgramW6432'],
+    process.env.ProgramData, process.env.ALLUSERSPROFILE, process.env.CommonProgramFiles,
+  ];
+  const posix = ['/bin', '/boot', '/dev', '/etc', '/lib', '/lib32', '/lib64', '/proc', '/root', '/sbin', '/sys', '/usr', '/var/lib'];
+  return [...declared, ...(process.platform === 'win32' ? [] : posix)]
+    .filter((value) => typeof value === 'string' && value.trim())
+    .map((value) => resolve(value))
+    .filter((value) => dirname(value) !== value);
+}
+async function assertUsableOutputRoot(value) {
+  const candidate = resolve(value);
+  const info = await stat(candidate).catch(() => null);
+  if (!info?.isDirectory()) throw new Error('无效设置：outputRoot 必须是已存在的目录');
+  if (dirname(candidate) === candidate) throw new Error('无效设置：outputRoot 不能是磁盘根目录');
+  const real = await realpath(candidate).catch(() => candidate);
+  if (systemDirectories().some((directory) => childOf(directory, real))) throw new Error('无效设置：outputRoot 不能位于系统目录内');
 }
 // `template_read` reads two provenance classes. Built-in templates are declared in
 // src/catalog.mjs, so their entry/prompt paths are code constants that only need to stay inside
@@ -417,6 +458,7 @@ export async function createEngine({ dataDir } = {}) {
         if (input[key] === undefined) continue;
         if (typeof input[key] !== 'string') throw new Error(`无效设置：${key}`);
         if (key === 'quality' && !['draft', 'production'].includes(input[key])) throw new Error('无效质量档位');
+        if (key === 'outputRoot') await assertUsableOutputRoot(input[key]);
         store.state.settings[key] = input[key];
       }
       await store.save();
@@ -425,6 +467,10 @@ export async function createEngine({ dataDir } = {}) {
     async canServeFile(file) {
       try {
         const target = await realpath(resolve(file));
+        // Second, independent layer: /api/files returns the bytes of whatever path passes this gate,
+        // so the path is only downloadable when it is a deliverable type. Containment alone answers
+        // "is this path inside a root I trust", never "is this file something I may hand out".
+        if (!servableExtensions.has(extname(target).toLowerCase())) return false;
         const output = await realpath(resolve(store.state.settings.outputRoot)).catch(() => resolve(store.state.settings.outputRoot));
         return childOf(output, target) || store.state.projects.some((p) => p.assets.some((a) => a.path === target));
       } catch { return false; }

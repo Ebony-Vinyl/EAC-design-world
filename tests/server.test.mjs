@@ -1,16 +1,29 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, parse } from 'node:path';
 import { Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { createEngine } from '../src/engine.mjs';
 import { previewCsp, sendFileBody, startServer } from '../src/server.mjs';
 
-const serverSource = fileURLToPath(new URL('../src/server.mjs', import.meta.url));
+const srcRoot = fileURLToPath(new URL('../src', import.meta.url));
+const serverSource = join(srcRoot, 'server.mjs');
+const renderTemplateSource = join(srcRoot, 'render-template.mjs');
+// Every .mjs under src/, so the "no naked read-stream pipe" rule cannot survive by moving into a
+// second file (render-template.mjs carried exactly the same shape).
+async function sourceModules(directory) {
+  const files = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...await sourceModules(path));
+    else if (entry.name.endsWith('.mjs')) files.push(path);
+  }
+  return files;
+}
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==', 'base64');
 
 // The harness host runs this server in-process (plugin/host.mjs), so an uncaught stream error is a
@@ -138,7 +151,7 @@ test('a failure after the headers were sent tears down the transfer without an u
 
 test('file routes still serve bodies, ranges, HEAD and sandboxed previews after the stream change', async () => {
   await withServer(async ({ app, engine, outputRoot }) => {
-    const binary = join(outputRoot, 'clip.bin');
+    const binary = join(outputRoot, 'clip.mp4');
     await writeFile(binary, Buffer.alloc(4096, 7));
     const url = `${app.url}/api/files?path=${encodeURIComponent(binary)}`;
     const full = await fetch(url);
@@ -193,14 +206,63 @@ test('file routes still serve bodies, ranges, HEAD and sandboxed previews after 
 });
 
 test('no route pipes a read stream straight into the response', async () => {
-  const source = await readFile(serverSource, 'utf8');
   // `createReadStream(...).pipe(response)` has no 'error' listener: an ENOENT between stat() and
-  // open() becomes an uncaughtException in the host process. Everything must go through the
-  // hardened primitive, which opens first and pumps with pipeline().
-  assert.doesNotMatch(source, /\.pipe\(response\)/);
-  assert.doesNotMatch(source, /createReadStream\(\s*(file|path)\b/);
+  // open() becomes an uncaughtException in the host process. Everything must go through a hardened
+  // primitive that opens first and pumps with pipeline(). The rule is scanned over all of src/, not
+  // just server.mjs — render-template.mjs carried the identical naked pipe behind an asset server,
+  // and a per-file exception is exactly how that one survived.
+  const modules = await sourceModules(srcRoot);
+  assert.ok(modules.length >= 10, `expected to scan all of src/, found ${modules.length} files`);
+  for (const file of modules) {
+    const source = await readFile(file, 'utf8');
+    assert.doesNotMatch(source, /\.pipe\((response|res)\)/, `${file} pipes a stream into the response without an error path`);
+    assert.doesNotMatch(source, /createReadStream\(\s*(file|path)\b/, `${file} opens a read stream that nothing guards`);
+  }
+  const source = await readFile(serverSource, 'utf8');
   assert.match(source, /from 'node:stream\/promises'/);
   assert.ok((source.match(/sendFileBody\(/g) || []).length >= 4, 'every serve path routes through sendFileBody');
+  const renderSource = await readFile(renderTemplateSource, 'utf8');
+  assert.match(renderSource, /from 'node:stream\/promises'/);
+  assert.match(renderSource, /sendAssetBody\(/, 'the render asset server routes through its hardened primitive too');
+});
+
+test('outputRoot must be a real directory and /api/files serves only deliverable types', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'eac-output-root-'));
+  const engine = await createEngine({ dataDir: join(directory, 'data') });
+  const outputRoot = join(directory, 'outputs');
+  await mkdir(outputRoot, { recursive: true });
+  try {
+    await engine.settingsUpdate({ outputRoot });
+    const app = await startServer({ engine, port: 0 });
+    try {
+      // A perfectly legal output directory can still contain text a caller asks for by name. The
+      // containment check alone answered 200 with the file contents, so the type gate is what
+      // refuses these three, while a real deliverable keeps working next to them.
+      await writeFile(join(outputRoot, 'settings.ini'), '[fonts]\r\nprivate=yes\r\n');
+      await writeFile(join(outputRoot, 'notes.txt'), 'private notes');
+      await writeFile(join(outputRoot, 'LICENSE'), 'no extension, still not a deliverable');
+      await writeFile(join(outputRoot, 'clip.mp4'), Buffer.alloc(64, 1));
+      for (const name of ['settings.ini', 'notes.txt', 'LICENSE']) {
+        const refused = await fetch(`${app.url}/api/files?path=${encodeURIComponent(join(outputRoot, name))}`);
+        assert.equal(refused.status, 403, `${name} must not be downloadable`);
+        assert.match((await refused.json()).error, /可交付的文件类型/);
+      }
+      const media = await fetch(`${app.url}/api/files?path=${encodeURIComponent(join(outputRoot, 'clip.mp4'))}`);
+      assert.equal(media.status, 200);
+      assert.equal((await media.arrayBuffer()).byteLength, 64);
+    } finally { await app.close(); }
+    // Layer one: the setting itself cannot name a filesystem root, an OS directory or a missing path.
+    const filesystemRoot = parse(outputRoot).root;
+    const osDirectory = process.platform === 'win32' ? (process.env.SystemRoot || filesystemRoot) : '/etc';
+    for (const bad of [filesystemRoot, osDirectory, join(directory, 'not-created-yet')]) {
+      await assert.rejects(engine.settingsUpdate({ outputRoot: bad }), /无效设置：outputRoot/, `accepted ${bad}`);
+    }
+    // The rejected values were not stored: the working root is still in place.
+    assert.equal((await engine.state()).settings.outputRoot, outputRoot);
+  } finally {
+    await engine.close();
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test('a sandboxed preview reaches its own origin but no other local port', { timeout: 60000 }, async () => {
