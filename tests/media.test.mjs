@@ -47,7 +47,13 @@ async function waitUntil(predicate, timeout = 10_000) {
 }
 
 function assertExited(pid) {
-  assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' }, `Process ${pid} still exists after cancellation`);
+  assert.throws(() => process.kill(pid, 0), (error) => {
+    // ESRCH: the pid is gone. EPERM: the pid now belongs to a process we may not signal
+    // (runner pids are reused quickly by other accounts), so our child no longer holds it.
+    assert.ok(error.code === 'ESRCH' || error.code === 'EPERM',
+      `Process ${pid} still exists after cancellation (${error.code})`);
+    return true;
+  });
 }
 
 async function cancelAtProcess(operation, predicate, ready) {
