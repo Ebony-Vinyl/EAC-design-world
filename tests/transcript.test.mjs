@@ -198,6 +198,10 @@ test('real local tiny ASR transcribes synthesized English with word timestamps a
   skip: process.platform !== 'win32', timeout: 180_000,
 }, async (t) => {
   const capabilities = await transcriptCapabilities();
+  if (!capabilities.available) {
+    t.skip(`本地 Whisper 模型不可用：${capabilities.detail}`);
+    return;
+  }
   assert.equal(capabilities.available, true, capabilities.detail);
   assert.match(capabilities.detail, /tiny.*low quality/i);
   const directory = await workspace(t);
@@ -240,14 +244,25 @@ test('missing model and invalid input fail honestly without caption artifacts', 
   await assert.rejects(transcribeMedia({ path: input, outputDir, modelPath: join(directory, 'missing') }),
     /Local model directory does not exist/);
   assert.deepEqual(await readdir(outputDir), []);
+  // 语言等纯参数校验先于模型探测，缺模型机器上同样成立。
+  await assert.rejects(transcribeMedia({ path: input, outputDir, language: '--bad' }), /language/);
+  const capabilities = await transcriptCapabilities();
+  if (!capabilities.available) {
+    t.skip(`本地 Whisper 模型不可用，跳过“有模型时的无效输入”断言：${capabilities.detail}`);
+    return;
+  }
   await assert.rejects(transcribeMedia({ path: input, outputDir }), /InvalidDataError|Invalid data/i);
   assert.deepEqual(await readdir(outputDir), []);
-  await assert.rejects(transcribeMedia({ path: input, outputDir, language: '--bad' }), /language/);
 });
 
 test('silence stays empty, video without audio fails, and long audio is rejected before ASR', {
   timeout: 60_000,
 }, async (t) => {
+  const capabilities = await transcriptCapabilities();
+  if (!capabilities.available) {
+    t.skip(`本地 Whisper 模型不可用：${capabilities.detail}`);
+    return;
+  }
   const directory = await workspace(t);
   const outputDir = join(directory, 'output');
   const silent = join(directory, 'silent.wav');

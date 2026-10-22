@@ -11,6 +11,7 @@ import { ROOT, loadLibrary } from '../src/catalog.mjs';
 import { resolveLibraryPath } from '../src/open-design-library.mjs';
 import { startServer } from '../src/server.mjs';
 import { synthesizeVoice, probeMedia } from '../src/media/index.mjs';
+import { transcriptCapabilities } from '../src/transcript.mjs';
 
 async function setup(fn) {
   const directory = await mkdtemp(join(tmpdir(), 'eac-engine-'));
@@ -96,7 +97,12 @@ test('closing with a second queued task waits for the active worker to cancel', 
   assert.equal((await engine.handle('job_status', { jobId: first.id })).status, 'cancelled');
 }));
 
-test('a background rough cut preserves a timeline manually edited during transcription', { skip: process.platform !== 'win32' }, () => setup(async (engine, dir) => {
+test('a background rough cut preserves a timeline manually edited during transcription', { skip: process.platform !== 'win32' }, (t) => setup(async (engine, dir) => {
+  const capabilities = await transcriptCapabilities();
+  if (!capabilities.available) {
+    t.skip(`本地 Whisper 模型不可用：${capabilities.detail}`);
+    return;
+  }
   const voice = join(dir, 'spoken.wav');
   await synthesizeVoice({ text: 'Welcome to this local speech transcription test. These words should remain in the edited video.', outputPath: voice });
   const duration = (await probeMedia(voice)).duration;

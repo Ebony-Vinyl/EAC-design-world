@@ -1,12 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createEngine } from '../src/engine.mjs';
 import { createToolRegistrations } from '../plugin/host.mjs';
 import { toLosslessJson, isLosslessJson, LosslessJsonError } from '../src/lossless-json.mjs';
 import { toolDefinitions } from '../src/tools.mjs';
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+// 可选 Motion Web / Onetake 库的注册条件与 src/motion-libraries.mjs 相同：对应源文件存在。
+// 用同一判据先判断「有没有导入」，而不是把任何 ENOENT 都当作未导入——已导入但内容损坏时
+// 后面的读取断言必须真的失败。
+const optionalLibrary = (path) => existsSync(resolve(ROOT, path));
 
 // Walk a value and report every path holding `undefined` (JSON.stringify would
 // silently drop object fields and coerce array holes to null).
@@ -42,7 +50,7 @@ function toolFor(engine, name) {
   return createToolRegistrations(engine, toolDefinitions).find(tool => tool.name === name);
 }
 
-test('real engine library_list and library_read outputs are lossless plain JSON for every category', async () => {
+test('real engine library_list and library_read outputs are lossless plain JSON for every category', async (t) => {
   await withEngine(async (engine) => {
     const list = toolFor(engine, 'eac_library_list');
     const read = toolFor(engine, 'eac_library_read');
@@ -79,7 +87,12 @@ test('real engine library_list and library_read outputs are lossless plain JSON 
     assert.match(builtinSource.entry.text, /<html|<!doctype/i);
 
     // Optional Motion Web / Onetake skill entries must not carry undefined `entry`/`resource`.
-    for (const id of ['motion-web-skill', 'onetake-skill']) {
+    // 未导入的库显式跳过并在测试输出里留痕；已导入的库读取失败仍然失败。
+    for (const [id, marker] of [['motion-web-skill', 'vendor/motion-web/SKILL.md'], ['onetake-skill', 'vendor/onetake/SKILL.md']]) {
+      if (!optionalLibrary(marker)) {
+        t.diagnostic(`可选库未导入（缺 ${marker}），跳过 skill/${id}`);
+        continue;
+      }
       for (const source of [false, true]) {
         const skill = await read.execute({ kind: 'skill', id, source }, { signal: new AbortController().signal });
         assertLossless(skill, `library_read ${id} source=${source}`);
@@ -95,7 +108,11 @@ test('real engine library_list and library_read outputs are lossless plain JSON 
     // library_read schema only enumerates template/design-system/skill/atom/scenario/prompt,
     // so optional motion entries are read through the engine's 'template' kind (which the
     // engine treats identically for mw-* / onetake-studio).
-    for (const id of ['mw-string-clock', 'onetake-studio']) {
+    for (const [id, marker] of [['mw-string-clock', 'vendor/motion-web/cases/string-clock/index.html'], ['onetake-studio', 'vendor/onetake/SKILL.md']]) {
+      if (!optionalLibrary(marker)) {
+        t.diagnostic(`可选库未导入（缺 ${marker}），跳过 template/${id}`);
+        continue;
+      }
       const item = await read.execute({ kind: 'template', id, source: true }, { signal: new AbortController().signal });
       assertLossless(item, `library_read ${id}`);
       assert.equal(item.id, id);
@@ -105,9 +122,13 @@ test('real engine library_list and library_read outputs are lossless plain JSON 
     }
 
     // Engine-level motion read (outside the host schema enum) must also be lossless.
-    const motionEngine = await engine.handle('library_read', { kind: 'motion', id: 'mw-string-clock', source: true });
-    assertLossless(motionEngine, 'engine library_read motion');
-    assert.equal(motionEngine.id, 'mw-string-clock');
+    if (optionalLibrary('vendor/motion-web/cases/string-clock/index.html')) {
+      const motionEngine = await engine.handle('library_read', { kind: 'motion', id: 'mw-string-clock', source: true });
+      assertLossless(motionEngine, 'engine library_read motion');
+      assert.equal(motionEngine.id, 'mw-string-clock');
+    } else {
+      t.diagnostic('可选库未导入，跳过 motion/mw-string-clock 的 engine 级读取');
+    }
 
     const status = await toolFor(engine, 'eac_status').execute({}, { signal: new AbortController().signal });
     assertLossless(status, 'status');
