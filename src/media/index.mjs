@@ -5,7 +5,7 @@ import { access, mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
-import { setImmediate as yieldTask } from 'node:timers/promises';
+import { setImmediate as yieldTask, setTimeout as delay } from 'node:timers/promises';
 import { createCaptionScript } from './captions.mjs';
 
 export { remapTranscriptToTimeline } from './captions.mjs';
@@ -172,6 +172,67 @@ function hasStream(media, type) {
   return media.streams.some((stream) => stream.codec_type === type);
 }
 
+const CLEANUP_RETRY_DELAY = 50;
+// The media README promises cleanup retries "for up to 750 ms". Node's own
+// `rm({ maxRetries, retryDelay })` backoff overshoots that badly (measured on
+// Windows: 34 s for a file held open by another process), so the budget is an
+// explicit deadline here instead of a retry count.
+const CLEANUP_RETRY_BUDGET = 750;
+const RETRYABLE_REMOVE_CODES = new Set(['EPERM', 'EBUSY', 'EACCES', 'ENOTEMPTY', 'EMFILE', 'ENFILE']);
+
+async function removeStagingDirectory(directory) {
+  const deadline = performance.now() + CLEANUP_RETRY_BUDGET;
+  for (;;) {
+    try {
+      await rm(directory, { recursive: true, force: true });
+      return null;
+    } catch (error) {
+      // Windows keeps a transient lock on files a just-killed ffmpeg/Edge still
+      // holds; anything permanent (ENOTDIR, ENOENT on a parent) must not spin.
+      if (!RETRYABLE_REMOVE_CODES.has(error?.code) || performance.now() >= deadline) return error;
+      await delay(CLEANUP_RETRY_DELAY);
+    }
+  }
+}
+
+function reportCleanupFailure(error, directory) {
+  try {
+    process.emitWarning(`Could not remove staging directory ${directory}: ${error.message}`,
+      { type: 'EacCleanupWarning', code: 'EAC_CLEANUP' });
+  } catch { /* reporting must never fail the operation either */ }
+}
+
+/**
+ * Best-effort removal of a `.eac-media-*` staging directory.
+ *
+ * Every call site is a `finally`, where a throw would replace the error that
+ * actually ended the operation: a cancelled render would surface as EPERM and
+ * the caller could no longer tell it was aborted. So this never rejects - it
+ * retries transient locks and reports what it could not remove. Exported so
+ * tests can pin that contract.
+ */
+export async function cleanupStaging(directory, { onFailure = reportCleanupFailure } = {}) {
+  if (!directory) return;
+  const error = await removeStagingDirectory(directory);
+  if (!error) return;
+  try { onFailure?.(error, directory); } catch { /* a sink cannot mask the failure path either */ }
+}
+
+// ffprobe reports "0/0" when it cannot derive an average frame rate (common for
+// VFR and some MKV streams). The string is truthy, so `avg_frame_rate ||
+// r_frame_rate` never fell back and stored fps 0; qualityCheck then widened its
+// frame tolerance with `2 / (fps || 30)` and silently compared against 30 fps.
+// Only a usable fraction is accepted, and legal ones ("30000/1001") are kept.
+function frameRate(stream) {
+  for (const value of [stream?.avg_frame_rate, stream?.r_frame_rate]) {
+    const [numerator, denominator = 1] = String(value ?? '').split('/').map(Number);
+    if (Number.isFinite(numerator) && numerator > 0 && Number.isFinite(denominator) && denominator > 0) {
+      return numerator / denominator;
+    }
+  }
+  return 0;
+}
+
 /** Normalized properties plus the complete ffprobe streams and format objects. */
 export async function probeMedia(path, { signal } = {}) {
   checkAbort(signal);
@@ -185,7 +246,6 @@ export async function probeMedia(path, { signal } = {}) {
   if (!streams.length) throw new Error(`No media streams in ${path}`);
   const video = streams.find((stream) => stream.codec_type === 'video');
   const audio = streams.find((stream) => stream.codec_type === 'audio');
-  const [numerator, denominator] = (video?.avg_frame_rate || video?.r_frame_rate || '0/1').split('/').map(Number);
   const durations = [format.duration, ...streams.map((stream) => stream.duration)]
     .map(Number).filter(Number.isFinite);
   // A container's duration is the longest of its streams, so it cannot bound a
@@ -200,7 +260,7 @@ export async function probeMedia(path, { signal } = {}) {
   };
   return {
     path, duration: Math.max(0, ...durations), width: video?.width ?? null,
-    height: video?.height ?? null, fps: denominator ? numerator / denominator : 0,
+    height: video?.height ?? null, fps: frameRate(video),
     hasVideo: Boolean(video), hasAudio: Boolean(audio),
     videoDuration: video ? streamDuration(video) : 0,
     audioDuration: audio ? streamDuration(audio) : 0,
@@ -305,6 +365,25 @@ function videoEncoding(quality = 'draft') {
     '-crf', quality === 'production' ? '17' : '20', '-pix_fmt', 'yuv420p'];
 }
 
+// Encode time tracks encoded pixels and seconds, and `production` (medium
+// preset, CRF 17) costs ~2.5x a draft pass. A flat 15 minute cap contradicted
+// MAX_DURATION: one hour of 1080p production, or any long 4K timeline, legitimately
+// needs hours, and hitting the cap killed ffmpeg and then deleted the staged
+// result in `finally`, so the caller kept an old file and learned nothing.
+// 1500 ms per megapixel-second is ~0.5x realtime at 1080p draft, i.e. roughly
+// 10x slower than measured throughput on a normal desktop.
+const ENCODING_TIMEOUT_CEILING = 6 * 60 * 60_000;
+const ENCODING_MS_PER_MEGAPIXEL_SECOND = 1500;
+
+/** Encode budget for a validated timeline: scales with pixels and seconds, still capped. */
+export function encodingTimeout({ width, height, duration, quality = 'draft' }) {
+  const megapixels = (width * height) / 1e6;
+  const perSecond = Math.max(500, ENCODING_MS_PER_MEGAPIXEL_SECOND * megapixels)
+    * (quality === 'production' ? 2.5 : 1);
+  // The flat 2 min floor covers filter-graph init, seeking and muxing of short clips.
+  return Math.min(ENCODING_TIMEOUT_CEILING, 120_000 + duration * perSecond);
+}
+
 /** Capture real browser frames without requiring Playwright's bundled FFmpeg. */
 export async function recordBrowser({ url, actions = [], outputDir, width = 1280, height = 720, signal } = {}) {
   checkAbort(signal);
@@ -339,7 +418,7 @@ export async function recordBrowser({ url, actions = [], outputDir, width = 1280
       '-vf', 'fps=30,pad=ceil(iw/2)*2:ceil(ih/2)*2', ...videoEncoding(), '-movflags', '+faststart', job.staged], { signal });
     return await publish(job, signal);
   } finally {
-    await rm(job.temporary, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+    await cleanupStaging(job.temporary);
   }
 }
 
@@ -354,7 +433,7 @@ export async function recordDesktop({ outputPath, duration, fps = 30, signal } =
       '-t', String(duration), '-vf', 'pad=ceil(iw/2)*2:ceil(ih/2)*2', '-an',
       ...videoEncoding(), job.staged], { signal, timeout: duration * 1000 + 60_000 });
     return await publish(job, signal);
-  } finally { await rm(job.temporary, { recursive: true, force: true }); }
+  } finally { await cleanupStaging(job.temporary); }
 }
 
 export async function synthesizeVoice({ text, outputPath, voice, rate = 0, signal } = {}) {
@@ -376,14 +455,18 @@ export async function synthesizeVoice({ text, outputPath, voice, rate = 0, signa
     await run(powershell, args, { signal, timeout: 300_000 });
     await ffmpeg(['-v', 'error', '-i', wavePath, '-vn', job.staged], { signal });
     return await publish(job, signal);
-  } finally { await rm(job.temporary, { recursive: true, force: true }); }
+  } finally { await cleanupStaging(job.temporary); }
 }
 
-function randomGenerator(seed) {
+/** 32-bit LCG/diffusion mix; exported so tests can pin the 32-bit invariant. */
+export function randomGenerator(seed) {
   let state = 2166136261;
   for (const char of String(seed)) state = Math.imul(state ^ char.charCodeAt(0), 16777619) >>> 0;
   return () => {
-    state += 0x6D2B79F5;
+    // Keep the running sum inside uint32. Without `>>> 0` it passes 2^53 after
+    // ~4.9 M samples (111 s of audio at 44.1 kHz) and float rounding starts
+    // eating the low bits, so the sequence stops being this generator.
+    state = (state + 0x6D2B79F5) >>> 0;
     let value = Math.imul(state ^ (state >>> 15), 1 | state);
     value ^= value + Math.imul(value ^ (value >>> 7), 61 | value);
     return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
@@ -460,7 +543,7 @@ export async function composeMusic({ outputPath, duration, bpm = 112, seed = 1, 
       stream.destroy();
       await closed;
     }
-    await rm(job.temporary, { recursive: true, force: true });
+    await cleanupStaging(job.temporary);
   }
 }
 
@@ -603,7 +686,7 @@ export async function renderTimeline({ project, outputPath, onProgress, signal }
     onProgress?.(0);
     await ffmpeg(args, {
       cwd: timeline.captionScript ? job.temporary : undefined,
-      signal, timeout: Math.min(900_000, 60_000 + timeline.duration * 5000),
+      signal, timeout: encodingTimeout(timeline),
       onStdout: (chunk) => {
         pending += chunk;
         const lines = pending.split(/\r?\n/);
@@ -622,7 +705,7 @@ export async function renderTimeline({ project, outputPath, onProgress, signal }
     // Completion callbacks run only after the output has been published.
     onProgress?.(1);
     return result;
-  } finally { await rm(job.temporary, { recursive: true, force: true }); }
+  } finally { await cleanupStaging(job.temporary); }
 }
 
 /** Decode validation plus duration/stream checks; content warnings are not hard failures. */

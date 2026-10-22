@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { channel } from 'node:diagnostics_channel';
-import { mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { chmod, mkdtemp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -10,6 +10,7 @@ import { after, before, test } from 'node:test';
 import {
   probeMedia, analyzeMedia, analyzeBeats, recordBrowser, recordDesktop,
   synthesizeVoice, composeMusic, renderTimeline, qualityCheck,
+  cleanupStaging, encodingTimeout, randomGenerator,
 } from '../src/media/index.mjs';
 
 let directory;
@@ -646,4 +647,159 @@ test('Windows desktop capture produces actual frames', { skip: process.platform 
   assert.equal(result.hasVideo, true);
   assert.ok(result.width >= 320);
   assert.ok(result.duration >= 0.2 && result.duration < 2);
+});
+
+// ---------------------------------------------------------------------------
+// Regression tests for the media fixes. Each one fails without its fix.
+// ---------------------------------------------------------------------------
+
+// A real "file is in use" lock. Node's own handles are opened with
+// FILE_SHARE_DELETE and never block deletion, so PowerShell holds the file with
+// FileShare.None - what a still-running ffmpeg/Edge does to a staging file.
+// POSIX needs no lock: an unlink inside a directory without write permission
+// fails with EACCES, which the cleanup loop retries exactly the same way.
+// The block ends on a timer in the holder process, not on a marker file: a
+// failed recursive rm still unlinks the files it can reach, so a marker inside
+// the staging tree could disappear before anyone observes it.
+async function blockRemoval(directory, { holdMs = 300 } = {}) {
+  const inner = join(directory, 'inner');
+  await mkdir(inner, { recursive: true });
+  const busy = join(inner, 'busy.bin');
+  await writeFile(busy, 'locked');
+  if (process.platform !== 'win32') {
+    await chmod(inner, 0o500);
+    const timer = setTimeout(() => { chmod(inner, 0o700).catch(() => {}); }, holdMs);
+    timer.unref();
+    return { stop: async () => { clearTimeout(timer); await chmod(inner, 0o700).catch(() => {}); } };
+  }
+  const ready = `${directory}.ready.marker`;
+  const quote = (value) => value.replaceAll("'", "''");
+  const script = [
+    `$handle = [System.IO.File]::Open('${quote(busy)}', 'Open', 'Read', 'None')`,
+    `Set-Content -LiteralPath '${quote(ready)}' -Value 'locked'`,
+    `Start-Sleep -Milliseconds ${holdMs}`,
+    '$handle.Close()',
+  ].join('; ');
+  const child = spawn('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', script],
+    { shell: false, windowsHide: true, stdio: 'ignore' });
+  await waitUntil(() => stat(ready).then(() => true, () => false), 20_000);
+  return { stop: async () => { child.kill(); await delay(200); } };
+}
+
+test('staging cleanup retries a transient lock instead of leaving the directory behind', async () => {
+  const staging = join(directory, '.eac-media-locked profile');
+  // Blocked for 300 ms: the first attempt lands while the file is still open, so
+  // only a retrying cleanup can remove the directory. Without the retry loop
+  // .eac-media-* survives, and a browser profile (hundreds of MB) leaks.
+  const lock = await blockRemoval(staging, { holdMs: 300 });
+  const failures = [];
+  try {
+    const started = performance.now();
+    await cleanupStaging(staging, { onFailure: (error) => failures.push(error.code) });
+    assert.ok(performance.now() - started < 5000, 'cleanup must finish inside its retry budget');
+    assert.deepEqual(failures, []);
+    await assert.rejects(stat(staging), { code: 'ENOENT' });
+  } finally {
+    await lock.stop().catch(() => {});
+  }
+});
+
+test('a cleanup failure is reported without replacing the error that ended the operation', async () => {
+  const staging = join(directory, '.eac-media-stuck profile');
+  // Held for far longer than the retry budget, so the removal cannot succeed.
+  const lock = await blockRemoval(staging, { holdMs: 10_000 });
+  const failures = [];
+  try {
+    const started = performance.now();
+    await assert.rejects((async () => {
+      try {
+        throw Object.assign(new Error('Media operation aborted'), { name: 'AbortError', code: 'ABORT_ERR' });
+      } finally {
+        // Exactly how every entry point cleans up. A throw here would surface as
+        // EBUSY/EPERM and hide that the caller's operation was cancelled.
+        await cleanupStaging(staging, { onFailure: (error) => failures.push(error) });
+      }
+    })(), { name: 'AbortError' });
+    const elapsed = performance.now() - started;
+    assert.equal(failures.length, 1, 'the removal failure must still be reported');
+    assert.ok(['EBUSY', 'EPERM', 'EACCES'].includes(failures[0].code), failures[0].code);
+    assert.ok(elapsed < 5000, `a stuck staging directory must not stall the operation (${Math.round(elapsed)} ms)`);
+  } finally {
+    await lock.stop().catch(() => {});
+  }
+});
+
+test('every entry point shares the retrying cleanup and the scaled encode budget', async () => {
+  const source = await readFile(new URL('../src/media/index.mjs', import.meta.url), 'utf8');
+  // README: "Cleanup retries transient Windows file locks for up to 750 ms".
+  // Only recordBrowser used to retry; desktop, SAPI, music and render used a
+  // bare rm in `finally`, which could replace the real error.
+  assert.ok(!/rm\(\s*job\.temporary/.test(source), 'staging removal must go through cleanupStaging');
+  const sites = source.match(/cleanupStaging\(job\.temporary\)/g) ?? [];
+  assert.ok(sites.length >= 5, `browser, desktop, voice, music and render must all retry cleanup (found ${sites.length})`);
+  assert.ok(source.includes('timeout: encodingTimeout(timeline)'), 'render must use the scaled encode budget');
+});
+
+test('the encode budget scales with pixels and seconds instead of a fixed 15 minutes', () => {
+  const hourHdProduction = encodingTimeout({ width: 1920, height: 1080, duration: 3600, quality: 'production' });
+  const hourHdDraft = encodingTimeout({ width: 1920, height: 1080, duration: 3600 });
+  // MAX_DURATION promises 3600 s timelines; a flat 900 s cap killed the legal
+  // long render and then deleted its staged output in `finally`.
+  assert.ok(hourHdProduction > 900_000, `1 h of 1080p production was allowed only ${hourHdProduction} ms`);
+  assert.ok(hourHdDraft > 900_000, `1 h of 1080p draft was allowed only ${hourHdDraft} ms`);
+  assert.ok(encodingTimeout({ width: 1920, height: 1080, duration: 600 }) < hourHdDraft, 'budget grows with duration');
+  const hourUhdProduction = encodingTimeout({ width: 3840, height: 2160, duration: 3600, quality: 'production' });
+  assert.ok(hourUhdProduction >= hourHdProduction, '4K needs at least as much time as 1080p');
+  // Still bounded, so a hung encoder cannot hold a job queue slot forever.
+  assert.ok(hourUhdProduction <= 8 * 3_600_000, `encode budget is unbounded: ${hourUhdProduction} ms`);
+  // Short renders keep a tight budget.
+  const shortHd = encodingTimeout({ width: 1920, height: 1080, duration: 5 });
+  assert.ok(shortHd < hourHdDraft);
+  assert.ok(shortHd <= 900_000, `a 5 s render inherited ${shortHd} ms`);
+});
+
+test('an unusable "0/0" average frame rate falls back to r_frame_rate', async () => {
+  // Mixed-rate MKV: ffprobe reports avg_frame_rate "0/0", which is truthy, so
+  // `avg_frame_rate || r_frame_rate` kept fps 0 - and qualityCheck then widened
+  // its frame tolerance with `2 / (fps || 30)`, silently assuming 30 fps.
+  const variable = join(directory, 'variable rate.mkv');
+  await fixture(['-f', 'lavfi', '-i', 'color=c=red:s=64x48:r=20:d=1',
+    '-f', 'lavfi', '-i', 'color=c=blue:s=64x48:r=30:d=1',
+    '-filter_complex', '[0:v][1:v]concat=n=2:v=1:a=0[v]', '-map', '[v]',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', variable]);
+  const media = await probeMedia(variable);
+  const video = media.streams.find((stream) => stream.codec_type === 'video');
+  assert.equal(video.avg_frame_rate, '0/0', 'fixture no longer reports an unusable average frame rate');
+  const [numerator, denominator] = video.r_frame_rate.split('/').map(Number);
+  assert.ok(numerator > 0 && denominator > 0, `r_frame_rate was ${video.r_frame_rate}`);
+  assert.equal(media.fps, numerator / denominator);
+  assert.ok(media.fps > 0, 'fps must fall back to r_frame_rate');
+
+  // Legal fractional rates keep their exact value.
+  const ntsc = join(directory, 'ntsc rate.mp4');
+  await fixture(['-f', 'lavfi', '-i', 'testsrc2=s=64x48:r=30000/1001:d=1',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', ntsc]);
+  assert.ok(Math.abs((await probeMedia(ntsc)).fps - 30000 / 1001) < 1e-9);
+});
+
+test('the music generator keeps 32-bit state past 2^53 samples', () => {
+  // The contract: the same generator with uint32 state. Without `>>> 0` the
+  // running sum passes 2^53 at sample 4,917,757 (~111.5 s at 44.1 kHz) and float
+  // rounding eats the low bits, so every later sample diverges from this.
+  const reference = (seed) => {
+    let state = 2166136261;
+    for (const char of String(seed)) state = Math.imul(state ^ char.charCodeAt(0), 16777619) >>> 0;
+    return () => {
+      state = (state + 0x6D2B79F5) >>> 0;
+      let value = Math.imul(state ^ (state >>> 15), 1 | state);
+      value ^= value + Math.imul(value ^ (value >>> 7), 61 | value);
+      return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+    };
+  };
+  const actual = randomGenerator('overflow');
+  const expected = reference('overflow');
+  // 5 M samples covers the break point and the tail of a 600 s track.
+  for (let index = 0; index < 5_000_000; index++) {
+    if (actual() !== expected()) assert.fail(`generator diverged from 32-bit state at sample ${index}`);
+  }
 });
