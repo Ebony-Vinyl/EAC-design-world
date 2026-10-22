@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, unlink, open, link, stat } from 'node:fs/promises';
+import { mkdir, readFile, rename, unlink, open, link, stat, utimes } from 'node:fs/promises';
 import { readFileSync, unlinkSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -18,8 +18,15 @@ const lockName = 'LOCK';
 // evidence of a crash.
 const INCOMPLETE_LOCK_GRACE_MS = 2_000;
 // A lock written by another machine cannot be probed with process.kill (its pid means nothing
-// here), so it counts as live until it is clearly abandoned.
+// here), so freshness is its only liveness proof — see FOREIGN_LOCK_TTL_MS below.
 const FOREIGN_LOCK_TTL_MS = 30 * 60_000;
+// Every holder refreshes its lock's mtime at this interval, at most one third of the TTL. Without a
+// refresh, age alone cannot tell "alive but idle" from "crashed", so any peer whose liveness cannot
+// be probed (a second host) is reclaimed the moment it outlives the TTL even while it is still
+// running — two writers on one directory, which is the failure this lock exists to prevent.
+// Refreshed with utimes, never by rewriting the file: a rewrite would reopen the create/write window
+// the lock publishes atomically.
+const FOREIGN_LOCK_HEARTBEAT_MS = Math.floor(FOREIGN_LOCK_TTL_MS / 4);
 const LOCK_POLL_MS = 50;
 const LOCK_RETRY_BUDGET_MS = 15_000;
 // Filesystems where link() is unavailable (FAT/exFAT, some network mounts and sandboxes): the
@@ -232,6 +239,36 @@ function releaseOnExit() {
   exitHooks.clear();
 }
 
+/** Touches our own lock so a peer on another host can see the holder is alive.
+ *  Same-host peers do not need it (they probe the pid directly), but it costs one utimes per
+ *  interval and is the only thing keeping a shared directory safe. Never rejects.
+ *  The token is checked first: refreshing a lock that no longer carries ours would keep a
+ *  successor's claim looking alive and hide ITS crash — the opposite of what the heartbeat is for. */
+async function refreshLock(entry) {
+  try {
+    const current = await readLock(entry.path);
+    if (!current || current.incomplete || current.info?.token !== entry.info.token) return;
+    const now = new Date();
+    await utimes(entry.path, now, now);
+  } catch { /* the lock was moved on; nothing to keep alive */ }
+}
+
+/** Starts the mtime heartbeat for a lock this process now owns. Idempotent per entry. */
+function startHeartbeat(entry, intervalMs = FOREIGN_LOCK_HEARTBEAT_MS) {
+  if (entry.heartbeat) return;
+  const timer = setInterval(() => { void refreshLock(entry); }, intervalMs);
+  // Never hold the event loop open on the lock's account: during shutdown it must be possible to
+  // exit even if release() is skipped.
+  if (typeof timer.unref === 'function') timer.unref();
+  entry.heartbeat = timer;
+}
+
+function stopHeartbeat(entry) {
+  if (!entry.heartbeat) return;
+  clearInterval(entry.heartbeat);
+  entry.heartbeat = null;
+}
+
 class DataLock {
   constructor(entry) {
     this.entry = entry;
@@ -250,6 +287,7 @@ class DataLock {
     else entry.owners.delete(entry.owner);
     if (entry.owners.size > 0) return;
     entry.released = true;
+    stopHeartbeat(entry);
     lockDirectories.delete(entry.root);
     exitHooks.delete(entry.path);
     const current = await readLock(entry.path);
@@ -258,13 +296,37 @@ class DataLock {
   }
 }
 
-/**
- * Takes the exclusive lock of a data directory.
- * `share: true` lets a sub-store (design/, owned by the same engine) join the lock its parent
- * root already holds in this process instead of being refused.
- * Throws EAC_LOCKED when another live instance owns the directory.
+/** Serialises acquisition inside one process.
+ *
+ * Two concurrent `acquireDataLock` callers in the same process can otherwise both succeed: the
+ * in-memory `lockDirectories` map is only filled once a lock is published, so both reach the "is it
+ * already held?" check before either publishes and both see nothing. Afterwards they settle in some
+ * order and the loser reads the winner's lock, sees its OWN pid, classifies it as a leftover of a
+ * closed instance in this process, reclaims it and publishes its own — two live Store/DesignStore
+ * instances each writing whole snapshots back, i.e. the silent overwrite this lock exists to stop.
+ * Measured before this change: two concurrent `new Store(dir).init()` both resolved.
+ *
+ * Chaining makes check-and-publish atomic within the process. Unkeyed because one call can only be
+ * waiting on one directory at a time; rejections are swallowed so one failure cannot stall the next
+ * caller. Cross-process atomicity is untouched — `publishLock` already provides it.
  */
-export async function acquireDataLock(root, { kind = 'data', share = false, owner = null } = {}) {
+/** Queues per data root, so one directory waiting out a grace period cannot stall an unrelated one.
+ *  An unkeyed queue was measured blocking a different directory for ~2 s (and a malformed lock can
+ *  hold a slot for up to the 15 s retry budget). */
+const acquireQueues = new Map();
+export async function acquireDataLock(root, options = {}) {
+  const key = resolve(root);
+  const previous = acquireQueues.get(key) ?? Promise.resolve();
+  const attempt = () => acquireDataLockInner(root, options);
+  const run = previous.then(attempt, attempt);
+  const tail = run.then(() => undefined, () => undefined);
+  acquireQueues.set(key, tail);
+  // Drop the entry once this is still the tail, so a long-lived process cannot accumulate one map
+  // entry per directory it ever touched.
+  tail.then(() => { if (acquireQueues.get(key) === tail) acquireQueues.delete(key); });
+  return run;
+}
+async function acquireDataLockInner(root, { kind = 'data', share = false, owner = null, heartbeatMs = FOREIGN_LOCK_HEARTBEAT_MS } = {}) {
   const key = resolve(root);
   if (lockDisabled()) {
     warnLockDisabled(key);
@@ -306,13 +368,14 @@ export async function acquireDataLock(root, { kind = 'data', share = false, owne
       continue;
     }
     if (await publishLock(lockPath, payload) !== 'published') continue;
-    const entry = { path: lockPath, info, owners: new Set(owner ? [owner] : []), owner, root: key, released: false };
+    const entry = { path: lockPath, info, owners: new Set(owner ? [owner] : []), owner, root: key, released: false, heartbeat: null };
     lockDirectories.set(key, entry);
     if (!exitHandlerInstalled) {
       exitHandlerInstalled = true;
       process.once('exit', releaseOnExit);
     }
     exitHooks.set(lockPath, token);
+    startHeartbeat(entry, heartbeatMs);
     return new DataLock(entry);
   }
   throw new Error(`无法获取数据目录锁：${lockPath}。请确认没有其他 EAC 实例正在运行。`);

@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { randomUUID } from 'node:crypto';
-import { Store } from '../src/store.mjs';
+import { Store, acquireDataLock } from '../src/store.mjs';
 import { DesignStore } from '../src/design-store.mjs';
 
 // Regression coverage for the storage layer's cross-process write protection. Two engines on one
@@ -378,5 +378,73 @@ test('state and lock writes are fsynced before the rename publishes them', async
   } finally {
     FileHandle.prototype.sync = original;
     await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('two initialisations racing inside one process cannot both take the lock', async () => {
+  // The cross-process tests above spawn children, so each contender has its own in-memory
+  // `lockDirectories` map. Inside ONE process the map is shared, but it is only filled after a lock
+  // is published, so two callers that pass the "is it held?" check before either publishes both
+  // succeed - and the loser then reclaims the winner's lock as "a leftover of this process", leaving
+  // two live stores writing whole snapshots back. Measured before the fix: both resolved.
+  const directory = await temporaryDirectory();
+  try {
+    const results = await Promise.allSettled([new Store(directory).init(), new Store(directory).init()]);
+    const acquired = results.filter((result) => result.status === 'fulfilled').length;
+    assert.equal(acquired, 1, `two stores on one directory both initialised: ${acquired}`);
+    const refusal = results.find((result) => result.status === 'rejected');
+    assert.ok(locked(refusal.reason), 'the loser must be refused with EAC_LOCKED');
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('a held lock keeps refreshing its own mtime so a peer on another host never takes it away', async () => {
+  // Freshness is the only liveness proof for a lock written by another machine (its pid means nothing
+  // here), so without a heartbeat a peer that has been running longer than the takeover TTL looks
+  // exactly like a crashed one - and taking it over is the silent double-write this lock exists to
+  // prevent. The interval is injected so the test does not have to wait minutes.
+  const directory = await temporaryDirectory();
+  try {
+    const held = await acquireDataLock(directory, { kind: 'data', owner: { tag: 'holder' }, heartbeatMs: 60 });
+    const lockPath = join(directory, 'LOCK');
+    const before = (await readFile(lockPath, 'utf8'));
+    const stale = new Date(Date.now() - 60 * 60_000);
+    await utimes(lockPath, stale, stale);
+    const agedAt = (await import('node:fs/promises')).stat(lockPath);
+    assert.equal((await agedAt).mtimeMs, stale.getTime());
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    const refreshed = await (await import('node:fs/promises')).stat(lockPath);
+    assert.ok(refreshed.mtimeMs > stale.getTime() + 30 * 60_000,
+      'the heartbeat must keep the lock looking alive');
+    // The content is untouched: refreshing never rewrites the file, so no reader can observe a
+    // half-written lock.
+    assert.equal(await readFile(lockPath, 'utf8'), before);
+    await held.release({ force: true });
+    assert.equal(existsSync(lockPath), false);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('waiting on one data directory does not block an unrelated one', async () => {
+  // The queue that serialises same-process acquisition was first written unkeyed, which made every
+  // directory wait behind any other one's retry budget (measured ~2 s for an unrelated directory).
+  const busy = await temporaryDirectory();
+  const other = await temporaryDirectory();
+  try {
+    // A fresh half-written lock makes the first acquisition wait out its grace period.
+    await writeFile(join(busy, 'LOCK'), '', 'utf8');
+    const slow = acquireDataLock(busy, { kind: 'data', owner: { tag: 'busy' } });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    const startedAt = Date.now();
+    const quick = await acquireDataLock(other, { kind: 'data', owner: { tag: 'other' } });
+    const elapsed = Date.now() - startedAt;
+    assert.ok(elapsed < 800, `an unrelated directory waited ${elapsed} ms behind another one`);
+    await quick.release({ force: true });
+    await (await slow).release({ force: true });
+  } finally {
+    await rm(busy, { recursive: true, force: true });
+    await rm(other, { recursive: true, force: true });
   }
 });
