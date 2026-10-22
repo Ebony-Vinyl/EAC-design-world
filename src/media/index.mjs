@@ -134,13 +134,20 @@ function ffmpeg(args, options) {
 // spelling is now -/filter_complex (a leading '/' makes the argument a filename).
 // Probe the installed binary instead of guessing from the version string, because
 // custom builds re-add or rename options. Cache only the option name for the process.
+//
+// ffmpeg writes `-h full` to stdout (measured on 9.0.2: 1.34 MB stdout, 0 bytes
+// stderr), but a build could route help elsewhere, so match against BOTH streams.
+// Reading only stderr made the probe a no-op that always returned the fallback:
+// invisible on a 9.x build (where the fallback happens to be right) and fatal on
+// 8.x (where the option still exists but was never selected).
 let filterScriptOptionName = null;
 async function filterScriptArgs(scriptPath, signal) {
   if (filterScriptOptionName === null) {
-    const { stderr } = await run(FFMPEG, ['-hide_banner', '-h', 'full'],
+    const { stdout, stderr } = await run(FFMPEG, ['-hide_banner', '-h', 'full'],
       { signal, timeout: 30_000, maxBytes: 8 * 2 ** 20 });
     checkAbort(signal);
-    filterScriptOptionName = /(?:^|\s)-filter_complex_script(?:\s|$)/m.test(stderr.toString('utf8'))
+    const help = `${stdout.toString('utf8')}\n${stderr.toString('utf8')}`;
+    filterScriptOptionName = /(?:^|\s)-filter_complex_script(?:\s|$)/m.test(help)
       ? '-filter_complex_script'
       : '-/filter_complex';
   }
