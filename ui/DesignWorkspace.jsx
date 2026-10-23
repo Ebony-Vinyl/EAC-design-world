@@ -177,8 +177,8 @@ function ProjectDialog({ selection, sessionId, onCreate, onClose, busy }) {
 function starterFor(name, kind) {
   const title = name.replace(/\.[a-z0-9]+$/i, '') || '作品';
   if (/\.md$/i.test(name) || kind === 'document') return `# ${title}\n\n在这里写下正文。\n`;
-  if (/\.svg$/i.test(name)) return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">\n  <rect width="800" height="450" fill="#f7f8f6"/>\n  <text x="40" y="80" font-family="sans-serif" font-size="28" fill="#227b70">${title}</text>\n</svg>\n`;
-  return `<!doctype html>\n<html lang="zh-CN">\n  <head>\n    <meta charset="utf-8" />\n    <title>${title}</title>\n    <style>\n      body { margin: 0; font-family: system-ui, sans-serif; background: #f7f8f6; color: #303531; }\n      main { max-width: 900px; margin: 0 auto; padding: 64px 32px; }\n      h1 { font-size: 40px; margin: 0 0 16px; }\n      p { line-height: 1.9; color: #69746b; }\n    </style>\n  </head>\n  <body>\n    <main>\n      <h1>${title}</h1>\n      <p>在这里搭建页面内容。</p>\n    </main>\n  </body>\n</html>\n`;
+  if (/\.svg$/i.test(name)) return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">\n  <rect width="800" height="450" fill="#f3f5f9"/>\n  <text x="40" y="80" font-family="sans-serif" font-size="28" fill="#4d6bfe">${title}</text>\n</svg>\n`;
+  return `<!doctype html>\n<html lang="zh-CN">\n  <head>\n    <meta charset="utf-8" />\n    <title>${title}</title>\n    <style>\n      body { margin: 0; font-family: system-ui, sans-serif; background: #f3f5f9; color: #171923; }\n      main { max-width: 900px; margin: 0 auto; padding: 64px 32px; }\n      h1 { font-size: 40px; margin: 0 0 16px; }\n      p { line-height: 1.9; color: #7b8497; }\n    </style>\n  </head>\n  <body>\n    <main>\n      <h1>${title}</h1>\n      <p>在这里搭建页面内容。</p>\n    </main>\n  </body>\n</html>\n`;
 }
 
 function splitDeckPages(content) {
@@ -494,7 +494,7 @@ export default function DesignWorkspace({ sessionId = '', initialView = 'library
           if (!response.ok) throw new Error('设计体系配色文件读取失败');
           const tokens = await response.text();
           const title = created.title.replace(/[<>&"']/g, character => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' })[character]);
-          seeded = await api('/design/artifacts', { method: 'POST', body: { projectId: created.id, name: 'index.html', content: `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><style>${tokens}\nbody{margin:0;padding:48px;background:var(--bg,#fff);color:var(--fg,#222);font-family:var(--font-body,system-ui)}h1{font-family:var(--font-display,system-ui)}button{padding:12px 20px;border:0;background:var(--accent,#227b70);color:var(--accent-on,#fff);border-radius:var(--radius-md,8px)}</style><main><h1>${title}</h1><p>已载入所选设计体系，请按创作说明完善内容。</p><button>开始</button></main></html>` } });
+          seeded = await api('/design/artifacts', { method: 'POST', body: { projectId: created.id, name: 'index.html', content: `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><style>${tokens}\nbody{margin:0;padding:48px;background:var(--bg,#fff);color:var(--fg,#222);font-family:var(--font-body,system-ui)}h1{font-family:var(--font-display,system-ui)}button{padding:12px 20px;border:0;background:var(--accent,#4d6bfe);color:var(--accent-on,#fff);border-radius:var(--radius-md,8px)}</style><main><h1>${title}</h1><p>已载入所选设计体系，请按创作说明完善内容。</p><button>开始</button></main></html>` } });
         }
       }
       notify(seeded ? `已创建「${created.title}」的起始文件，请按简报修改` : `已创建「${created.title}」`);

@@ -150,10 +150,10 @@ export default function TemplatePickerGallery({ templates, selectedId, onSelect,
     </div>}
     {inline && <div className="library-recommend-label"><div><strong>{kindLabel(design ? kind : 'motion')}</strong><span>{scoped.length} 个灵感起点</span></div><span>选择风格，开始创作</span></div>}
     <div className="library-picker-scroll" ref={scroller} tabIndex={inline ? undefined : 0} aria-label="模板浏览区">
-      <div className="library-card-grid">{visible.map(item => {
+      <div className="library-card-grid">{visible.map((item, index) => {
         const selected = systems ? selectedSystemId === item.id : selectedId === item.id;
         const select = () => systems ? onSelectSystem?.(item) : onSelect(item);
-        return <article key={item.id} className={`library-card ${selected ? 'selected' : ''} ${saved.has(item.id) ? 'in-shotlist' : ''}`} data-template-kind={systems ? 'design-system' : item.kind || 'motion'}>
+        return <article key={item.id} className={`library-card ${selected ? 'selected' : ''} ${saved.has(item.id) ? 'in-shotlist' : ''}`} data-template-kind={systems ? 'design-system' : item.kind || 'motion'} style={{ '--i': index }}>
           <div className="library-card-visual"><button type="button" className="library-card-cover" aria-label={`${systems ? '选择' : '预览'}${item.name}`} onClick={() => systems ? select() : onPreview?.(item)}><LibraryThumbnail item={item} system={systems} />{motion && <MotionThumbnail item={item} />}{selected && <span className="library-selected"><Check size={13} /></span>}
             {motion && !inline && <><span className="library-card-category">{item.category}</span>{item.recommended && <span className="library-curated"><Star size={10} fill="currentColor" />精选</span>}{formatDuration(item.duration) && <span className="library-card-duration">{formatDuration(item.duration)}</span>}</>}
             <span className="library-cover-action">{systems ? '使用体系' : '查看预览'} <ArrowRight size={12} /></span></button>

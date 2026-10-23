@@ -10,10 +10,10 @@ export default function LibraryThumbnail({ item, system = false }) {
   useEffect(() => { setFailed(false); setLoaded(false); }, [primary]);
   const colors = item.colors || [];
   const value = (name, fallback) => colors.find(color => color.name === name)?.value || fallback;
-  const accent = value('--accent', '#227b70');
+  const accent = value('--accent', '#4d6bfe');
   return <>
     {!failed && <img className={`library-cover ${loaded ? 'cover-loaded' : ''}`} src={primary} alt={item.name} loading="lazy" decoding="async" onLoad={() => setLoaded(true)} onError={() => setFailed(true)} />}
-    {(!loaded || failed) && <div className={`library-specimen ${system ? 'is-system' : ''}`} style={{ '--spec-bg': value('--bg', '#f0f2ec'), '--spec-ink': value('--fg', '#22362d'), '--spec-accent': accent, fontFamily: item.fonts?.[0]?.family || 'Georgia,serif' }}>
+    {(!loaded || failed) && <div className={`library-specimen ${system ? 'is-system' : ''}`} style={{ '--spec-bg': value('--bg', '#eef1f7'), '--spec-ink': value('--fg', '#171923'), '--spec-accent': accent, fontFamily: item.fonts?.[0]?.family || 'Georgia,serif' }}>
       <div className="specimen-top"><span>{system ? 'DESIGN SYSTEM' : kindLabel(item.kind)}</span><span>↗</span></div>
       <strong>{system ? 'Aa' : item.name}</strong>
       <span className="specimen-rule" />

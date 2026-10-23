@@ -1,105 +1,157 @@
-/* Shared interaction rhythm across the studio, library and embedded views. */
+/* Shared interaction rhythm, motion and glass polish across studio, library
+   and embedded views. Design tokens live in styles.css; this file layers the
+   feel on top: focus rings, entrance choreography, hover physics. */
+
 :root {
   --ease-out: cubic-bezier(.2, .7, .2, 1);
-  --muted: #727e78;
-  --line: #e0e6e3;
 }
 
 button, a, input, textarea, select { touch-action: manipulation; }
 button:focus-visible, a:focus-visible, [tabindex="0"]:focus-visible {
-  outline: 2px solid var(--teal);
+  outline: 2px solid var(--blue);
   outline-offset: 3px;
+  box-shadow: 0 0 0 4px var(--blue-soft-2);
 }
 
-.app-topnav {
-  background: #fffffff5;
-  box-shadow: 0 1px 0 #243a3010;
-  backdrop-filter: blur(14px);
+/* view transition choreography — `backwards` fill so the finished animation
+   never leaves a transform behind (a filling transform turns the element into
+   a containing block and breaks position: fixed dialogs rendered inside) */
+.view-swap > * { animation: fade-up .45s var(--ease) backwards; }
+.view-swap > *:nth-child(2) { animation-delay: 60ms; }
+.view-swap > *:nth-child(3) { animation-delay: 110ms; }
+.view-swap > *:nth-child(4) { animation-delay: 160ms; }
+.view-swap > *:nth-child(n+5) { animation-delay: 200ms; }
+
+/* scroll-driven sheen on the primary action */
+.button.primary { position: relative; overflow: hidden; }
+.button.primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, .35) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform .6s var(--ease);
+  pointer-events: none;
 }
-.brand strong { color: #263a35; }
-.page-heading h1 { color: #263a35; font-weight: 600; }
-.page-heading p { font-size: 12px; line-height: 1.7; color: #74817b; }
-.eyebrow, .brand small, .harness-label, .dw-attribution-source, .specimen-top { letter-spacing: 0; }
-.heading-dot { color: #d47a65; }
-.button, .icon-button, .topnav-item, .dw-tabs button, .dw-device-bar button,
-.filter-tabs button, .library-select, .library-pagination button {
-  transition: background-color 160ms ease, border-color 160ms ease,
-    color 160ms ease, box-shadow 160ms ease, transform 160ms var(--ease-out);
-}
-.button.primary { box-shadow: 0 2px 3px #175b4514; }
-.button.primary:hover:not(:disabled) { box-shadow: 0 3px 8px #175b4524; }
-.button:active:not(:disabled), .icon-button:active:not(:disabled),
-.library-select:active:not(:disabled) { transform: translateY(1px); }
-.button:disabled { box-shadow: none; }
-input, textarea, select {
-  transition: border-color 160ms ease, box-shadow 160ms ease;
-}
-input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 3px #227b700c; }
-.preview-stage { border: 1px solid #183e2d18; box-shadow: 0 6px 22px #20392a0a; }
-.brief-panel { border-color: #dce5df; }
-.section-title h2 { font-size: 12px; color: #53665b; }
+.button.primary:hover:not(:disabled)::after { transform: translateX(120%); }
+
+input, textarea, select { transition: border-color var(--speed) ease, box-shadow var(--speed) ease, background var(--speed) ease; }
+
+.preview-stage { isolation: isolate; }
+.section-title h2 { font-size: 12.5px; }
 .section-title .count { font-size: 10px; }
 .studio-tabs button { font-size: 12px; }
-.project-form label, .project-form input, .project-form textarea,
-.project-form select, .project-form legend { font-size: 12px; }
-.brief-panel .project-form textarea { min-height: 120px; line-height: 1.8; }
 .preview-footer { font-size: 11px; }
 .preview-footer > .mono { font-size: 10px; }
 .preview-section .segmented button { font-size: 11px; min-height: 26px; }
+.brief-panel .project-form textarea { min-height: 120px; line-height: 1.8; }
+
 .library-cover-action { display: inline-flex; align-items: center; gap: 5px; }
 .mini-template > span { font-size: 11px; gap: 6px; text-align: left; }
 .mini-template > span > svg { flex-shrink: 0; }
-.mini-template > div { transition: border-color 160ms ease, box-shadow 160ms ease; }
-.mini-template:hover > div { border-color: #92b2a3; box-shadow: 0 3px 12px #174b3012; }
 .library-card-cover, .dw-template-thumb, .dw-system-cover { isolation: isolate; }
-.library-card-cover { border-radius: 8px; }
+.library-card-cover { border-radius: var(--r); }
 .library-card-cover:focus-visible, .dw-template-thumb:focus-visible,
 .dw-system-cover:focus-visible { outline-offset: 3px; }
-.library-card-cover img, .dw-template-thumb img { transition: transform 240ms var(--ease-out); }
-.library-card-cover:hover img, .dw-template-thumb:hover img { transform: scale(1.025); }
-.library-card.selected .library-card-cover { box-shadow: 0 0 0 2px var(--teal); }
+.library-card-cover img, .dw-template-thumb img { transition: transform 320ms var(--ease); }
+.library-card-cover:hover img, .dw-template-thumb:hover img { transform: scale(1.035); }
+.library-card.selected .library-card-cover { box-shadow: 0 0 0 2px var(--blue), var(--shadow-md); }
 .library-card-cover:focus-visible .library-cover-action,
 .dw-system-cover:focus-visible > span { opacity: 1; }
 .library-select { min-width: 32px; min-height: 32px; }
-.library-selected { animation: selection-in 180ms var(--ease-out) both; }
+.library-selected { animation: selection-in 200ms var(--ease-bounce) backwards; }
 .library-results-bar > span { font-variant-numeric: tabular-nums; }
 .library-picker-scroll { scrollbar-gutter: stable; overscroll-behavior: contain; }
 .library-no-results button { margin-top: 8px; }
-.dw-system-card:hover { transform: none; }
-.dw-system-card { transition: border-color 160ms ease, box-shadow 160ms ease; }
+.dw-system-card:hover { transform: translateY(-2px); }
 .dw-device-bar button { min-width: 32px; min-height: 30px; }
 .dw-editor-toolbar { min-height: 36px; }
 .dw-editor-main[aria-busy="true"] .dw-code { opacity: .6; }
-.dw-code { tab-size: 2; caret-color: var(--teal); }
+.dw-code { tab-size: 2; caret-color: var(--blue); }
 .dw-history-row button { min-height: 32px; }
 .dw-history-row button:disabled { opacity: .55; }
-.dw-draft-status { display: flex; align-items: center; gap: 6px; min-height: 18px; color: #8a6b43; font-size: 11px; }
-.modal-backdrop { animation: backdrop-in 160ms ease both; overscroll-behavior: contain; }
-.dialog {
-  animation: dialog-in 220ms var(--ease-out) both;
-  border: 1px solid #dce5df;
-  box-shadow: 0 24px 80px #112b3329, 0 4px 16px #112b3310;
-}
+.dw-draft-status { display: flex; align-items: center; gap: 6px; min-height: 18px; color: var(--warn); font-size: 11px; }
+
+.modal-backdrop { overscroll-behavior: contain; }
 .dialog:focus { outline: none; }
-.dialog-header { background: #fcfdfc; }
-.toast { animation: toast-in 220ms var(--ease-out) both; max-width: min(480px, calc(100vw - 32px)); }
 .toast > span { min-width: 0; overflow-wrap: anywhere; }
-.page-footer { font-size: 10px; color: #7e8a80; }
-@keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes dialog-in { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
-@keyframes toast-in { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
-@keyframes selection-in { from { opacity: 0; scale: .75; } to { opacity: 1; scale: 1; } }
+.page-footer { font-size: 10px; color: var(--muted); }
+
+/* ── micro-motion layer ─────────────────────────────────────────────────
+   Small, idle-friendly details. Everything here is a transform/opacity or
+   paint-only animation, runs on compositor-friendly properties, and is
+   silenced by the prefers-reduced-motion rules below. */
+
+/* template covers fade in softly once the bitmap arrives (the specimen
+   placeholder hands over instead of popping) */
+.library-cover.cover-loaded { animation: cover-in .38s ease backwards; }
+@keyframes cover-in { from { opacity: 0; } }
+
+/* selected pills snap in with a small bounce so tab switches feel physical */
+.studio-tabs button.selected, .topnav-item.active, .dw-tabs button.selected,
+.library-mode-tabs button[aria-selected="true"], .segmented button.selected,
+.filter-tabs button.selected, .settings-subnav button.active,
+.library-source-tabs button[aria-pressed="true"], .dw-device-bar button.selected,
+.dw-canvas-filters button.selected {
+  animation: tab-pop .26s var(--ease-bounce) backwards;
+}
+@keyframes tab-pop { from { scale: .93; } }
+
+/* running progress bars carry a moving sheen so "alive" reads at a glance */
+.progress-line progress::-webkit-progress-value,
+.mt-progress progress::-webkit-progress-value {
+  background-image: linear-gradient(90deg, #7a8cff, var(--blue)),
+    linear-gradient(100deg, transparent 25%, rgba(255, 255, 255, .5) 50%, transparent 75%);
+  background-size: 100% 100%, 34px 100%;
+  animation: progress-flow 1.2s linear infinite;
+}
+@keyframes progress-flow { to { background-position: 0 0, 34px 0; } }
+
+/* empty states drift gently instead of sitting still */
+.empty > svg { animation: empty-drift 5.6s ease-in-out infinite; }
+@keyframes empty-drift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* the play affordance breathes until it is hovered */
+.play-preview { animation: play-pulse 2.8s ease-in-out infinite; }
+.play-preview:hover { animation-play-state: paused; }
+@keyframes play-pulse {
+  0%, 100% { box-shadow: 0 8px 32px rgba(5, 10, 40, .4), 0 0 0 8px rgba(255, 255, 255, .1); }
+  50% { box-shadow: 0 8px 32px rgba(5, 10, 40, .4), 0 0 0 14px rgba(255, 255, 255, .05); }
+}
+
+/* single-instance placeholder stages get one slow sheen sweep */
+.template-placeholder { position: relative; overflow: hidden; }
+.template-placeholder::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, .38) 50%, transparent 70%);
+  transform: translateX(-130%);
+  animation: placeholder-sheen 4.8s var(--ease) infinite;
+}
+@keyframes placeholder-sheen {
+  0% { transform: translateX(-130%); }
+  46%, 100% { transform: translateX(130%); }
+}
+
+/* a newly active job count announces itself */
+.nav-badge { animation: selection-in .32s var(--ease-bounce) backwards; }
+
 @media (hover: none) {
   .library-cover-action, .dw-system-cover > span { opacity: 1; }
 }
 @media (max-width: 680px) {
-  .app-topnav { backdrop-filter: none; }
+  .app-topnav { backdrop-filter: none; -webkit-backdrop-filter: none; }
   .topnav-item { min-height: 38px; }
   .page-heading p { font-size: 11px; max-width: 44ch; }
   .page-heading { align-items: flex-start; }
   .heading-actions { flex-shrink: 0; }
   .brief-panel { padding-top: 18px; }
-  .studio-tabs > div { gap: 14px; }
+  .studio-tabs > div { gap: 4px; }
   .studio-tabs button { font-size: 11px; gap: 5px; }
   .studio-tabs .studio-format { display: none; }
   .dw-library-toolbar .search-input { width: 100%; }
@@ -110,6 +162,9 @@ input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 3px #227b700c; }
 @media (prefers-reduced-motion: reduce) {
   .library-card:hover, .library-card:focus-within,
   .library-card:hover .library-cover, .dw-template-thumb:hover img { transform: none; }
+  .view-swap > *, .library-card, .clip, .job-row,
+  .empty > svg, .play-preview, .nav-badge,
+  .library-cover.cover-loaded, .studio-tabs button.selected, .topnav-item.active { animation: none !important; }
   *, *::before, *::after {
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;

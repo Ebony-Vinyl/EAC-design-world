@@ -21,9 +21,19 @@ DeepSeek Harness 的本地视频制作与设计工作室
 
 EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 提供原生创作模式、模板选择和右侧作品画布，同时拥有可独立运行的本地工作台。视频录制、配音、配乐、字幕、编码与检查产生真实文件；网站、幻灯片、SVG 和文档保留源文件及版本历史。
 
-当前版本为 **v0.4.0 开发预览版**。本版新增 150 个 Shotcraft 镜头、动态选片与项目素材导入，重做模板预览播放器并优化状态轮询，详见 [发布说明](docs/release-v0.4.0.md)。保留插件维护、签名更新与回滚、草稿恢复和隔离预览。Windows 上的录屏、语音、转录和渲染流程已执行测试；其他平台的桌面录制与本地语音未实现。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
+当前版本为 **v0.5.0 开发预览版**。本版将界面整体切换为墨蓝玻璃设计系统，加入视图切换与列表入场动效，并修复设计库卡片横向溢出，详见 [发布说明](docs/release-v0.5.0.md)。上一版引入 150 个 Shotcraft 镜头、动态选片与项目素材导入。保留插件维护、签名更新与回滚、草稿恢复和隔离预览。Windows 上的录屏、语音、转录和渲染流程已执行测试；其他平台的桌面录制与本地语音未实现。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
 
-<p align="center"><img src="docs/assets/templates.png" alt="EAC design world 两行模板推荐与真实页面封面" width="960" /><br /><sub>按创作类型推荐模板，保留真实封面与可移除的选择标签。</sub></p>
+<p align="center"><b>以下两条宣传片均为 deepseek harness + EAC design world + deepseek v4.1 flash（非 1017）一轮出的结果</b></p>
+
+<p align="center"><b>AI 全程自己录制素材和制作音乐</b></p>
+
+<p align="center"><b>EAC design world · RUSH 60s</b></p>
+
+https://github.com/user-attachments/assets/3f6641e0-e803-48cf-b61a-2baa57f2c088
+
+<p align="center"><b>Our Free Model · 65s</b></p>
+
+https://github.com/user-attachments/assets/ca081273-1061-4656-a1b7-41d50af0aec7
 
 ## 目录
 
@@ -46,6 +56,8 @@ EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-
 | 创建网站和演示稿 | HTML、SVG、Markdown 编辑、隔离预览、不可变修订与源文件下载 |
 | 检查与导出作品 | Harness 原生右侧作品画布、HTML 幻灯片分页、PDF / PNG / PPTX 整页图像导出 |
 | 维护插件 | 顶部导航中的独立维护中心：运行/安装版本、签名更新、本地更新、备份回滚、宿主热重载、公告与已读记录 |
+
+<p align="center"><img src="docs/assets/templates.png" alt="EAC design world 两行模板推荐与真实页面封面" width="960" /><br /><sub>按创作类型推荐模板，保留真实封面与可移除的选择标签。</sub></p>
 
 ### 设计内容库
 
@@ -88,9 +100,9 @@ npm run motion:verify
 
 | 文件 | 用途 |
 | --- | --- |
-| `eac-design-world-v0.4.0-plugin.zip` | 插件源码、预构建 Web UI、Shotcraft 镜头视频与源码、设计体系、封面、安装脚本及许可说明；不包含 Node 依赖 |
-| `eac-design-world-v0.4.0-media.zip` | 可选大媒体包：MG 原始预览视频、字体、渲染素材及宣传片素材 |
-| `eac-design-world-v0.4.0-update.zip` | 维护中心使用的签名本地更新包，解压后选择其中 `manifest.json` |
+| `eac-design-world-v0.5.0-plugin.zip` | 插件源码、预构建 Web UI、Shotcraft 镜头视频与源码、设计体系、封面、安装脚本及许可说明；不包含 Node 依赖 |
+| `eac-design-world-v0.5.0-media.zip` | 可选大媒体包：MG 原始预览视频、字体、渲染素材及宣传片素材 |
+| `eac-design-world-v0.5.0-update.zip` | 维护中心使用的签名本地更新包，解压后选择其中 `manifest.json` |
 | `SHA256SUMS.txt` | 发布产物的 SHA-256 校验值 |
 | GitHub 自动生成的 Source code | 与仓库提交对应的源码快照，不含预构建 `dist` 和可选大媒体 |
 
@@ -125,10 +137,12 @@ node scripts/install-harness.mjs
 也可通过 npm 安装同一版本，再运行包内安装器：
 
 ```powershell
-npm install eac-design-world@0.4.0
+npm install eac-design-world@0.5.0
 node node_modules/eac-design-world/scripts/install-harness.mjs --dry-run
 node node_modules/eac-design-world/scripts/install-harness.mjs
 ```
+
+npm 版对完全相同的二进制资源进行无损去重，安装时从包内恢复原始文件；禁用安装脚本时，首次启动也会补齐。恢复不下载媒体、不覆盖已有文件，并按版本隔离，模板和镜头内容保持不变。GitHub ZIP 保留完整文件布局。
 
 自定义宿主 profile：
 
