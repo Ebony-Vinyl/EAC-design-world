@@ -596,6 +596,9 @@ export const OPTIONAL_MEDIA_EXTENSIONS = ['.ttf', '.flac', '.wav', '.ply', '.hdr
 export function isOptionalMediaPath(rel) {
   const normalized = String(rel).replace(/\\/g, '/')
   if (normalized.startsWith('public/media/') || normalized.startsWith('dist/media/')) return true
+  // Showcase films are README-only assets played straight from GitHub; they are
+  // far above the per-file manifest cap and no runtime path reads them.
+  if (normalized.startsWith('docs/assets/showcase/')) return true
   if (normalized.startsWith('vendor/mg-styles-15/videos/')) return true
   if (!normalized.startsWith('vendor/mg-styles-15/')) return false
   const lower = normalized.toLowerCase()
