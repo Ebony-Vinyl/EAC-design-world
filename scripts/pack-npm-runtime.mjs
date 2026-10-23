@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
-import { copyFile, link, mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { gunzipSync } from 'node:zlib';
 import { createRequire } from 'node:module';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -34,11 +35,14 @@ export async function packNpmRuntime({ source, output, npmCli = process.env.npm_
   }
   const stage = join(output, 'package');
   await mkdir(stage, { recursive: true });
+  // Stage real copies, never hard links: npm's tar writer treats nlink>1 files
+  // as hard-link candidates keyed by dev:ino, and libuv's Windows ino is a
+  // collision-prone file-id hash — a collision would silently replace one
+  // staged file's content with another's inside the tarball.
   for (const file of files) {
     const target = join(stage, file);
     await mkdir(dirname(target), { recursive: true });
-    if (['package.json', 'src/catalog.mjs', bootstrap].includes(file)) await copyFile(join(source, file), target);
-    else await link(join(source, file), target);
+    await copyFile(join(source, file), target);
   }
   await copyFile(join(ROOT, bootstrap), join(stage, bootstrap));
   const catalog = await readFile(join(stage, 'src/catalog.mjs'), 'utf8');
@@ -95,6 +99,27 @@ export async function packNpmRuntime({ source, output, npmCli = process.env.npm_
   }
   assert.equal(packed.files.filter(file => /^vendor\/video-shotcraft\/media\/.*\.mp4$/.test(file.path)).length, 150);
   for (const file of packed.files) assert.equal(isExcludedPath(file.path), false, file.path);
+  // A tarball entry that is not a regular file (hard link, symlink, device…)
+  // would either be rejected by the registry or silently alias another file's
+  // content on install, so refuse to ship one.
+  {
+    const bytes = await readFile(join(output, packed.filename));
+    const tar = gunzipSync(bytes);
+    let offset = 0, entries = 0;
+    while (offset + 512 <= tar.length) {
+      const header = tar.subarray(offset, offset + 512);
+      if (header.every(byte => byte === 0)) break;
+      const type = String.fromCharCode(header[156]);
+      const name = header.subarray(0, 100).toString('utf8').replace(/\0.*$/s, '');
+      assert.ok(type === '0' || type === '\0', `npm archive entry "${name}" has non-regular type "${type.trim()}"`);
+      const sizeField = header.subarray(124, 136).toString('utf8').replace(/\0.*$/s, '').trim();
+      const size = sizeField === '' ? 0 : parseInt(sizeField, 8);
+      assert.ok(Number.isInteger(size) && size >= 0, `npm archive entry "${name}" has an unreadable size`);
+      offset += 512 + Math.ceil(size / 512) * 512;
+      entries += 1;
+    }
+    assert.equal(entries, packed.entryCount, 'npm archive entry count disagrees with the pack report');
+  }
   const result = { ...packed, deduplication: { assets: assets.length, savedBytes, originalFiles: files.length, restoredFiles: files.length + (files.includes(bootstrap) ? 1 : 2) } };
   await writeFile(join(output, 'npm-package.json'), JSON.stringify(result, null, 2) + '\n');
   console.log(JSON.stringify({ filename: packed.filename, bytes: packed.size, files: packed.entryCount, deduplicatedAssets: assets.length, savedBytes }));

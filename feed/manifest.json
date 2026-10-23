@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "version": "0.5.0",
   "base": "../",
-  "publishedAt": "2026-10-23T17:44:48.348Z",
+  "publishedAt": "2026-10-23T18:17:15.369Z",
   "notes": "v0.5.0: ink-blue glass design system, motion polish and library card layout fix",
   "minSupported": "0.3.0",
   "files": [
@@ -4548,8 +4548,8 @@
     },
     {
       "path": "scripts/pack-npm-runtime.mjs",
-      "size": 5967,
-      "sha256": "5d03fbb29eeee2ed681d5ad2a480bf4265ab6af31c9d468ec0979e679660176a"
+      "size": 7382,
+      "sha256": "9fd40991cdc9706a3a62488ac03e1a9b1eeab8f64b44ed3ef0d3c73f50d6f047"
     },
     {
       "path": "scripts/prepare-release.mjs",
@@ -44202,5 +44202,5 @@
       "sha256": "102c7a016bbc277b459310aae823fbb6d4dd04f8727d7f2b4ab4fd579cfea43c"
     }
   ],
-  "signature": "JdlTaUMxRnqxbxlRM6GkDXsDyAvOT+T+3PlsWxIgvJ4dADgmAITcOv9RZB7sgXpuq8xl+uVoUmw3ALvvuO2tDw=="
+  "signature": "tJnK+4jNChlAgrStaBvOz7G6ke+2Z3v7b73EYO11pMPgkqh5Iov/QQUfh7s2CPU11q/LgrH+722o9dJONmgzBw=="
 }
