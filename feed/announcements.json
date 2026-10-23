@@ -1,6 +1,15 @@
 {
   "announcements": [
     {
+      "id": "eac-050-design-refresh",
+      "title": "0.5.0：墨蓝玻璃设计系统与动效打磨",
+      "level": "update",
+      "pinned": true,
+      "createdAt": "2026-10-24T08:00:00Z",
+      "html": "<p>界面整体切换为墨蓝玻璃设计系统：白色玻璃卡片、胶囊导航、单一蓝色强调与统一的状态色，嵌入宿主时自动去掉环境光背景。</p><p>新增视图切换过渡、卡片与镜头列表交错入场、进度条流光、播放按钮呼吸等微动效，全部遵循系统的减弱动态偏好。</p><p>修复设计库模板卡片长标题把「使用」按钮挤出卡片导致页面横向滚动的问题。功能与 0.4.0 保持一致，可通过维护中心或签名更新包升级。</p>",
+      "link": { "url": "https://github.com/Ebony-Vinyl/EAC-design-world/releases/tag/v0.5.0", "label": "查看发布与下载" }
+    },
+    {
       "id": "eac-040-shotcraft",
       "title": "0.4.0：Shotcraft 镜头库与动态选片",
       "level": "update",

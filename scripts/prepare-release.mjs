@@ -36,7 +36,7 @@ for (const path of files) {
   assert.equal(isExcludedPath(path), false, path);
   assert.ok(!/(?:^|\/)(?:\.npmrc|\.env(?:\..*)?|[^/]*private[^/]*\.pem)$/.test(path), `Private file: ${path}`);
 }
-const notes = `v${VERSION}: Shotcraft library, dynamic shot picker, preview playback and polling improvements`;
+const notes = `v${VERSION}: ink-blue glass design system, motion polish and library card layout fix`;
 const update = join(output, 'update');
 const channel = join(output, 'channel');
 await mkdir(update);
