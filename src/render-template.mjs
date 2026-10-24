@@ -1,7 +1,8 @@
 import http from 'node:http';
-import { createReadStream } from 'node:fs';
-import { mkdir, mkdtemp, stat, writeFile, rm, realpath, rename } from 'node:fs/promises';
+import { mkdir, mkdtemp, open, stat, writeFile, rm, realpath, rename } from 'node:fs/promises';
+import { pipeline } from 'node:stream/promises';
 import { resolve, join, dirname, relative, isAbsolute, extname } from 'node:path';
+import { tmpdir } from 'node:os';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { once } from 'node:events';
@@ -10,7 +11,121 @@ import { chromium } from 'playwright';
 
 const within = (root, file) => { const rel = relative(root, file); return !rel.startsWith('..') && !isAbsolute(rel); };
 const motionAssetRoots = ['vendor/onetake/lib', 'vendor/motion-web', 'vendor/eac-motion'];
-const types = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.glb': 'model/gltf-binary', '.mp4': 'video/mp4' };
+const types = { '.html': 'text/html', '.htm': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.glb': 'model/gltf-binary', '.mp4': 'video/mp4' };
+// The render page is local template code running against a throwaway file server. That server has no
+// API and no credentials, but the page still must not phone home, reach another localhost service,
+// submit forms or pull a remote CDN: 'self' is the ephemeral 127.0.0.1 port only. No `sandbox`
+// directive — deterministic frame rendering needs a real origin for canvas/WebGL/blob workers, and an
+// opaque origin would make ordinary template scripts throw on storage access.
+// The same policy covers every document type the browser will execute (an .svg subdocument runs its
+// own inline script just like an .html one), not only .html: a documented-CSP-less SVG iframe was a
+// working egress path (fetch/Image to any loopback port) while the render still reported ok:true.
+const renderCsp = [
+  "default-src 'none'",
+  "script-src 'unsafe-inline' 'unsafe-eval' 'self'",
+  "style-src 'unsafe-inline' 'self'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  "media-src 'self' data: blob:",
+  "connect-src 'self'",
+  "worker-src 'self' blob:",
+  "frame-src 'self'",
+  "base-uri 'self'",
+  "form-action 'none'",
+].join('; ');
+// Documents the browser may execute as a page (with its own script context). Everything else is a
+// passive subresource, where a CSP response header has no effect anyway.
+const executableDocuments = new Set(['.html', '.htm', '.svg', '.xhtml']);
+
+// htmlPath is user-supplied through job_submit, so it must resolve inside a root this renderer is
+// allowed to read: the repository (vendored templates and example films), the working directory,
+// the job/project output directory the MP4 is written to, or the OS temp directory used for
+// throwaway drafts. Symlinks are resolved first so a link inside the tree cannot point outside it.
+// The asset server derives its document root from this path, so containing it also bounds what the
+// page can read.
+export async function containRenderSource(candidate, outputPath, label) {
+  const real = await realpath(resolve(ROOT, candidate)).catch(() => null);
+  if (!real) throw new Error(`${label} 不存在：${candidate}`);
+  // Repository and working directory cover vended templates and agent-authored films; the job output
+  // directory and its project directory cover drafts kept next to the rendered MP4; the OS temp
+  // directory covers throwaway fixtures.
+  //
+  // A root has to be a real directory, never a drive root reached by walking up too far: with a short
+  // outputPath like C:\x.mp4, `dirname(dirname(outputPath))` is C:\ — and then EVERYTHING on that
+  // drive is "inside the root", so win.ini passed containment.
+  //
+  // Exactly one step up, matching the original `dirname(dirname())` breadth: the output directory plus
+  // its parent (the project directory). Walking two steps instead silently widened the allowance by one
+  // level of ancestor.
+  const output = dirname(resolve(outputPath));
+  const upwardRoots = [output];
+  const parent = dirname(output);
+  if (parent && dirname(parent) !== parent) upwardRoots.push(parent);
+  // Every root is filtered for drive roots, tmpdir() included. On a machine where TEMP is the drive
+  // root, keeping it would re-open exactly the hole this guards: the whole drive would count as
+  // project output and win.ini would pass again. Refusing a throwaway-fixture render on such a
+  // machine (a rare, self-inflicted configuration) is the correct trade against that.
+  const isDriveRoot = (path) => Boolean(path) && dirname(path) === path;
+  const candidates = [ROOT, process.cwd(), ...upwardRoots, tmpdir()];
+  const resolvedRoots = await Promise.all(candidates.map(candidate => realpath(candidate).catch(() => resolve(candidate))));
+  const roots = [...new Set(resolvedRoots)].filter(root => Boolean(root) && !isDriveRoot(root));
+  if (!roots.some(root => within(root, real))) {
+    throw new Error(`${label} 必须位于仓库/工作目录、项目输出目录或系统临时目录内：${real}`);
+  }
+  return real;
+}
+async function resolveRenderSource(htmlPath, outputPath) {
+  return await containRenderSource(htmlPath, outputPath, 'htmlPath');
+}
+// template.entry is the second, independent source of a render root, and it is not always code:
+// `od-*` entries are read straight out of vendor/open-design/catalog.json (untrusted data), and the
+// asset server turns `dirname(entry)` into a static document root. So the entry walks the exact same
+// chain as htmlPath — and an `od-*` entry first passes the library gate that keeps catalog data
+// inside vendor/open-design. Without this an entry could point the whole asset root at C:\Windows.
+async function resolveEntrySource(template, outputPath) {
+  const declared = typeof template.entry === 'string' ? template.entry : null;
+  if (!declared) return null;
+  if (String(template.id || '').startsWith('od-')) {
+    const { resolveLibraryPath } = await import('./open-design-library.mjs');
+    const contained = resolveLibraryPath(declared);
+    if (!contained) throw new Error(`模板 entry 越界：${declared}`);
+    return await containRenderSource(contained, outputPath, '模板 entry');
+  }
+  const candidate = resolve(ROOT, declared);
+  const rel = relative(ROOT, candidate);
+  if (!rel || rel.startsWith('..') || isAbsolute(rel)) throw new Error(`模板 entry 越界：${declared}`);
+  return await containRenderSource(candidate, outputPath, '模板 entry');
+}
+
+// A read stream carries no 'error' listener of its own, so piping one straight into the response
+// turns a file that disappeared between realpath/stat and open() into an uncaughtException — and
+// this renderer runs inside the plugin/Harness host process. Same shape, same fix as
+// src/server.mjs:sendFileBody: open the handle before any header goes out (so a failure is still a
+// clean 404), pump with pipeline() so it destroys both sides, and close the handle in `finally`.
+// The promise never rejects, so a failed body cannot become an unhandled rejection either.
+export async function sendAssetBody(request, response, file, { headers = {} } = {}) {
+  let handle;
+  try {
+    handle = await open(file, 'r');
+  } catch (error) {
+    return assetFailure(response, error);
+  }
+  try {
+    response.writeHead(200, headers);
+    if (request.method === 'HEAD') response.end();
+    else await pipeline(handle.createReadStream({ autoClose: false }), response);
+  } catch {
+    if (!response.headersSent) return assetFailure(response);
+    if (!response.destroyed) response.destroy();
+  } finally {
+    await handle.close().catch(() => {});
+  }
+}
+function assetFailure(response) {
+  if (response.headersSent || response.destroyed) { if (!response.destroyed) response.destroy(); return; }
+  response.writeHead(404);
+  response.end();
+}
 
 async function assetServer(root, entry) {
   const server = http.createServer(async (req, res) => {
@@ -22,11 +137,21 @@ async function assetServer(root, entry) {
       else if (motionAssetRoots.some(directory => pathname.startsWith(`/${directory}/`))) file = resolve(ROOT, `.${pathname}`);
       else file = resolve(root, `.${pathname}`);
       const resolved = await realpath(file);
-      if (resolved !== entry && !within(root, resolved) && !within(join(ROOT, 'node_modules'), resolved)
+      // No entry exemption: the entry was realpath-contained in containRenderSource, and it lives
+      // inside the document root derived from it, so a second bypass is not needed and would let a
+      // single unvalidated pointer widen the whole asset root.
+      if (!within(root, resolved) && !within(join(ROOT, 'node_modules'), resolved)
         && !motionAssetRoots.some(directory => within(join(ROOT, directory), resolved))) throw new Error('Path outside template');
       if (!(await stat(resolved)).isFile()) throw new Error('Not a file');
-      res.writeHead(200, { 'content-type': types[extname(resolved)] || 'application/octet-stream' });
-      createReadStream(resolved).pipe(res);
+      const extension = extname(resolved).toLowerCase();
+      const type = types[extension] || 'application/octet-stream';
+      const document = executableDocuments.has(extension);
+      const headers = {
+        'content-type': type,
+        ...(document ? { 'content-security-policy': renderCsp, 'cache-control': 'no-store' } : {}),
+        ...(type === 'application/octet-stream' ? {} : { 'x-content-type-options': 'nosniff' }),
+      };
+      return await sendAssetBody(req, res, resolved, { headers });
     } catch { res.writeHead(404); res.end(); }
   });
   await new Promise((done) => server.listen(0, '127.0.0.1', done));
@@ -45,13 +170,28 @@ export async function renderTemplate({ templateId, htmlPath, outputPath, duratio
   outputPath = resolve(outputPath);
   if (extname(outputPath).toLowerCase() !== '.mp4') throw new Error('模板输出必须是 MP4 文件');
   const template = await resolveTemplate(templateId);
-  if (template.previewMode === 'interactive' && htmlPath && resolve(ROOT, htmlPath) === resolve(ROOT, template.entry)) {
-    throw new Error(`模板 ${template.id} 是原始实时交互页面；请用 record-browser 录制，或将定制合成另存为支持 __seek(t) 的 htmlPath`);
-  }
-  if (!htmlPath && !template.entry) throw new Error(`模板 ${template.id} 只有提示词或示例，没有可渲染的源文件；请提交 htmlPath 或改用其它模板`);
+  const entryDeclared = typeof template.entry === 'string' && template.entry;
+  if (!htmlPath && !entryDeclared) throw new Error(`模板 ${template.id} 只有提示词或示例，没有可渲染的源文件；请提交 htmlPath 或改用其它模板`);
   if (!htmlPath && template.previewMode === 'interactive') throw new Error(`模板 ${template.id} 是实时交互页面；请用 record-browser 录制实际操作，或先定制为支持 __seek(t) 的 htmlPath 再逐帧渲染`);
   if (!htmlPath && template.renderable === false) throw new Error(`模板 ${template.id} 的运行时依赖不可用（${template.status}），不能直接渲染；请补全依赖或提交定制 htmlPath`);
-  const source = resolve(ROOT, htmlPath || template.entry);
+  // The entry is only needed for two things: as the render root when no htmlPath was supplied, and
+  // as the yardstick for the "you are rendering the untouched interactive original" guard. When a
+  // custom htmlPath owns the render, nothing else may depend on the entry — resolving it eagerly made
+  // an unrelated catalog defect (a missing file, an absolute target another machine left behind)
+  // fail an otherwise valid custom film, which is exactly what this comment used to promise would
+  // not happen. So: resolve it lazily, and only where it is genuinely required. If resolving it is
+  // impossible, the comparison simply cannot prove "same file" and the render proceeds — the guard
+  // is a usability warning, and it must never be able to break a render it was meant to guide.
+  const entryReal = await (async () => {
+    if (!htmlPath) return resolveEntrySource(template, outputPath);
+    if (template.previewMode !== 'interactive') return null;
+    return resolveEntrySource(template, outputPath).catch(() => null);
+  })();
+  const source = htmlPath ? await resolveRenderSource(htmlPath, outputPath) : entryReal;
+  if (!source) throw new Error(`模板 ${template.id} 没有可渲染的源文件；请提交 htmlPath 或改用其它模板`);
+  if (htmlPath && template.previewMode === 'interactive' && entryReal && source === entryReal) {
+    throw new Error(`模板 ${template.id} 是原始实时交互页面；请用 record-browser 录制，或将定制合成另存为支持 __seek(t) 的 htmlPath`);
+  }
   const sourceRoot = htmlPath ? dirname(source) : template.source === 'mg-styles-15' ? join(ROOT, 'vendor/mg-styles-15') : dirname(source);
   if (template.id === '04-3d-render' && !htmlPath) throw new Error('此三维模板依赖预渲染 Blender 资产，请先生成其资产再渲染');
   scale = Number(scale);
@@ -70,7 +210,26 @@ export async function renderTemplate({ templateId, htmlPath, outputPath, duratio
     signal?.addEventListener('abort', abort, { once: true });
     try {
       const context = await browser.newContext({ viewport: { width: template.width, height: template.height }, deviceScaleFactor: scale });
+      // CSP cannot constrain window.open, and a popup document does not inherit the opener's policy:
+      // before this guard a rendered template could ask the browser to open any URL (a loopback port
+      // probe was reproduced this way) while the report still said ok:true and missingAssets:[]. The
+      // render context itself now refuses every http(s) request outside its own throwaway origin and
+      // closes any popup that still appears, and both facts are reported instead of being swallowed.
+      const assetOrigin = new URL(url).origin;
+      const refused = [];
+      await context.route('**/*', async (route) => {
+        let allowed = false;
+        try { allowed = new URL(route.request().url()).origin === assetOrigin; } catch { allowed = false; }
+        if (allowed) return route.continue().catch(() => {});
+        refused.push(route.request().url());
+        return route.abort('blockedbyclient').catch(() => {});
+      });
       const page = await context.newPage();
+      context.on('page', (opened) => {
+        if (opened === page) return;
+        refused.push(opened.url());
+        void opened.close().catch(() => {});
+      });
       await page.addInitScript(() => { window.__odMotionRender = true; });
       page.on('pageerror', (error) => errors.push(error.message));
       page.on('response', (response) => { if (response.status() >= 400) missing.add(response.url()); });
@@ -196,7 +355,7 @@ export async function renderTemplate({ templateId, htmlPath, outputPath, duratio
       await rename(stagedOutput, outputPath);
       qa.path = outputPath;
       const report = { path: outputPath, templateId, source, duration: seconds, fps: rate, deterministic, exactPixels, pixelCheck, missingAssets: [...missing],
-        referencePreview: !htmlPath, qa, productionReady: qa.ok && missing.size === 0,
+        referencePreview: !htmlPath, qa, refusedEgress: refused, productionReady: qa.ok && missing.size === 0 && refused.length === 0,
         warning: !htmlPath ? '此输出是原模板示例预览；用户成片须定制内容后提交 htmlPath。' : undefined };
       await writeFile(join(dirname(outputPath), 'template-report.json'), JSON.stringify(report, null, 2));
       return report;

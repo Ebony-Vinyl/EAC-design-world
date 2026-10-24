@@ -5,7 +5,7 @@ import { access, mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
-import { setImmediate as yieldTask } from 'node:timers/promises';
+import { setImmediate as yieldTask, setTimeout as delay } from 'node:timers/promises';
 import { createCaptionScript } from './captions.mjs';
 
 export { remapTranscriptToTimeline } from './captions.mjs';
@@ -130,6 +130,40 @@ function ffmpeg(args, options) {
   return run(FFMPEG, ['-hide_banner', '-nostdin', '-y', ...args], options);
 }
 
+// ffmpeg 9.0 removed the standalone -filter_complex_script option; the supported
+// spelling is now -/filter_complex (a leading '/' makes the argument a filename).
+// Probe the installed binary instead of guessing from the version string, because
+// custom builds re-add or rename options. Cache only the option name for the process.
+//
+// ffmpeg writes `-h full` to stdout (measured on 9.0.2: 1.34 MB stdout, 0 bytes
+// stderr), but a build could route help elsewhere, so match against BOTH streams.
+// Reading only stderr made the probe a no-op that always returned the fallback:
+// invisible on a 9.x build (where the fallback happens to be right) and fatal on
+// 8.x (where the option still exists but was never selected).
+/**
+ * Option name for one `ffmpeg -h full` text: a build that still lists
+ * `-filter_complex_script` keeps it, everything else gets the 9.x spelling.
+ * Pure text matching, exported so both branches are testable without a real
+ * binary - a wrong probe on 9.x still renders fine, so only an explicit help
+ * fixture can tell the branches apart.
+ */
+export function filterScriptOption(help) {
+  return /(?:^|\s)-filter_complex_script(?:\s|$)/m.test(String(help ?? ''))
+    ? '-filter_complex_script'
+    : '-/filter_complex';
+}
+
+let filterScriptOptionName = null;
+async function filterScriptArgs(scriptPath, signal) {
+  if (filterScriptOptionName === null) {
+    const { stdout, stderr } = await run(FFMPEG, ['-hide_banner', '-h', 'full'],
+      { signal, timeout: 30_000, maxBytes: 8 * 2 ** 20 });
+    checkAbort(signal);
+    filterScriptOptionName = filterScriptOption(`${stdout.toString('utf8')}\n${stderr.toString('utf8')}`);
+  }
+  return [filterScriptOptionName, scriptPath];
+}
+
 async function workspace(outputPath) {
   const output = filePath(outputPath, 'outputPath');
   await mkdir(dirname(output), { recursive: true });
@@ -148,6 +182,191 @@ function hasStream(media, type) {
   return media.streams.some((stream) => stream.codec_type === type);
 }
 
+const CLEANUP_RETRY_DELAY = 50;
+// The media README promises cleanup retries "for up to 750 ms". Node's own
+// `rm({ maxRetries, retryDelay })` backoff overshoots that badly (measured on
+// Windows: 34 s for a file held open by another process), so the budget is an
+// explicit deadline here instead of a retry count.
+const CLEANUP_RETRY_BUDGET = 750;
+const RETRYABLE_REMOVE_CODES = new Set(['EPERM', 'EBUSY', 'EACCES', 'ENOTEMPTY', 'EMFILE', 'ENFILE']);
+
+async function removeStagingDirectory(directory) {
+  const deadline = performance.now() + CLEANUP_RETRY_BUDGET;
+  for (;;) {
+    try {
+      await rm(directory, { recursive: true, force: true });
+      return null;
+    } catch (error) {
+      // Windows keeps a transient lock on files a just-killed ffmpeg/Edge still
+      // holds; anything permanent (ENOTDIR, ENOENT on a parent) must not spin.
+      if (!RETRYABLE_REMOVE_CODES.has(error?.code) || performance.now() >= deadline) return error;
+      await delay(CLEANUP_RETRY_DELAY);
+    }
+  }
+}
+
+function reportCleanupFailure(error, directory) {
+  try {
+    process.emitWarning(`Could not remove staging directory ${directory}: ${error.message}`,
+      { type: 'EacCleanupWarning', code: 'EAC_CLEANUP' });
+  } catch { /* reporting must never fail the operation either */ }
+}
+
+/**
+ * Best-effort removal of a `.eac-media-*` staging directory.
+ *
+ * Every call site is a `finally`, where a throw would replace the error that
+ * actually ended the operation: a cancelled render would surface as EPERM and
+ * the caller could no longer tell it was aborted. So this never rejects - it
+ * retries transient locks and reports what it could not remove. Exported so
+ * tests can pin that contract.
+ */
+export async function cleanupStaging(directory, { onFailure = reportCleanupFailure } = {}) {
+  if (!directory) return;
+  const error = await removeStagingDirectory(directory);
+  if (!error) return;
+  try { onFailure?.(error, directory); } catch { /* a sink cannot mask the failure path either */ }
+}
+
+// ffprobe reports "0/0" when it cannot derive an average frame rate (common for
+// VFR and some MKV streams). The string is truthy, so `avg_frame_rate ||
+// r_frame_rate` never fell back and stored fps 0; qualityCheck then widened its
+// frame tolerance with `2 / (fps || 30)` and silently compared against 30 fps.
+// Only a usable fraction is accepted, and legal ones ("30000/1001") are kept.
+function frameRate(stream) {
+  for (const value of [stream?.avg_frame_rate, stream?.r_frame_rate]) {
+    const [numerator, denominator = 1] = String(value ?? '').split('/').map(Number);
+    if (Number.isFinite(numerator) && numerator > 0 && Number.isFinite(denominator) && denominator > 0) {
+      return numerator / denominator;
+    }
+  }
+  return 0;
+}
+
+// Matroska (and FLV) store each track's length in a tag instead of the stream
+// header, so ffprobe reports `duration: N/A` for every stream there. Matroska
+// writes `DURATION=00:00:02.000000000` per track; that is the only per-stream
+// number in the file, and it is exact. Malformed tags are ignored.
+function tagDuration(stream) {
+  const value = String(stream?.tags?.DURATION ?? stream?.tags?.duration ?? '').trim();
+  const match = /^(\d+):(\d{1,2}):(\d{1,2}(?:\.\d+)?)$/.exec(value);
+  if (!match) return 0;
+  const seconds = Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]);
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
+}
+
+function headerDuration(stream) {
+  const own = Number(stream?.duration);
+  if (Number.isFinite(own) && own > 0) return { seconds: own, source: 'header' };
+  const tagged = tagDuration(stream);
+  if (tagged > 0) return { seconds: tagged, source: 'tag' };
+  return null;
+}
+
+// Measures how much picture data the file actually holds, by reading the last presentation
+// timestamp instead of trusting any number the file states about itself.
+//
+// Every declaration a container makes about its own length is a claim, not a measurement: a
+// faststart MP4 truncated mid-download keeps an intact moov that still says 4 s while only 1.5 s of
+// pictures survive, and ffprobe happily reports both `duration: 4.0` and "partial file" errors at
+// the same time. Believing the claim let a clip seek past the end and render pure black, which was
+// then published as a success because qualityCheck only warns about black frames.
+//
+// PTS is per-frame by definition, so this is also correct for variable frame rate, where the older
+// `packets / fps` inference reported 2.33 s for a real 5 s track and then refused legitimate clips.
+// Decode-free, one number, and measured to take ~0.1 s on an 8 MB file, ~0.2 s on 112 MB.
+// Raw elementary streams (`.h264`/`.hevc`) carry no timestamps at all — every packet reports
+// `pts_time: N/A` — so there is nothing to read the end from. Their frame rate is constant by
+// construction, which is what makes counting packets and dividing exact, and it stays the only way
+// to bound them. Kept separate from measuredDuration because the two answer different questions:
+// this infers a length from a count, that one reads the real end of the picture data.
+async function countedDuration(stream, path, signal) {
+  const fps = frameRate(stream);
+  if (stream?.codec_type !== 'video' || !(fps > 0)) return null;
+  try {
+    const { stdout } = await run(FFPROBE, ['-v', 'error', '-count_packets',
+      '-select_streams', 'v:0', '-show_entries', 'stream=nb_read_packets', '-of', 'json', path],
+      { signal, timeout: 60_000, maxBytes: 2 ** 20 });
+    checkAbort(signal);
+    const packets = Number(JSON.parse(stdout.toString('utf8'))?.streams?.[0]?.nb_read_packets);
+    if (!Number.isFinite(packets) || packets <= 0) return null;
+    const seconds = packets / fps;
+    return Number.isFinite(seconds) && seconds > 0 ? { seconds, source: 'packets' } : null;
+  } catch (error) {
+    if (signal?.aborted) throw abortError();
+    return null;
+  }
+}
+
+// True when the demuxer itself complains that the byte stream ends early.
+const TRUNCATION_MARKERS = /partial file|Invalid NAL|missing picture|Truncat|truncated|Invalid data found/i;
+
+async function measuredDuration(stream, path, signal) {
+  const fps = frameRate(stream);
+  if (stream?.codec_type !== 'video' || !(fps > 0)) return null;
+  // Read every packet's presentation time and duration, keeping only what the decision needs:
+  // the first PTS (to normalise an absolute timeline), the last two (to know how far apart frames
+  // actually are at the end), and the last packet's own duration. Memory stays flat, and a read that
+  // outgrows maxBytes still yields a usable bound instead of failing back to the header.
+  // The carry buffer is essential, not defensive: a chunk boundary can split "3.933333" into
+  // "3.93" and "3333", and parsing those separately produced a garbage bound (measured: a 500-frame
+  // track reported 9 s instead of 16.63 s).
+  let first = null;
+  let prev = null;
+  let last = null; // { pts, duration }
+  let count = 0;
+  let carry = '';
+  const consider = (pts, duration) => {
+    if (!Number.isFinite(pts)) return;
+    count += 1;
+    if (first === null || pts < first) first = pts;
+    if (last === null || pts >= last.pts) { prev = last?.pts ?? null; last = { pts, duration: Number.isFinite(duration) && duration > 0 ? duration : null }; }
+    else if (prev === null || pts > prev) prev = pts;
+  };
+  const note = (chunk) => {
+    carry += chunk;
+    const lines = carry.split('\n');
+    carry = lines.pop() ?? '';
+    for (const line of lines) {
+      const fields = line.trim().split(',').map(Number);
+      if (fields.length >= 2) consider(fields[0], fields[1]);
+      else consider(fields[0], null);
+    }
+  };
+  try {
+    const { stderr } = await run(FFPROBE, ['-v', 'error', '-select_streams', 'v:0',
+      '-show_entries', 'packet=pts_time,duration_time', '-of', 'csv=p=0', path],
+      { signal, timeout: 60_000, maxBytes: 8 * 2 ** 20, onStdout: (chunk) => { try { note(chunk); } catch { /* ignore */ } } });
+    checkAbort(signal);
+    if (carry.trim()) {
+      const fields = carry.trim().split(',').map(Number);
+      if (fields.length >= 2) consider(fields[0], fields[1]);
+      else consider(fields[0], null);
+    }
+    if (last === null) return null;
+    // Absolute timelines are normal: a Matroska written through a pipe (live capture, an interrupted
+    // recording) starts its PTS at an arbitrary offset — measured 100 s for a 4 s track. The length is
+    // the span between the first and last packet, never the last timestamp itself, or a 4 s clip
+    // becomes a 104 s bound and any seek inside it renders black.
+    const origin = first ?? 0;
+    // A packet's own duration when the container reports one; otherwise infer it from how far apart the
+    // last two frames actually are (not from the average rate: a 1 fps tail in a 10 fps overall track
+    // would be under-counted by 10x).
+    const tailStep = last.pts - (prev ?? last.pts);
+    const frameSpan = last.duration ?? (tailStep > 0 ? tailStep : 1 / fps);
+    const seconds = (last.pts - origin) + frameSpan;
+    const demuxerSaysTruncated = TRUNCATION_MARKERS.test(String(stderr ?? ''));
+    return Number.isFinite(seconds) && seconds > 0
+      ? { seconds, origin, lastPts: last.pts, frameSpan, demuxerSaysTruncated }
+      : null;
+  } catch (error) {
+    // A failed measurement leaves the stream unknown; it must not fail a probe that already
+    // produced usable metadata.
+    if (signal?.aborted) throw abortError();
+    return null;
+  }
+}
+
 /** Normalized properties plus the complete ffprobe streams and format objects. */
 export async function probeMedia(path, { signal } = {}) {
   checkAbort(signal);
@@ -161,13 +380,63 @@ export async function probeMedia(path, { signal } = {}) {
   if (!streams.length) throw new Error(`No media streams in ${path}`);
   const video = streams.find((stream) => stream.codec_type === 'video');
   const audio = streams.find((stream) => stream.codec_type === 'audio');
-  const [numerator, denominator] = (video?.avg_frame_rate || video?.r_frame_rate || '0/1').split('/').map(Number);
   const durations = [format.duration, ...streams.map((stream) => stream.duration)]
     .map(Number).filter(Number.isFinite);
+  // A container's duration is the longest of its streams, so it cannot bound a
+  // single stream: a 2 s video track inside a 10 s mux would let a clip seek to
+  // 6 s and render pure black. Keep `duration` as the aggregate (callers compare
+  // it with the timeline), and resolve each stream on its own: header, per-track
+  // tag, then (once, measured) packet count. The container total survives only as
+  // a number flagged `known: false`, so no caller mistakes it for a stream bound.
+  let videoLength = video ? headerDuration(video) : null;
+  let audioLength = audio ? headerDuration(audio) : null;
+  // Two mistakes are equally real and point in opposite directions, so neither "trust the header"
+  // nor "trust the measurement" is correct on its own:
+  //   - a truncated faststart MP4 keeps an intact moov that still claims its original length while
+  //     holding far less picture data — believing it let a clip seek past the end and render black;
+  //   - a variable-frame-rate file is COMPLETE and its last PTS legitimately sits well before the
+  //     declared end — taking the shorter number there refuses clips that exist.
+  //
+  // The demuxer's own complaints (`partial file`, `Invalid NAL`, `missing picture`) catch most
+  // truncation, but not all: a cut that lands exactly on a packet boundary leaves a byte stream every
+  // demuxer reads without error (measured: a 4 s claim over 2.3 s of packets, stderr empty). So when
+  // the two disagree, look at HOW they disagree: a long last frame leaves a gap comparable to the
+  // spacing of the frames around it, while missing data leaves a gap far larger than any frame there.
+  if (video) {
+    const measured = (await measuredDuration(video, path, signal))
+      ?? (await countedDuration(video, path, signal));
+    if (measured) {
+      const claimed = videoLength && videoLength.seconds > 0 ? videoLength.seconds : 0;
+      const gap = claimed > 0 ? claimed - measured.seconds : 0;
+      // A frame's own spacing at the tail, with latitude for jitter and for a container that reports
+      // no per-packet duration at all.
+      const tolerance = Math.max(0.5, measured.frameSpan * 3);
+      const dataMissing = measured.demuxerSaysTruncated || gap > tolerance;
+      if (claimed === 0) {
+        videoLength = { seconds: measured.seconds, source: measured.source };
+      } else if (dataMissing && gap > 0) {
+        videoLength = { seconds: measured.seconds, source: 'measured' };
+      }
+      // Otherwise the claim stands: it is exact for VFR, and a measurement that stopped reading early
+      // can never loosen a bound.
+    }
+  }
+  // Audio has no picture to protect: a truncated tail there is silence. Only the aggregate
+  // container bound is used, as before.
+  const formatDuration = Number(format.duration);
+  const containerFallback = Number.isFinite(formatDuration) && formatDuration > 0 ? formatDuration : 0;
+  const resolve = (length) => (length
+    ? { seconds: length.seconds, known: true }
+    : { seconds: containerFallback, known: false });
+  const videoDuration = video ? resolve(videoLength) : { seconds: 0, known: false };
+  const audioDuration = audio ? resolve(audioLength) : { seconds: 0, known: false };
   return {
-    path, duration: Math.max(0, ...durations), width: video?.width ?? null,
-    height: video?.height ?? null, fps: denominator ? numerator / denominator : 0,
+    path, duration: Math.max(0, ...durations, videoDuration.seconds, audioDuration.seconds),
+    width: video?.width ?? null,
+    height: video?.height ?? null, fps: frameRate(video),
     hasVideo: Boolean(video), hasAudio: Boolean(audio),
+    videoDuration: videoDuration.seconds, videoDurationKnown: videoDuration.known,
+    audioDuration: audioDuration.seconds, audioDurationKnown: audioDuration.known,
     size: Number(format.size) || 0, streams, format,
   };
 }
@@ -269,6 +538,42 @@ function videoEncoding(quality = 'draft') {
     '-crf', quality === 'production' ? '17' : '20', '-pix_fmt', 'yuv420p'];
 }
 
+// Encode time tracks encoded pixels and seconds, and `production` (medium
+// preset, CRF 17) costs ~2.5x a draft pass. A flat 15 minute cap contradicted
+// MAX_DURATION: one hour of 1080p production, or any long 4K timeline, legitimately
+// needs hours, and hitting the cap killed ffmpeg and then deleted the staged
+// result in `finally`, so the caller kept an old file and learned nothing.
+// 1500 ms per megapixel-second is ~0.5x realtime at 1080p draft, i.e. roughly
+// 10x slower than measured throughput on a normal desktop.
+const ENCODING_TIMEOUT_CEILING = 6 * 60 * 60_000;
+const ENCODING_MS_PER_MEGAPIXEL_SECOND = 1500;
+
+// One scale for every long media step: pixels x seconds, a 2 minute floor for
+// filter-graph init/seek/mux, and a hard ceiling so a hung child cannot hold a
+// queue slot forever. Encoding and decoding used different formulas, which is how
+// a legal render could be allowed hours and then failed by a 15 minute gate.
+function scaledTimeout({ width, height, duration, quality = 'draft' }) {
+  const megapixels = ((Number(width) || 0) * (Number(height) || 0)) / 1e6;
+  const perSecond = Math.max(500, ENCODING_MS_PER_MEGAPIXEL_SECOND * megapixels)
+    * (quality === 'production' ? 2.5 : 1);
+  return Math.min(ENCODING_TIMEOUT_CEILING, 120_000 + duration * perSecond);
+}
+
+/** Encode budget for a validated timeline: scales with pixels and seconds, still capped. */
+export function encodingTimeout({ width, height, duration, quality = 'draft' }) {
+  return scaledTimeout({ width, height, duration, quality });
+}
+
+/**
+ * Decode budget for validation, on the same scale and ceiling as the encoder.
+ * Decoding is not the expensive direction, so the production cost factor is left
+ * out; everything else matches, because a 1 h 4K production render that the
+ * encoder may spend hours on must not be declared "Decode failed" after 15 min.
+ */
+export function decodeTimeout(media) {
+  return scaledTimeout({ ...media, quality: 'draft' });
+}
+
 /** Capture real browser frames without requiring Playwright's bundled FFmpeg. */
 export async function recordBrowser({ url, actions = [], outputDir, width = 1280, height = 720, signal } = {}) {
   checkAbort(signal);
@@ -303,7 +608,7 @@ export async function recordBrowser({ url, actions = [], outputDir, width = 1280
       '-vf', 'fps=30,pad=ceil(iw/2)*2:ceil(ih/2)*2', ...videoEncoding(), '-movflags', '+faststart', job.staged], { signal });
     return await publish(job, signal);
   } finally {
-    await rm(job.temporary, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+    await cleanupStaging(job.temporary);
   }
 }
 
@@ -318,7 +623,7 @@ export async function recordDesktop({ outputPath, duration, fps = 30, signal } =
       '-t', String(duration), '-vf', 'pad=ceil(iw/2)*2:ceil(ih/2)*2', '-an',
       ...videoEncoding(), job.staged], { signal, timeout: duration * 1000 + 60_000 });
     return await publish(job, signal);
-  } finally { await rm(job.temporary, { recursive: true, force: true }); }
+  } finally { await cleanupStaging(job.temporary); }
 }
 
 export async function synthesizeVoice({ text, outputPath, voice, rate = 0, signal } = {}) {
@@ -340,14 +645,18 @@ export async function synthesizeVoice({ text, outputPath, voice, rate = 0, signa
     await run(powershell, args, { signal, timeout: 300_000 });
     await ffmpeg(['-v', 'error', '-i', wavePath, '-vn', job.staged], { signal });
     return await publish(job, signal);
-  } finally { await rm(job.temporary, { recursive: true, force: true }); }
+  } finally { await cleanupStaging(job.temporary); }
 }
 
-function randomGenerator(seed) {
+/** 32-bit LCG/diffusion mix; exported so tests can pin the 32-bit invariant. */
+export function randomGenerator(seed) {
   let state = 2166136261;
   for (const char of String(seed)) state = Math.imul(state ^ char.charCodeAt(0), 16777619) >>> 0;
   return () => {
-    state += 0x6D2B79F5;
+    // Keep the running sum inside uint32. Without `>>> 0` it passes 2^53 after
+    // ~4.9 M samples (111 s of audio at 44.1 kHz) and float rounding starts
+    // eating the low bits, so the sequence stops being this generator.
+    state = (state + 0x6D2B79F5) >>> 0;
     let value = Math.imul(state ^ (state >>> 15), 1 | state);
     value ^= value + Math.imul(value ^ (value >>> 7), 61 | value);
     return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
@@ -424,7 +733,7 @@ export async function composeMusic({ outputPath, duration, bpm = 112, seed = 1, 
       stream.destroy();
       await closed;
     }
-    await rm(job.temporary, { recursive: true, force: true });
+    await cleanupStaging(job.temporary);
   }
 }
 
@@ -476,10 +785,26 @@ export async function renderTimeline({ project, outputPath, onProgress, signal }
   }
   for (const clip of timeline.clips) {
     const info = media.get(clip.path);
-    if (!hasStream(info, clip.kind === 'audio' ? 'audio' : 'video')) throw new Error(`Clip ${clip.id ?? clip.index} lacks a ${clip.kind === 'audio' ? 'audio' : 'video'} stream`);
+    const wants = clip.kind === 'audio' ? 'audio' : 'video';
+    if (!hasStream(info, wants)) throw new Error(`Clip ${clip.id ?? clip.index} lacks a ${wants} stream`);
     if (clip.kind === 'image' && clip.sourceIn !== 0) throw new Error('Image sourceIn must be zero');
-    if (clip.kind !== 'image' && info.duration && clip.sourceIn + clip.duration > info.duration + 1 / timeline.fps) {
-      throw new Error(`Clip ${clip.id ?? clip.index} exceeds source duration`);
+    if (clip.kind !== 'image') {
+      // Bound the seek with the duration of the stream this clip actually reads.
+      // Using the container total let a clip run past the end of a shorter video
+      // track: ffmpeg kept encoding black frames and qualityCheck only warned.
+      const limit = wants === 'audio' ? info.audioDuration : info.videoDuration;
+      const known = wants === 'audio' ? info.audioDurationKnown : info.videoDurationKnown;
+      // A number inherited from the container bounds only the *longest* track, so
+      // an unknown picture length cannot bound a seek at all - refuse instead of
+      // silently rendering black. Audio keeps the container bound on purpose: it
+      // is still an upper bound there, so the worst case is silence in the tail,
+      // never a fabricated picture.
+      if (!known && (wants === 'video' || limit <= 0)) {
+        throw new Error(`Clip ${clip.id ?? clip.index} cannot be bounded: ${wants} stream duration is unknown`);
+      }
+      if (clip.sourceIn + clip.duration > limit + 1 / timeline.fps) {
+        throw new Error(`Clip ${clip.id ?? clip.index} exceeds source duration (${wants} stream is ${limit}s)`);
+      }
     }
   }
   for (const bed of external) if (!media.get(bed.path).hasAudio) throw new Error(`${bed.key} has no audio stream`);
@@ -549,7 +874,7 @@ export async function renderTimeline({ project, outputPath, onProgress, signal }
     }
     const script = join(job.temporary, 'filters.txt');
     await writeFile(script, filters.join(';\n'), { encoding: 'utf8', signal });
-    args.push('-filter_complex_script', script, '-map', `[${previous}]`);
+    args.push(...await filterScriptArgs(script, signal), '-map', `[${previous}]`);
     if (audioLabels.length) args.push('-map', '[audio]', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000');
     else args.push('-an');
     args.push(...videoEncoding(timeline.quality), '-r', String(timeline.fps), '-t', String(timeline.duration));
@@ -560,7 +885,7 @@ export async function renderTimeline({ project, outputPath, onProgress, signal }
     onProgress?.(0);
     await ffmpeg(args, {
       cwd: timeline.captionScript ? job.temporary : undefined,
-      signal, timeout: Math.min(900_000, 60_000 + timeline.duration * 5000),
+      signal, timeout: encodingTimeout(timeline),
       onStdout: (chunk) => {
         pending += chunk;
         const lines = pending.split(/\r?\n/);
@@ -579,7 +904,7 @@ export async function renderTimeline({ project, outputPath, onProgress, signal }
     // Completion callbacks run only after the output has been published.
     onProgress?.(1);
     return result;
-  } finally { await rm(job.temporary, { recursive: true, force: true }); }
+  } finally { await cleanupStaging(job.temporary); }
 }
 
 /** Decode validation plus duration/stream checks; content warnings are not hard failures. */
@@ -592,7 +917,7 @@ export async function qualityCheck({ path, expectedDuration, signal } = {}) {
   const warnings = [];
   try {
     await ffmpeg(['-v', 'error', '-xerror', '-i', media.path, '-map', '0:v?', '-map', '0:a?', '-f', 'null', '-'],
-      { signal, timeout: Math.min(900_000, 30_000 + media.duration * 3000) });
+      { signal, timeout: decodeTimeout(media) });
   } catch (error) {
     checkAbort(signal);
     errors.push(`Decode failed: ${error.message}`);

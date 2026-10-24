@@ -1,6 +1,7 @@
 import http from 'node:http';
-import { createReadStream, existsSync } from 'node:fs';
-import { readFile, stat, realpath } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { open, readFile, stat, realpath } from 'node:fs/promises';
+import { pipeline } from 'node:stream/promises';
 import { resolve, join, extname, relative, isAbsolute } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { ROOT, getTemplates } from './catalog.mjs';
@@ -31,11 +32,56 @@ const inside = (root, path) => {
 // loads are limited to the server's own loopback origin (so source-ready HTML still finds its local
 // assets); connect-src and forms stay blocked. Only an optional template project can
 // resolve a base URL on the current local server origin.
-function previewCsp(kind, origin, assetBase = "'none'") {
-  const local = `http://127.0.0.1:* http://localhost:*${origin ? ` ${origin}` : ''}`;
-  if (kind === 'svg') return `sandbox; default-src 'none'; style-src 'unsafe-inline' ${local}; img-src data: blob: ${local}; font-src data: ${local}`;
+// The allowed sources are exactly this server's origin, in both loopback spellings and on its own
+// port. A `http://127.0.0.1:*` / `http://localhost:*` port wildcard would let a previewed document
+// (vendor/open-design/** is upstream-controllable) blind-GET every service on this machine from an
+// opaque origin — local CSRF and port probing — even with connect-src 'none'.
+function previewOrigins(origin) {
+  if (!origin) return [];
+  const url = new URL(origin);
+  const twin = url.hostname === 'localhost' ? '127.0.0.1' : url.hostname === '127.0.0.1' ? 'localhost' : null;
+  return twin ? [origin, `${url.protocol}//${twin}${url.port ? `:${url.port}` : ''}`] : [origin];
+}
+export function previewCsp(kind, origin, assetBase = "'none'") {
+  const local = previewOrigins(origin);
+  const sources = (base) => [...base, ...local].join(' ').trim();
   if (kind === 'markdown') return "sandbox; default-src 'none'; style-src 'unsafe-inline'";
-  return `sandbox allow-scripts allow-downloads; default-src 'none'; script-src 'unsafe-inline' ${local}; style-src 'unsafe-inline' ${local}; img-src data: blob: ${local}; font-src data: ${local}; media-src data: blob: ${local}; connect-src 'none'; base-uri ${assetBase}; form-action 'none'`;
+  if (kind === 'svg') return `sandbox; default-src 'none'; style-src ${sources(["'unsafe-inline'"])}; img-src ${sources(['data:', 'blob:'])}; font-src ${sources(['data:'])}`;
+  return `sandbox allow-scripts allow-downloads; default-src 'none'; script-src ${sources(["'unsafe-inline'"])}; style-src ${sources(["'unsafe-inline'"])}; img-src ${sources(['data:', 'blob:'])}; font-src ${sources(['data:'])}; media-src ${sources(['data:', 'blob:'])}; connect-src 'none'; base-uri ${assetBase}; form-action 'none'`;
+}
+// A read stream has no 'error' listener of its own, so piping one straight into the response
+// turns a missing or unreadable file into an uncaughtException — and plugin/host.mjs runs this
+// server inside the Harness host process, so that kills the host. The race is real: stat() and the
+// open are separate syscalls, and engine.mjs removes job directories while /api/files downloads
+// are still in flight. So the handle is opened before any header goes out (a failure is answered
+// as 404/500 while headers are unsent) and the body is pumped with pipeline(), which destroys both
+// sides and reports the error to this function instead of the process. The promise never rejects,
+// so callers cannot turn it into an unhandled rejection.
+export async function sendFileBody(request, response, file, { status = 200, headers = {}, start, end } = {}) {
+  let handle;
+  try {
+    handle = await open(file, 'r');
+  } catch (error) {
+    return answerStreamFailure(response, error);
+  }
+  try {
+    response.writeHead(status, headers);
+    if (request.method === 'HEAD') response.end();
+    else await pipeline(handle.createReadStream({ start, end, autoClose: false }), response);
+  } catch (error) {
+    if (!response.headersSent) return answerStreamFailure(response, error);
+    // Headers are gone: terminate the transfer so the client sees a truncated body instead of
+    // hanging, and keep the failure out of the process.
+    if (!response.destroyed) response.destroy();
+  } finally {
+    await handle.close().catch(() => {});
+  }
+}
+function answerStreamFailure(response, error) {
+  if (response.headersSent || response.destroyed) { if (!response.destroyed) response.destroy(); return; }
+  const code = ['ENOENT', 'ENOTDIR', 'EISDIR'].includes(error.code) ? 404 : 500;
+  response.writeHead(code, { 'content-type': mime['.json'], 'cache-control': 'no-store' });
+  response.end(JSON.stringify({ error: error.message }));
 }
 // The composer controls live inside the Harness dsh-app context and must reach this one
 // endpoint across origins. Only this route relaxes CORS, and only for trusted origins.
@@ -77,9 +123,7 @@ async function serveUntrusted(request, response, file, kind, origin) {
     'content-security-policy': previewCsp(kind, origin),
     'cache-control': 'no-store',
   };
-  response.writeHead(200, headers);
-  if (request.method === 'HEAD') { response.end(); return; }
-  createReadStream(file).pipe(response);
+  return sendFileBody(request, response, file, { headers });
 }
 async function serveArtifact(request, response, file, { preview, origin, assetBase }) {
   const info = await stat(file.path).catch(() => null);
@@ -94,9 +138,7 @@ async function serveArtifact(request, response, file, { preview, origin, assetBa
     const fallback = file.name.replace(/[^A-Za-z0-9._-]+/g, '_');
     headers['content-disposition'] = `attachment; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(file.name)}`;
   }
-  response.writeHead(200, headers);
-  if (request.method === 'HEAD') { response.end(); return; }
-  createReadStream(file.path).pipe(response);
+  return sendFileBody(request, response, file.path, { headers });
 }
 async function serveFile(request, response, file) {
   const info = await stat(file);
@@ -110,17 +152,18 @@ async function serveFile(request, response, file) {
     const start = match[1] ? Number(match[1]) : Math.max(0, info.size - Number(match[2]));
     const end = match[1] && match[2] ? Math.min(Number(match[2]), info.size - 1) : info.size - 1;
     if (start > end || start >= info.size) { response.writeHead(416, { 'content-range': `bytes */${info.size}` }); response.end(); return; }
-    response.writeHead(206, { ...headers, 'content-range': `bytes ${start}-${end}/${info.size}`, 'content-length': end - start + 1 });
-    createReadStream(file, { start, end }).pipe(response);
-  } else {
-    response.writeHead(200, { ...headers, 'content-length': info.size });
-    createReadStream(file).pipe(response);
+    return sendFileBody(request, response, file, { status: 206, start, end,
+      headers: { ...headers, 'content-range': `bytes ${start}-${end}/${info.size}`, 'content-length': end - start + 1 } });
   }
+  return sendFileBody(request, response, file, { headers: { ...headers, 'content-length': info.size } });
 }
 
 export async function startServer({ engine: suppliedEngine, port = Number(process.env.EAC_PORT || 4173), dev = false, maintenanceOptions = {} } = {}) {
   const engine = suppliedEngine || await createEngine();
   const maintenance = createMaintenance({ engine, manifestPublicKey: RELEASE_PUBLIC_KEY, ...maintenanceOptions });
+  // instanceId 每个维护实例固定不变；缓存它供 /api/health 使用，避免健康检查
+  // 每次都走 status() 把本地安装的一次性令牌池冲掉（令牌随每次 status() 发放）。
+  const healthInstanceId = maintenance.status().instanceId;
   const vite = dev ? await (await import('vite')).createServer({ root: ROOT, server: { middlewareMode: true }, appType: 'spa' }) : null;
   let origin;
   const server = http.createServer(async (request, response) => {
@@ -135,7 +178,7 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
         if (requestOrigin && !loopback(requestOrigin) && !(composerRoute && trustedOrigin(requestOrigin))) {
           return json(response, 403, { error: '跨来源请求被拒绝' });
         }
-        if (url.pathname === '/api/health') return json(response, 200, { ok: true, name: 'EAC design world', version: VERSION, instanceId: maintenance.status().instanceId });
+        if (url.pathname === '/api/health') return json(response, 200, { ok: true, name: 'EAC design world', version: VERSION, instanceId: healthInstanceId });
         if (url.pathname === '/api/maintenance' && request.method === 'GET') return json(response, 200, maintenance.status());
         if (url.pathname.startsWith('/api/maintenance/') && ['POST', 'PUT'].includes(request.method)) {
           const input = await body(request);
@@ -196,7 +239,10 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
         if (url.pathname === '/api/settings' && request.method === 'PUT') return json(response, 200, await engine.settingsUpdate(await body(request)));
         if (url.pathname === '/api/files' && ['GET', 'HEAD'].includes(request.method)) {
           const path = url.searchParams.get('path') || '';
-          if (!await engine.canServeFile(path)) return json(response, 403, { error: '文件不属于已导入素材或输出目录' });
+          // The gate is two-layered in engine.mjs: containment in outputRoot/project assets AND a
+          // deliverable-extension allowlist. The message names both so a legitimate miss is diagnosable
+          // and a refused .ini/.txt looks like a refusal instead of a bug.
+          if (!await engine.canServeFile(path)) return json(response, 403, { error: '文件不属于已导入素材或输出目录，或不是可交付的文件类型' });
           const extension = extname(path).toLowerCase();
           if (['.html', '.htm', '.svg'].includes(extension)) {
             return await serveUntrusted(request, response, resolve(path), extension === '.svg' ? 'svg' : 'html', origin);
@@ -254,7 +300,8 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
       return await serveFile(request, response, existsSync(file) && (await stat(file)).isFile() ? file : join(dist, 'index.html'));
     } catch (error) {
       if (response.headersSent) { response.destroy(error); return; }
-      return json(response, error.code === 'ENOENT' ? 404 : 400, { error: error.message });
+      // error.code 一并返回（如本地安装令牌 EAC_LOCAL_TOKEN），前端据此给出可操作提示。
+      return json(response, error.code === 'ENOENT' ? 404 : 400, { error: error.message, ...(error.code ? { code: error.code } : {}) });
     }
   });
   try {

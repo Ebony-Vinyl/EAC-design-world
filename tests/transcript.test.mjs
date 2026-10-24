@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { channel } from 'node:diagnostics_channel';
-import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -110,10 +110,98 @@ test('SRT formats hour boundaries, millisecond carry, and Unicode without loadin
   assert.equal(result.long, '100:00:00,125');
 });
 
+test('unconfigured model reports a configuration error instead of an invented default path', async () => {
+  const previous = process.env.EAC_WHISPER_MODEL_PATH;
+  delete process.env.EAC_WHISPER_MODEL_PATH;
+  try {
+    const capabilities = await transcriptCapabilities();
+    assert.equal(capabilities.available, false);
+    assert.equal(capabilities.modelPath, null);
+    assert.match(capabilities.detail, /EAC_WHISPER_MODEL_PATH/);
+    assert.doesNotMatch(capabilities.detail, /hf-cache|[A-Z]:\\/i,
+      'the reported capability must not leak a developer machine layout');
+    await assert.rejects(transcribeMedia({ path: 'unused input.wav', outputDir: 'unused output' }),
+      { code: 'EAC_WHISPER_MODEL_UNCONFIGURED' });
+  } finally {
+    if (previous === undefined) delete process.env.EAC_WHISPER_MODEL_PATH;
+    else process.env.EAC_WHISPER_MODEL_PATH = previous;
+  }
+  // Configured but unusable stays a different failure, so callers can tell the two apart.
+  await assert.rejects(transcribeMedia({
+    path: 'unused input.wav', outputDir: 'unused output', modelPath: '   ',
+  }), TypeError);
+});
+
+test('an invalid language is a parameter error even on a machine with no model configured', async (t) => {
+  const directory = await workspace(t);
+  const previous = process.env.EAC_WHISPER_MODEL_PATH;
+  // The operator's environment must not decide which error a caller sees: with no model the
+  // pre-fix code answered EAC_WHISPER_MODEL_UNCONFIGURED for any language, hiding the real bug.
+  delete process.env.EAC_WHISPER_MODEL_PATH;
+  try {
+    for (const language of ['--bad', 'english', 'EN', 42, '']) {
+      await assert.rejects(
+        transcribeMedia({
+          path: join(directory, 'unused input.wav'),
+          outputDir: join(directory, 'unused output'),
+          language,
+        }),
+        (error) => {
+          assert.notEqual(error.code, 'EAC_WHISPER_MODEL_UNCONFIGURED',
+            'a missing model must never mask an invalid language argument');
+          assert.match(error.message, /language/);
+          return true;
+        },
+      );
+    }
+    assert.deepEqual(await readdir(directory), [], 'a rejected argument must not touch the filesystem');
+  } finally {
+    if (previous === undefined) delete process.env.EAC_WHISPER_MODEL_PATH;
+    else process.env.EAC_WHISPER_MODEL_PATH = previous;
+  }
+});
+
+test('multibyte JSON split across stdout chunks is decoded once, not per chunk', { timeout: 60_000 }, async (t) => {
+  const directory = await workspace(t);
+  const shim = join(directory, 'python startup');
+  await mkdir(shim, { recursive: true });
+  // A python startup hook writes the worker's JSON document in three separate writes that tear a
+  // three-byte UTF-8 character, so this needs neither a Whisper model nor audio.
+  const detail = '\u4e2d\u6587\u8f6c\u5f55 \u2014 caf\u00e9';
+  const bytes = [...Buffer.from(JSON.stringify({ available: true, detail }), 'utf8')];
+  const torn = bytes.findIndex((byte) => (byte & 0xf0) === 0xe0);
+  assert.ok(torn > 0, 'payload must contain a three-byte UTF-8 character');
+  const pieces = [bytes.slice(0, torn + 1), bytes.slice(torn + 1, torn + 2), bytes.slice(torn + 2)];
+  await writeFile(join(shim, 'sitecustomize.py'), [
+    'import os, time',
+    `pieces = [${pieces.map((piece) => `bytes([${piece.join(',')}])`).join(', ')}]`,
+    'for piece in pieces:',
+    '    os.write(1, piece)',
+    '    time.sleep(0.2)',
+    'os._exit(0)',
+  ].join('\n'));
+  const previous = { pythonpath: process.env.PYTHONPATH, model: process.env.EAC_WHISPER_MODEL_PATH };
+  process.env.PYTHONPATH = shim;
+  process.env.EAC_WHISPER_MODEL_PATH = directory;
+  t.after(() => {
+    if (previous.pythonpath === undefined) delete process.env.PYTHONPATH;
+    else process.env.PYTHONPATH = previous.pythonpath;
+    if (previous.model === undefined) delete process.env.EAC_WHISPER_MODEL_PATH;
+    else process.env.EAC_WHISPER_MODEL_PATH = previous.model;
+  });
+  const capabilities = await transcriptCapabilities();
+  assert.equal(capabilities.detail, detail, capabilities.detail);
+  assert.equal(capabilities.available, true);
+});
+
 test('real local tiny ASR transcribes synthesized English with word timestamps and caption files', {
   skip: process.platform !== 'win32', timeout: 180_000,
 }, async (t) => {
   const capabilities = await transcriptCapabilities();
+  if (!capabilities.available) {
+    t.skip(`本地 Whisper 模型不可用：${capabilities.detail}`);
+    return;
+  }
   assert.equal(capabilities.available, true, capabilities.detail);
   assert.match(capabilities.detail, /tiny.*low quality/i);
   const directory = await workspace(t);
@@ -156,14 +244,25 @@ test('missing model and invalid input fail honestly without caption artifacts', 
   await assert.rejects(transcribeMedia({ path: input, outputDir, modelPath: join(directory, 'missing') }),
     /Local model directory does not exist/);
   assert.deepEqual(await readdir(outputDir), []);
+  // 语言等纯参数校验先于模型探测，缺模型机器上同样成立。
+  await assert.rejects(transcribeMedia({ path: input, outputDir, language: '--bad' }), /language/);
+  const capabilities = await transcriptCapabilities();
+  if (!capabilities.available) {
+    t.skip(`本地 Whisper 模型不可用，跳过“有模型时的无效输入”断言：${capabilities.detail}`);
+    return;
+  }
   await assert.rejects(transcribeMedia({ path: input, outputDir }), /InvalidDataError|Invalid data/i);
   assert.deepEqual(await readdir(outputDir), []);
-  await assert.rejects(transcribeMedia({ path: input, outputDir, language: '--bad' }), /language/);
 });
 
 test('silence stays empty, video without audio fails, and long audio is rejected before ASR', {
   timeout: 60_000,
 }, async (t) => {
+  const capabilities = await transcriptCapabilities();
+  if (!capabilities.available) {
+    t.skip(`本地 Whisper 模型不可用：${capabilities.detail}`);
+    return;
+  }
   const directory = await workspace(t);
   const outputDir = join(directory, 'output');
   const silent = join(directory, 'silent.wav');
@@ -203,7 +302,7 @@ test('worker deadline kills Python and cleans staged captions', { timeout: 15_00
   events.subscribe(listener);
   t.mock.timers.enable({ apis: ['setTimeout'] });
   try {
-    const operation = transcribeMedia({ path: input, outputDir });
+    const operation = transcribeMedia({ path: input, outputDir, modelPath: join(directory, 'missing model') });
     const rejected = assert.rejects(operation, /timed out after 900000ms/);
     await spawned;
     t.mock.timers.tick(900_000);
@@ -237,7 +336,9 @@ test('pre-abort creates no output and active abort terminates Python before reje
   };
   events.subscribe(listener);
   try {
-    await assert.rejects(transcribeMedia({ path: input, outputDir, signal: controller.signal }), { name: 'AbortError' });
+    await assert.rejects(transcribeMedia({
+      path: input, outputDir, modelPath: join(directory, 'missing model'), signal: controller.signal,
+    }), { name: 'AbortError' });
     assert.ok(pid, 'a real Python process must have started');
     assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' });
     assert.deepEqual(await readdir(outputDir), []);

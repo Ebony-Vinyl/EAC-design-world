@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { mkdtemp, readFile, rm, mkdir, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, mkdir, writeFile, link } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createEngine, designContextFor } from '../src/engine.mjs';
+import { DesignStore } from '../src/design-store.mjs';
 import { startServer } from '../src/server.mjs';
 import { loadLibrary, resolveTemplate, libraryCatalogEntry } from '../src/catalog.mjs';
 
@@ -290,6 +291,86 @@ test('renderTemplate refuses prompt-only and dependency-missing templates', asyn
   // The 3D template is dependency-gated: it must refuse before launching a browser.
   await assert.rejects(renderTemplate({ templateId: '04-3d-render', outputPath: join(tmpdir(), 'x.mp4') }), /Blender/);
   await assert.rejects(renderTemplate({ templateId: 'nope', outputPath: join(tmpdir(), 'x.mp4') }), /Unknown template/);
+});
+
+test('a revision written before the metadata save is adopted instead of blocking later saves', async () => {
+  // Regression: writeFile(r3) succeeded but projects.json still said revision 2 (crash, power loss).
+  // The next save then recomputed r3, hit EEXIST on the wx write and could never save that artifact
+  // again. The bytes on disk must be kept, adopted, and numbered past.
+  const directory = await mkdtemp(join(tmpdir(), 'eac-design-crash-'));
+  try {
+    const first = await createEngine({ dataDir: directory });
+    const project = await first.handle('design_project_create', { title: 'Crash', kind: 'website' });
+    const one = await first.handle('design_artifact_save', { projectId: project.id, name: 'index.html', content: '<h1>one</h1>' });
+    await first.handle('design_artifact_save', { projectId: project.id, name: 'index.html', content: '<h1>two</h1>', revision: 1 });
+    await first.close();
+    const artifactDirectory = join(directory, 'design', 'files', one.id);
+    await writeFile(join(artifactDirectory, 'r3.html'), '<h1>interrupted</h1>', 'utf8');
+    // A crash in the middle of the write leaves only a temporary file; it is not a revision.
+    await writeFile(join(artifactDirectory, `r4.html.eac-tmp-${'0'.repeat(8)}`), '<h1>partial', 'utf8');
+    const second = await createEngine({ dataDir: directory });
+    try {
+      const state = second.designStore.snapshot();
+      assert.equal(state.projects[0].artifacts[0].revision, 3, 'the revision on disk is adopted');
+      assert.deepEqual(second.designStore.recovered.map((entry) => entry.revision), [3]);
+      assert.equal(existsSync(join(artifactDirectory, `r4.html.eac-tmp-${'0'.repeat(8)}`)), false, 'interrupted write is discarded');
+      assert.equal((await second.designStore.readContent(one.id, 3)).content, '<h1>interrupted</h1>');
+      const saved = await second.handle('design_artifact_save', { projectId: project.id, name: 'index.html', content: '<h1>three</h1>', revision: 3 });
+      assert.equal(saved.revision, 4);
+      assert.equal((await second.designStore.readContent(one.id)).content, '<h1>three</h1>');
+      assert.equal((await second.designStore.readContent(one.id, 1)).content, '<h1>one</h1>');
+      assert.equal((await second.designStore.readContent(one.id, 2)).content, '<h1>two</h1>');
+    } finally { await second.close(); }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test('an untracked revision file that appears at runtime is adopted instead of failing the save', () => setup(async (engine, directory) => {
+  const project = await engine.handle('design_project_create', { title: 'Stray', kind: 'document' });
+  const saved = await engine.handle('design_artifact_save', { projectId: project.id, name: 'doc.md', content: '# one' });
+  assert.equal(saved.revision, 1);
+  // Something put a revision file where the store is about to write (a second writer, a restore).
+  await writeFile(join(directory, 'design', 'files', saved.id, 'r2.md'), '# stray', 'utf8');
+  const next = await engine.handle('design_artifact_save', { projectId: project.id, name: 'doc.md', content: '# two', revision: 1 });
+  assert.equal(next.revision, 3, 'the conflicting number is skipped, not overwritten');
+  assert.equal((await engine.designStore.readContent(saved.id, 1)).content, '# one');
+  assert.equal((await engine.designStore.readContent(saved.id, 2)).content, '# stray');
+  assert.equal((await engine.designStore.readContent(saved.id, 3)).content, '# two');
+}));
+
+test('a volume without hard links fails the save instead of overwriting a revision', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'eac-design-nolink-'));
+  let hardLinks = true;
+  // Simulates the volume the old rename fallback was written for: link() fails with a code other
+  // than EEXIST, while a rename would have succeeded and silently replaced r2.html.
+  const store = new DesignStore(directory, {
+    publish: (temporary, path) => (hardLinks
+      ? link(temporary, path)
+      : Promise.reject(Object.assign(new Error('hard links are not supported on this volume'), { code: 'EPERM' }))),
+  });
+  await store.init();
+  try {
+    const project = await store.createProject({ title: 'No links', kind: 'website' });
+    const first = await store.saveArtifact({ projectId: project.id, name: 'index.html', content: '<h1>one</h1>' });
+    assert.equal(first.revision, 1);
+    hardLinks = false;
+    await assert.rejects(
+      store.saveArtifact({ projectId: project.id, name: 'index.html', content: '<h1>two</h1>', revision: 1 }),
+      (error) => {
+        assert.equal(error.code, 'EPERM', 'an unsupported volume must fail closed, not publish by rename');
+        return true;
+      },
+    );
+    assert.equal(existsSync(join(directory, 'files', first.id, 'r2.html')), false,
+      'no revision may be published when the link step failed');
+    assert.equal((await store.readContent(first.id, 1)).content, '<h1>one</h1>', 'existing revision bytes stay intact');
+    assert.equal(store.snapshot().projects[0].artifacts[0].revision, 1,
+      'metadata must not claim a revision that was never published');
+    // The interrupted attempt must not leave a temporary file behind either.
+    assert.deepEqual((await readdir(join(directory, 'files', first.id))).sort(), ['r1.html']);
+  } finally {
+    await store.release().catch(() => {});
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test('design projects survive engine restart through the local store', async () => {

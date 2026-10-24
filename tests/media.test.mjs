@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { channel } from 'node:diagnostics_channel';
-import { mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { chmod, mkdtemp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -10,6 +10,7 @@ import { after, before, test } from 'node:test';
 import {
   probeMedia, analyzeMedia, analyzeBeats, recordBrowser, recordDesktop,
   synthesizeVoice, composeMusic, renderTimeline, qualityCheck,
+  cleanupStaging, encodingTimeout, decodeTimeout, filterScriptOption, randomGenerator,
 } from '../src/media/index.mjs';
 
 let directory;
@@ -17,6 +18,7 @@ let red;
 let blue;
 let image;
 let tone;
+let mixedDurations;
 
 function command(executable, args, { includeStderr = false } = {}) {
   return new Promise((resolve, reject) => {
@@ -45,7 +47,13 @@ async function waitUntil(predicate, timeout = 10_000) {
 }
 
 function assertExited(pid) {
-  assert.throws(() => process.kill(pid, 0), { code: 'ESRCH' }, `Process ${pid} still exists after cancellation`);
+  assert.throws(() => process.kill(pid, 0), (error) => {
+    // ESRCH: the pid is gone. EPERM: the pid now belongs to a process we may not signal
+    // (runner pids are reused quickly by other accounts), so our child no longer holds it.
+    assert.ok(error.code === 'ESRCH' || error.code === 'EPERM',
+      `Process ${pid} still exists after cancellation (${error.code})`);
+    return true;
+  });
 }
 
 async function cancelAtProcess(operation, predicate, ready) {
@@ -72,11 +80,15 @@ async function cancelAtProcess(operation, predicate, ready) {
   const events = channel('child_process');
   events.subscribe(started);
   const safety = setTimeout(() => controller.abort(), 15_000);
+  // CI runners have no interactive desktop and share the CPU, so terminating the
+  // SAPI/desktop process tree takes longer than on a developer machine. The hard part of
+  // this assertion — every captured pid has exited — is unchanged; only the wait budget grows.
+  const cancelDeadlineMs = Number(process.env.EAC_CANCEL_DEADLINE_MS) || (process.env.EAC_CI ? 20_000 : 5_000);
   try {
     await assert.rejects(operation(controller.signal), { name: 'AbortError' });
     if (readinessFailure) throw readinessFailure;
     assert.ok(abortedAt, 'the requested OS process actually started before cancellation');
-    assert.ok(performance.now() - abortedAt < 5000, 'cancellation should finish within 5 seconds');
+    assert.ok(performance.now() - abortedAt < cancelDeadlineMs, `cancellation should finish within ${cancelDeadlineMs} ms`);
     for (const pid of processes) assertExited(pid);
   } finally {
     clearTimeout(timer);
@@ -168,6 +180,12 @@ before(async () => {
   await fixture(['-f', 'lavfi', '-i', 'color=c=lime:s=64x32',
     '-frames:v', '1', '-update', '1', image]);
   await fixture(['-f', 'lavfi', '-i', 'sine=frequency=880:sample_rate=48000:duration=0.35', tone]);
+  // A 2 s picture track inside a 10 s container: no -shortest, so the audio
+  // stream keeps running long after the picture ends.
+  mixedDurations = join(directory, 'mixed durations.mp4');
+  await fixture(['-f', 'lavfi', '-i', 'color=c=red:s=96x64:r=10:d=2',
+    '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=48000:duration=10',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', mixedDurations]);
 });
 
 after(async () => {
@@ -258,6 +276,30 @@ test('sourceIn trims real changing source content', async () => {
     ] }, outputPath: output,
   });
   assert.ok((await pixel(output, 0.1))[2] > 200);
+});
+
+test('clip bounds follow the stream a clip reads, not the container duration', async () => {
+  const mixed = await probeMedia(mixedDurations);
+  // The container reports the audio length; the picture track ends at 2 s.
+  assert.ok(Math.abs(mixed.duration - 10) < 0.3, `container duration was ${mixed.duration}`);
+  assert.ok(Math.abs(mixed.videoDuration - 2) < 0.3, `video duration was ${mixed.videoDuration}`);
+  assert.ok(Math.abs(mixed.audioDuration - 10) < 0.3, `audio duration was ${mixed.audioDuration}`);
+
+  // Seeking past the end of the picture track used to render one black second
+  // and still pass quality check (black frames were a warning, not an error).
+  await assert.rejects(renderTimeline({
+    project: { width: 96, height: 64, fps: 10, clips: [
+      { path: mixedDurations, kind: 'video', start: 0, sourceIn: 6, duration: 1 },
+    ] }, outputPath: join(directory, 'past-video-end.mp4'),
+  }), /exceeds source duration \(video stream/);
+
+  // The same offset is legitimate for the audio track, which really is 10 s long.
+  const audioOnly = await renderTimeline({
+    project: { width: 96, height: 64, fps: 10, clips: [
+      { path: mixedDurations, kind: 'audio', start: 0, sourceIn: 6, duration: 1 },
+    ] }, outputPath: join(directory, 'audio-tail.mp4'),
+  });
+  assert.ok(Math.abs(audioOnly.duration - 1) < 0.2, `audio clip duration was ${audioOnly.duration}`);
 });
 
 test('external voice and looped bed mix with original audio; voice does not loop', async () => {
@@ -519,7 +561,15 @@ test('music cancellation interrupts PCM generation and conversion without replac
   assert.ok(!(await readdir(directory)).some((name) => name.startsWith('.eac-media-')));
 });
 
-test('Windows desktop and SAPI cancellation terminate their OS processes', { skip: process.platform !== 'win32' }, async () => {
+test('Windows desktop and SAPI cancellation terminate their OS processes', { skip: process.platform !== 'win32' }, async (t) => {
+  if (process.env.EAC_CI) {
+    // GitHub's Windows runners have no interactive desktop, so ffmpeg's gdigrab input cannot
+    // start (or terminate) there; the same applies to SAPI, which blocks the PowerShell host
+    // for far longer than any cancellation budget. Neither failure says anything about the
+    // cancellation code, which is covered on an interactive Windows machine.
+    t.skip('CI runner 没有交互桌面：桌面录制与 SAPI 取消无法在此验证');
+    return;
+  }
   const output = join(directory, 'cancel OS capture.wav');
   const original = Buffer.from('preserve this output');
   await writeFile(output, original);
@@ -615,4 +665,324 @@ test('Windows desktop capture produces actual frames', { skip: process.platform 
   assert.equal(result.hasVideo, true);
   assert.ok(result.width >= 320);
   assert.ok(result.duration >= 0.2 && result.duration < 2);
+});
+
+// ---------------------------------------------------------------------------
+// Regression tests for the media fixes. Each one fails without its fix.
+// ---------------------------------------------------------------------------
+
+// A real "file is in use" lock. Node's own handles are opened with
+// FILE_SHARE_DELETE and never block deletion, so PowerShell holds the file with
+// FileShare.None - what a still-running ffmpeg/Edge does to a staging file.
+// POSIX needs no lock: an unlink inside a directory without write permission
+// fails with EACCES, which the cleanup loop retries exactly the same way.
+// The block ends on a timer in the holder process, not on a marker file: a
+// failed recursive rm still unlinks the files it can reach, so a marker inside
+// the staging tree could disappear before anyone observes it.
+async function blockRemoval(directory, { holdMs = 300 } = {}) {
+  const inner = join(directory, 'inner');
+  await mkdir(inner, { recursive: true });
+  const busy = join(inner, 'busy.bin');
+  await writeFile(busy, 'locked');
+  if (process.platform !== 'win32') {
+    await chmod(inner, 0o500);
+    const timer = setTimeout(() => { chmod(inner, 0o700).catch(() => {}); }, holdMs);
+    timer.unref();
+    return { stop: async () => { clearTimeout(timer); await chmod(inner, 0o700).catch(() => {}); } };
+  }
+  const ready = `${directory}.ready.marker`;
+  const quote = (value) => value.replaceAll("'", "''");
+  const script = [
+    `$handle = [System.IO.File]::Open('${quote(busy)}', 'Open', 'Read', 'None')`,
+    `Set-Content -LiteralPath '${quote(ready)}' -Value 'locked'`,
+    `Start-Sleep -Milliseconds ${holdMs}`,
+    '$handle.Close()',
+  ].join('; ');
+  const child = spawn('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', script],
+    { shell: false, windowsHide: true, stdio: 'ignore' });
+  await waitUntil(() => stat(ready).then(() => true, () => false), 20_000);
+  return { stop: async () => { child.kill(); await delay(200); } };
+}
+
+test('staging cleanup retries a transient lock instead of leaving the directory behind', async () => {
+  const staging = join(directory, '.eac-media-locked profile');
+  // Blocked for 300 ms: the first attempt lands while the file is still open, so
+  // only a retrying cleanup can remove the directory. Without the retry loop
+  // .eac-media-* survives, and a browser profile (hundreds of MB) leaks.
+  const lock = await blockRemoval(staging, { holdMs: 300 });
+  const failures = [];
+  try {
+    const started = performance.now();
+    await cleanupStaging(staging, { onFailure: (error) => failures.push(error.code) });
+    assert.ok(performance.now() - started < 5000, 'cleanup must finish inside its retry budget');
+    assert.deepEqual(failures, []);
+    await assert.rejects(stat(staging), { code: 'ENOENT' });
+  } finally {
+    await lock.stop().catch(() => {});
+  }
+});
+
+test('a cleanup failure is reported without replacing the error that ended the operation', async () => {
+  const staging = join(directory, '.eac-media-stuck profile');
+  // Held for far longer than the retry budget, so the removal cannot succeed.
+  const lock = await blockRemoval(staging, { holdMs: 10_000 });
+  const failures = [];
+  try {
+    const started = performance.now();
+    await assert.rejects((async () => {
+      try {
+        throw Object.assign(new Error('Media operation aborted'), { name: 'AbortError', code: 'ABORT_ERR' });
+      } finally {
+        // Exactly how every entry point cleans up. A throw here would surface as
+        // EBUSY/EPERM and hide that the caller's operation was cancelled.
+        await cleanupStaging(staging, { onFailure: (error) => failures.push(error) });
+      }
+    })(), { name: 'AbortError' });
+    const elapsed = performance.now() - started;
+    assert.equal(failures.length, 1, 'the removal failure must still be reported');
+    assert.ok(['EBUSY', 'EPERM', 'EACCES'].includes(failures[0].code), failures[0].code);
+    assert.ok(elapsed < 5000, `a stuck staging directory must not stall the operation (${Math.round(elapsed)} ms)`);
+  } finally {
+    await lock.stop().catch(() => {});
+  }
+});
+
+test('every entry point shares the retrying cleanup and the scaled encode budget', async () => {
+  const source = await readFile(new URL('../src/media/index.mjs', import.meta.url), 'utf8');
+  // README: "Cleanup retries transient Windows file locks for up to 750 ms".
+  // Only recordBrowser used to retry; desktop, SAPI, music and render used a
+  // bare rm in `finally`, which could replace the real error.
+  assert.ok(!/rm\(\s*job\.temporary/.test(source), 'staging removal must go through cleanupStaging');
+  const sites = source.match(/cleanupStaging\(job\.temporary\)/g) ?? [];
+  assert.ok(sites.length >= 5, `browser, desktop, voice, music and render must all retry cleanup (found ${sites.length})`);
+  assert.ok(source.includes('timeout: encodingTimeout(timeline)'), 'render must use the scaled encode budget');
+});
+
+test('the encode budget scales with pixels and seconds instead of a fixed 15 minutes', () => {
+  const hourHdProduction = encodingTimeout({ width: 1920, height: 1080, duration: 3600, quality: 'production' });
+  const hourHdDraft = encodingTimeout({ width: 1920, height: 1080, duration: 3600 });
+  // MAX_DURATION promises 3600 s timelines; a flat 900 s cap killed the legal
+  // long render and then deleted its staged output in `finally`.
+  assert.ok(hourHdProduction > 900_000, `1 h of 1080p production was allowed only ${hourHdProduction} ms`);
+  assert.ok(hourHdDraft > 900_000, `1 h of 1080p draft was allowed only ${hourHdDraft} ms`);
+  assert.ok(encodingTimeout({ width: 1920, height: 1080, duration: 600 }) < hourHdDraft, 'budget grows with duration');
+  const hourUhdProduction = encodingTimeout({ width: 3840, height: 2160, duration: 3600, quality: 'production' });
+  assert.ok(hourUhdProduction >= hourHdProduction, '4K needs at least as much time as 1080p');
+  // Still bounded, so a hung encoder cannot hold a job queue slot forever.
+  assert.ok(hourUhdProduction <= 8 * 3_600_000, `encode budget is unbounded: ${hourUhdProduction} ms`);
+  // Short renders keep a tight budget.
+  const shortHd = encodingTimeout({ width: 1920, height: 1080, duration: 5 });
+  assert.ok(shortHd < hourHdDraft);
+  assert.ok(shortHd <= 900_000, `a 5 s render inherited ${shortHd} ms`);
+});
+
+test('an unusable "0/0" average frame rate falls back to r_frame_rate', async () => {
+  // Mixed-rate MKV: ffprobe reports avg_frame_rate "0/0", which is truthy, so
+  // `avg_frame_rate || r_frame_rate` kept fps 0 - and qualityCheck then widened
+  // its frame tolerance with `2 / (fps || 30)`, silently assuming 30 fps.
+  const variable = join(directory, 'variable rate.mkv');
+  await fixture(['-f', 'lavfi', '-i', 'color=c=red:s=64x48:r=20:d=1',
+    '-f', 'lavfi', '-i', 'color=c=blue:s=64x48:r=30:d=1',
+    '-filter_complex', '[0:v][1:v]concat=n=2:v=1:a=0[v]', '-map', '[v]',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', variable]);
+  const media = await probeMedia(variable);
+  const video = media.streams.find((stream) => stream.codec_type === 'video');
+  assert.equal(video.avg_frame_rate, '0/0', 'fixture no longer reports an unusable average frame rate');
+  const [numerator, denominator] = video.r_frame_rate.split('/').map(Number);
+  assert.ok(numerator > 0 && denominator > 0, `r_frame_rate was ${video.r_frame_rate}`);
+  assert.equal(media.fps, numerator / denominator);
+  assert.ok(media.fps > 0, 'fps must fall back to r_frame_rate');
+
+  // Legal fractional rates keep their exact value.
+  const ntsc = join(directory, 'ntsc rate.mp4');
+  await fixture(['-f', 'lavfi', '-i', 'testsrc2=s=64x48:r=30000/1001:d=1',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', ntsc]);
+  assert.ok(Math.abs((await probeMedia(ntsc)).fps - 30000 / 1001) < 1e-9);
+});
+
+test('the music generator keeps 32-bit state past 2^53 samples', () => {
+  // The contract: the same generator with uint32 state. Without `>>> 0` the
+  // running sum passes 2^53 at sample 4,917,757 (~111.5 s at 44.1 kHz) and float
+  // rounding eats the low bits, so every later sample diverges from this.
+  const reference = (seed) => {
+    let state = 2166136261;
+    for (const char of String(seed)) state = Math.imul(state ^ char.charCodeAt(0), 16777619) >>> 0;
+    return () => {
+      state = (state + 0x6D2B79F5) >>> 0;
+      let value = Math.imul(state ^ (state >>> 15), 1 | state);
+      value ^= value + Math.imul(value ^ (value >>> 7), 61 | value);
+      return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+    };
+  };
+  const actual = randomGenerator('overflow');
+  const expected = reference('overflow');
+  // 5 M samples covers the break point and the tail of a 600 s track.
+  for (let index = 0; index < 5_000_000; index++) {
+    if (actual() !== expected()) assert.fail(`generator diverged from 32-bit state at sample ${index}`);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// S2: per-stream lengths, the decode budget and the filter-script probe.
+// ---------------------------------------------------------------------------
+
+test('a matroska picture track keeps its own length instead of the container total', async () => {
+  // ffprobe reports `duration: N/A` for every matroska stream; the only per-track
+  // number is the Matroska DURATION tag (2.000 s here), while the container holds
+  // the 10 s audio track. Falling back to the container let a clip seek to 6 s in
+  // a 2 s picture track, encode pure black and still pass qualityCheck.
+  const mixed = join(directory, 'mixed tracks.mkv');
+  await fixture(['-f', 'lavfi', '-i', 'color=c=red:s=96x64:r=10:d=2',
+    '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=48000:duration=10',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', mixed]);
+  const media = await probeMedia(mixed);
+  const video = media.streams.find((stream) => stream.codec_type === 'video');
+  assert.ok(video.duration === undefined || video.duration === 'N/A',
+    `fixture now reports a stream duration (${video.duration}), so it no longer reproduces the bug`);
+  assert.ok(Math.abs(media.duration - 10.02) < 0.3, `container duration was ${media.duration}`);
+  assert.ok(Math.abs(media.videoDuration - 2) < 0.2, `video duration was ${media.videoDuration}`);
+  assert.equal(media.videoDurationKnown, true, 'the per-track tag is a measured length');
+  assert.ok(Math.abs(media.audioDuration - 10.02) < 0.3, `audio duration was ${media.audioDuration}`);
+  await assert.rejects(renderTimeline({
+    project: { width: 96, height: 64, fps: 10, clips: [
+      { path: mixed, kind: 'video', start: 0, sourceIn: 6, duration: 1 },
+    ] }, outputPath: join(directory, 'past mkv video end.mp4'),
+  }), /exceeds source duration \(video stream is 2(?:\.\d+)?s\)/);
+});
+
+test('a stream that states no length at all is measured instead of skipping the bound', async () => {
+  // Raw H.264: no container duration, no stream duration, no tags - the old
+  // `limit > 0` guard skipped validation entirely for such a file.
+  const raw = join(directory, 'elementary.h264');
+  await fixture(['-f', 'lavfi', '-i', 'testsrc2=s=96x64:r=20:d=2',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-f', 'h264', raw]);
+  const media = await probeMedia(raw);
+  assert.equal(media.videoDurationKnown, true, 'packet count x frame rate bounds the stream');
+  assert.ok(media.videoDuration > 1 && media.videoDuration < 2.6, `raw stream length was ${media.videoDuration}`);
+  await assert.rejects(renderTimeline({
+    project: { width: 96, height: 64, fps: 10, clips: [
+      { path: raw, kind: 'video', start: 0, sourceIn: 6, duration: 1 },
+    ] }, outputPath: join(directory, 'past raw end.mp4'),
+  }), /exceeds source duration \(video stream is [\d.]+s\)/);
+});
+
+test('validation decoding shares the encode budget scale instead of a flat 15 minutes', async () => {
+  // A 1 h 4K production render may legitimately take hours; the decoder gate was
+  // capped at 15 minutes and reported that legal output as "Decode failed".
+  const hourHd = decodeTimeout({ width: 1920, height: 1080, duration: 3600 });
+  const hourUhd = decodeTimeout({ width: 3840, height: 2160, duration: 3600 });
+  assert.ok(hourHd > 900_000, `1 h of 1080p validation was allowed only ${hourHd} ms`);
+  assert.ok(hourUhd >= hourHd, '4K validation needs at least as much time as 1080p');
+  assert.ok(hourUhd <= 6 * 3_600_000, `decode budget is unbounded: ${hourUhd} ms`);
+  assert.ok(decodeTimeout({ width: 1920, height: 1080, duration: 5 }) < hourHd, 'budget grows with duration');
+  // Audio-only media has no pixels to decode.
+  assert.ok(decodeTimeout({ width: null, height: null, duration: 3600 }) > 900_000);
+  const source = await readFile(new URL('../src/media/index.mjs', import.meta.url), 'utf8');
+  assert.ok(source.includes('timeout: decodeTimeout(media)'), 'qualityCheck must use the scaled decode budget');
+  assert.ok(!source.includes('Math.min(900_000'), 'the flat 15 minute decode gate must be gone');
+});
+
+test('the filter-script option is decided by the help text, without a real ffmpeg', async () => {
+  // ffmpeg 8: the option exists and must be used. ffmpeg 9: it was removed and its
+  // help does not advertise a replacement (`-h full` only lists -filter_complex),
+  // so absence selects the `-/filter_complex` spelling. Both branches are
+  // unreachable on a real 9.x build, where the fallback happens to be correct.
+  const legacy = '-filter_complex <graph>\n-filter_complex_script <file>  set the filtergraph script file\n';
+  assert.equal(filterScriptOption(legacy), '-filter_complex_script');
+  const modern = '-filter_complex <graph>\n-filter_complex_threads  number of threads\n-/filter_complex <file>\n';
+  assert.equal(filterScriptOption(modern), '-/filter_complex');
+  assert.equal(filterScriptOption(''), '-/filter_complex', 'an empty probe must not pick the removed option');
+  // Deciding this must not spawn a process: the probe is text matching.
+  const spawned = [];
+  const listener = ({ process: child }) => spawned.push(child.spawnfile);
+  channel('child_process').subscribe(listener);
+  try {
+    filterScriptOption(legacy);
+    filterScriptOption(modern);
+  } finally { channel('child_process').unsubscribe(listener); }
+  assert.deepEqual(spawned, [], 'filterScriptOption must not run ffmpeg');
+  const source = await readFile(new URL('../src/media/index.mjs', import.meta.url), 'utf8');
+  assert.ok(source.includes('filterScriptOptionName = filterScriptOption('),
+    'the cached probe must go through filterScriptOption');
+});
+
+test('a truncated picture track is bounded by its real data, and a truncation on a packet boundary is still caught', async () => {
+  // Believing a container's own duration let a clip seek past the end of the picture data and render
+  // pure black, which was then published as a success (qualityCheck only warns about black frames).
+  // A faststart MP4 keeps an intact moov when the download is cut, so the file still claims 4 s.
+  const whole = join(directory, 'truncation source.mp4');
+  await fixture(['-f', 'lavfi', '-i', 'color=c=orange:s=96x64:r=30:d=4',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', whole]);
+  const size = (await stat(whole)).size;
+
+  // A plain cut leaves decaying NAL units, which the demuxer reports.
+  const cut = join(directory, 'truncated mid.mp4');
+  await writeFile(cut, (await readFile(whole)).subarray(0, Math.floor(size * 0.55)));
+  const mid = await probeMedia(cut);
+  assert.equal(mid.videoDurationKnown, true);
+  assert.ok(mid.videoDuration < 3, `a cut file was still bounded by its claim: ${mid.videoDuration}`);
+
+  // A cut landing exactly on a packet boundary reads without any demuxer complaint, so the length
+  // must be decided by the gap between the last packet and the claim — not by stderr alone.
+  let packets = [];
+  {
+    const out = await command('ffprobe', ['-v', 'error', '-select_streams', 'v:0',
+      '-show_entries', 'packet=pos,size', '-of', 'csv=p=0', whole]);
+    packets = out.toString('utf8').trim().split('\n').map((line) => {
+      const [pos, packetSize] = line.split(',').map(Number);
+      return { end: pos + packetSize };
+    });
+  }
+  const boundary = join(directory, 'truncated on packet boundary.mp4');
+  await writeFile(boundary, (await readFile(whole)).subarray(0, packets[Math.floor(packets.length * 0.6)].end));
+  const onBoundary = await probeMedia(boundary);
+  assert.equal(onBoundary.videoDurationKnown, true);
+  assert.ok(onBoundary.videoDuration < 3,
+    `a packet-aligned cut was still bounded by its claim: ${onBoundary.videoDuration}`);
+  await assert.rejects(renderTimeline({
+    project: { width: 96, height: 64, fps: 10, clips: [
+      { path: boundary, kind: 'video', start: 0, sourceIn: 3.2, duration: 0.7 },
+    ] }, outputPath: join(directory, 'past truncated end.mp4'),
+  }), /exceeds source duration \(video stream is [\d.]+s\)/);
+
+  // The whole file is untouched by the measurement.
+  const intact = await probeMedia(whole);
+  assert.ok(Math.abs(intact.videoDuration - 4) < 0.2, `intact length moved: ${intact.videoDuration}`);
+});
+
+test('an absolute timeline is normalised, so a pipe-written track is not inflated', async () => {
+  // A Matroska written through a pipe (live capture, an interrupted recording) starts its PTS at an
+  // arbitrary offset - measured 100 s for a 4 s track - and reports no duration. Using the last
+  // timestamp as the length turned 4 s into 104 s, so every seek inside the real content was allowed
+  // and rendered black.
+  const piped = join(directory, 'absolute timeline.mkv');
+  await fixture(['-f', 'lavfi', '-i', 'color=c=teal:s=96x64:r=30:d=4',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-output_ts_offset', '100', '-f', 'matroska', piped]);
+  const media = await probeMedia(piped);
+  assert.ok(Math.abs(media.videoDuration - 4) < 0.5,
+    `an offset timeline inflated the bound to ${media.videoDuration}`);
+  await assert.rejects(renderTimeline({
+    project: { width: 96, height: 64, fps: 10, clips: [
+      { path: piped, kind: 'video', start: 0, sourceIn: 50, duration: 1 },
+    ] }, outputPath: join(directory, 'past absolute end.mp4'),
+  }), /exceeds source duration/);
+});
+
+test('a variable frame rate tail keeps its declared length instead of being measured short', async () => {
+  // The opposite mistake to truncation: the file is complete, but its last frame lasts a second, so
+  // the last PTS sits well before the declared end. Taking the shorter number refused clips that
+  // really exist in the 2.0-3.0 s tail.
+  const vfr = join(directory, 'variable tail.mkv');
+  await fixture(['-f', 'lavfi', '-i', 'color=c=purple:s=96x64:r=10:d=1',
+    '-f', 'lavfi', '-i', 'color=c=olive:s=96x64:r=1:d=2',
+    '-filter_complex', '[0:v][1:v]concat=n=2:v=1:a=0[v]', '-map', '[v]',
+    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-fps_mode', 'vfr', vfr]);
+  const media = await probeMedia(vfr);
+  assert.ok(media.videoDuration >= 2.8,
+    `a complete VFR track was measured short: ${media.videoDuration}`);
+  await assert.doesNotReject(renderTimeline({
+    project: { width: 96, height: 64, fps: 10, clips: [
+      { path: vfr, kind: 'video', start: 0, sourceIn: 2.5, duration: 0.5 },
+    ] }, outputPath: join(directory, 'legit vfr tail.mp4'),
+  }));
 });

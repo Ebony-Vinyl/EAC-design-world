@@ -190,6 +190,8 @@ export default function MaintenancePanel({ notify, initialStatus = null }) {
   const [rollbackConfirmed, setRollbackConfirmed] = useState(false);
   const [localManifest, setLocalManifest] = useState('');
   const [allowUnsigned, setAllowUnsigned] = useState(false);
+  // 本地安装的一次性确认令牌失效时的可操作提示（令牌 60 秒过期、消费一次即失效）。
+  const [localTokenHint, setLocalTokenHint] = useState('');
   const [settingsDraft, setSettingsDraft] = useState({ autoReloadWatch: false, feedPollMinutes: '', updateCheckHours: '' });
   const alive = useRef(true);
   // 以 operation 记录为准确认结果：失败回滚同样会更换实例，只有操作本身成功才算成功。
@@ -352,9 +354,23 @@ export default function MaintenancePanel({ notify, initialStatus = null }) {
     return api('/maintenance/rollback', { method: 'POST', body: {} });
   }, '已开始回滚到保留的备份。');
 
-  const localUpdate = () => run('local',
-    () => api('/maintenance/local', { method: 'POST', body: { manifestPath: localManifest.trim(), allowUnsigned: allowUnsigned === true } }),
-    '已开始从本地目录安装。');
+  // 本地安装必须携带 status() 返回的一次性确认令牌（60 秒有效、消费一次即失效）。
+  // 令牌失效时给出可操作提示：重新读取状态拿新令牌后再试一次。
+  const localUpdate = () => run('local', async () => {
+    setLocalTokenHint('');
+    try {
+      return await api('/maintenance/local', { method: 'POST', body: {
+        manifestPath: localManifest.trim(),
+        allowUnsigned: allowUnsigned === true,
+        localInstallToken: clean(status?.localInstallToken),
+      } });
+    } catch (err) {
+      if (/EAC_LOCAL_TOKEN|令牌/.test(err?.message || '')) {
+        setLocalTokenHint('本地安装确认令牌缺失、无效或已过期，安装未开始。请刷新维护面板获取新的确认令牌后重试。');
+      }
+      throw err;
+    }
+  }, '已开始从本地目录安装。');
 
   // 公告刷新可能依次尝试多个来源，耗时超过默认的 20 秒超时；单独放宽到 60 秒。
   const refreshAnnouncements = () => run('announce-refresh',
@@ -485,9 +501,17 @@ export default function MaintenancePanel({ notify, initialStatus = null }) {
           <input type="checkbox" checked={allowUnsigned} onChange={event => setAllowUnsigned(event.target.checked)} />
           我了解：清单中的哈希只能证明文件与清单一致，不能证明清单来自官方签名；勾选后将接受未签名清单。
         </label>
+        {localTokenHint && <>
+          <div className="mt-banner" role="alert"><CircleAlert size={15} aria-hidden="true" /><span>{localTokenHint}</span></div>
+          <div className="mt-actions">
+            <PanelButton icon={RefreshCw} disabled={action !== ''}
+              onClick={() => { setLocalTokenHint(''); load(); }}>刷新确认令牌</PanelButton>
+          </div>
+        </>}
         <div className="mt-actions">
-          <PanelButton icon={Download} busy={action === 'local'} disabled={action !== '' || operationRunning || activeJobs > 0 || !reloadSupported || recoveryRequired || localManifest.trim() === ''} onClick={localUpdate}>从本地目录安装</PanelButton>
+          <PanelButton icon={Download} busy={action === 'local'} disabled={action !== '' || operationRunning || activeJobs > 0 || !reloadSupported || recoveryRequired || localManifest.trim() === '' || !clean(status?.localInstallToken)} onClick={localUpdate}>从本地目录安装</PanelButton>
         </div>
+        <p className="mt-help">安装时会消耗一枚一次性安装确认令牌（60 秒内有效、仅可用一次），令牌随面板状态自动刷新；已签名与未签名的本地包都需要它，签名校验不受影响。</p>
         <div className="mt-subsection">
           <h3>回滚到备份</h3>
           <p className="mt-help">{rollbackAvailable ? '用更新前保留的备份覆盖当前安装，恢复到上一个可用版本。' : '当前没有可用的备份，回滚不可用。'}</p>

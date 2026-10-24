@@ -167,7 +167,10 @@ on success. Temporary files are removed on completion/failure. Explicit output
 paths replace existing files only after successful encoding. FFmpeg/ffprobe
 always use spawn argument arrays, shell:false, hidden windows and bounded
 timeouts/output. Chinese, spaces and quote characters in paths are supported.
-Probe timeout 30 s; analysis 180 s; render/quality decode at most 15 min.
+Probe timeout 30 s; analysis 180 s. Render scales its budget with the output:
+`min(6 h, 120 s + duration x max(500, 1500 x megapixels) ms, x2.5 for production)`,
+so a 5 s clip still gets about 2 min while an hour of 1080p or 4K is no longer
+killed at a fixed 15 min. Quality-check decode keeps its own 15 min bound.
 Browser: 100 actions, 10 s action timeout, 30 s navigation/launch timeout,
 90 s total explicit waits, 120 s session deadline, 150 s total capture bound.
 SAPI timeout 5 min.

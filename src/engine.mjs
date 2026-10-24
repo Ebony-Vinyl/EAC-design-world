@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile, realpath, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { resolve, join, extname, basename, relative, isAbsolute } from 'node:path';
+import { resolve, join, dirname, extname, basename, relative, isAbsolute } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { Store } from './store.mjs';
@@ -22,6 +22,80 @@ const childOf = (root, path) => {
 };
 function safeOutputName(value) {
   return String(value || 'film').replace(/[<>:"/\\|?*\x00-\x1f]/g, '-').slice(0, 80);
+}
+// /api/files hands the caller the raw bytes of a path, and outputRoot (a user setting) is its
+// containment root. Two separate checks are therefore needed, because either one alone was bypassable:
+//   1. outputRoot itself must be a real, ordinary directory. "Any string" accepted C:\Windows, which
+//      turned the endpoint into an arbitrary local file reader (measured: 200 + win.ini contents).
+//   2. what gets served must be a deliverable type. Containment says "inside a trusted root"; it does
+//      not say "this file is something we produce". A .ini/.txt/extensionless file inside the real
+//      output directory is still refused, and a project asset cannot smuggle one either.
+const servableExtensions = new Set([
+  // video / audio deliverables
+  '.mp4', '.m4v', '.mov', '.webm', '.mkv', '.avi', '.mpg', '.mpeg', '.ts',
+  '.wav', '.mp3', '.m4a', '.aac', '.flac', '.ogg', '.opus', '.aif', '.aiff', '.wma',
+  // stills, previews and 3D/HDR plates
+  '.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif', '.bmp', '.tif', '.tiff', '.svg', '.heic', '.glb', '.hdr', '.exr',
+  // subtitles
+  '.srt', '.vtt', '.ass', '.ssa', '.ttml', '.sbv',
+  // document deliverables, page assets and fonts used by a sandboxed preview
+  '.json', '.md', '.markdown', '.pdf', '.pptx', '.html', '.htm', '.css', '.js', '.mjs',
+  '.woff', '.woff2', '.ttf', '.otf',
+]);
+// Directories whose contents are OS installations, never project deliverables. Compared after
+// realpath, and the filesystem root is refused separately.
+function systemDirectories() {
+  const declared = [
+    process.env.SystemRoot, process.env.windir, process.env.winbootdir,
+    process.env.ProgramFiles, process.env['ProgramFiles(x86)'], process.env['ProgramW6432'],
+    process.env.ProgramData, process.env.ALLUSERSPROFILE, process.env.CommonProgramFiles,
+  ];
+  const posix = ['/bin', '/boot', '/dev', '/etc', '/lib', '/lib32', '/lib64', '/proc', '/root', '/sbin', '/sys', '/usr', '/var/lib'];
+  return [...declared, ...(process.platform === 'win32' ? [] : posix)]
+    .filter((value) => typeof value === 'string' && value.trim())
+    .map((value) => resolve(value))
+    .filter((value) => dirname(value) !== value);
+}
+async function assertUsableOutputRoot(value) {
+  const candidate = resolve(value);
+  const info = await stat(candidate).catch(() => null);
+  if (!info?.isDirectory()) throw new Error('无效设置：outputRoot 必须是已存在的目录');
+  if (dirname(candidate) === candidate) throw new Error('无效设置：outputRoot 不能是磁盘根目录');
+  const real = await realpath(candidate).catch(() => candidate);
+  if (systemDirectories().some((directory) => childOf(directory, real))) throw new Error('无效设置：outputRoot 不能位于系统目录内');
+}
+// Containment must be decided on the REAL path, not the string that names it. This reads two provenance
+// classes and both are attacker-reachable in the threat model this module already assumes: `od-*`
+// entries carry paths straight out of vendor/open-design/catalog.json, and catalog.json together with
+// the vendor tree is third-party contribution. A contribution that adds one symlink inside the tree
+// plus one tiny entry pointing at it therefore used to read any file on the machine: `resolve()` only
+// normalises `..` textually, it never follows links, and `readFile` follows them happily. Compare
+// `pathResolver` in shotcraft-library.mjs, which has always resolved symlinks before comparing.
+// Routing on the `od-` id prefix rather than on template.source keeps a data file from loosening the
+// gate by spoofing `source`. Returns null when the path is unsafe; callers must treat null as a
+// refusal, never as "missing file".
+export async function templateReadPath(template, target) {
+  if (typeof target !== 'string' || !target.trim()) return null;
+  if (String(template?.id || '').startsWith('od-')) {
+    const { resolveLibraryPath } = await import('./open-design-library.mjs');
+    return resolveLibraryPath(target);
+  }
+  const candidate = resolve(ROOT, target);
+  const rel = relative(ROOT, candidate);
+  if (!rel || rel.startsWith('..') || isAbsolute(rel)) return null;
+  // The text stayed inside the root; now prove what it points at also does. "Absent" is allowed to
+  // fall through to the caller's own absence check, but a resolution failure of any other kind means
+  // containment cannot be proven (a link loop, an unreadable directory) — that is a refusal.
+  let real;
+  try {
+    real = await realpath(candidate);
+  } catch (error) {
+    if (error?.code === 'ENOENT' || error?.code === 'ENOTDIR') return candidate;
+    return null;
+  }
+  const root = await realpath(ROOT).catch(() => ROOT);
+  const relReal = relative(root, real);
+  return relReal && !relReal.startsWith('..') && !isAbsolute(relReal) ? candidate : null;
 }
 // Shared by local and remote host paths: builds explicit design context for one session's
 // composer record. Returns null unless that session actually selected design mode, so mode
@@ -399,6 +473,7 @@ export async function createEngine({ dataDir } = {}) {
         if (input[key] === undefined) continue;
         if (typeof input[key] !== 'string') throw new Error(`无效设置：${key}`);
         if (key === 'quality' && !['draft', 'production'].includes(input[key])) throw new Error('无效质量档位');
+        if (key === 'outputRoot') await assertUsableOutputRoot(input[key]);
         store.state.settings[key] = input[key];
       }
       await store.save();
@@ -407,6 +482,10 @@ export async function createEngine({ dataDir } = {}) {
     async canServeFile(file) {
       try {
         const target = await realpath(resolve(file));
+        // Second, independent layer: /api/files returns the bytes of whatever path passes this gate,
+        // so the path is only downloadable when it is a deliverable type. Containment alone answers
+        // "is this path inside a root I trust", never "is this file something I may hand out".
+        if (!servableExtensions.has(extname(target).toLowerCase())) return false;
         const output = await realpath(resolve(store.state.settings.outputRoot)).catch(() => resolve(store.state.settings.outputRoot));
         return childOf(output, target) || store.state.projects.some((p) => p.assets.some((a) => a.path === target));
       } catch { return false; }
@@ -495,7 +574,8 @@ export async function createEngine({ dataDir } = {}) {
           }
           const target = args.source ? template.entry : template.prompt;
           if (!target) throw new Error(`模板 ${template.id} 没有可读取的${args.source ? '源文件' : '说明'}，请改用 library_read`);
-          const path = join(ROOT, target);
+          const path = await templateReadPath(template, target);
+          if (!path) throw new Error(`模板 ${template.id} 的${args.source ? '源文件' : '说明'}路径越界，已拒绝读取：${target}`);
           if (!existsSync(path)) throw new Error(`模板文件不存在：${target}`);
           return { template, path, content: await readFile(path, 'utf8'), instructions: productionInstructions };
         }
@@ -557,6 +637,11 @@ export async function createEngine({ dataDir } = {}) {
       await pumpTask;
       await designStore.flush();
       await store.save();
+      // Release the data-directory lock only here, after everything is durable. The stores
+      // expose it separately from flush() so that a plain checkpoint can never hand the
+      // directory to another instance while this engine is still running.
+      await store.release();
+      await designStore.release();
     }
   };
   return engine;
