@@ -61,9 +61,12 @@ function archive(directory, name, prefix) {
 }
 archive(packageRoot, `eac-design-world-v${VERSION}-plugin.zip`, 'eac-design-world/');
 archive(update, `eac-design-world-v${VERSION}-update.zip`, '');
-const oldMedia = join(root, 'release/publish-v0.3.0/eac-design-world-v0.3.0-media.zip');
-assert.equal(await sha256File(oldMedia), 'e25eaa79f91b030f2f5028d6b3515b9c1c4332303aa38086477f1d5fabb98166', 'Reused media must match the published 0.3.0 asset');
-await cp(oldMedia, join(output, `eac-design-world-v${VERSION}-media.zip`));
+// One media zip is kept locally (release/publish-v0.5.0) and reused verbatim;
+// it is byte-identical to the media asset published since v0.3.0, and every
+// release re-uploads the same bytes under its own name.
+const reusedMedia = join(root, 'release/publish-v0.5.0/eac-design-world-v0.5.0-media.zip');
+assert.equal(await sha256File(reusedMedia), 'e25eaa79f91b030f2f5028d6b3515b9c1c4332303aa38086477f1d5fabb98166', 'Reused media must match the published 0.3.0 asset');
+await cp(reusedMedia, join(output, `eac-design-world-v${VERSION}-media.zip`));
 await cp(join(root, `docs/release-v${VERSION}.md`), join(output, 'RELEASE_NOTES.md'));
 const npmOutput = join(output, 'npm');
 const npmPackage = await packNpmRuntime({ source: packageRoot, output: npmOutput, npmCli: process.env.npm_execpath });
