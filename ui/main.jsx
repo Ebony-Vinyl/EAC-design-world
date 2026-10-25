@@ -2,13 +2,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client';
 import {
   ArrowDownToLine, ArrowRight, AudioLines, Captions, Check, CheckCheck,
-  CircleAlert, CircleCheck, CircleHelp, Clapperboard,
+  CircleAlert, CircleCheck, CircleHelp, Clapperboard, Copy,
   Clock3, ExternalLink, FileImage, FileText, FileVideo, Film, Folder, FolderOpen, Grid2X2,
   Layers3, ListVideo, LoaderCircle, Maximize2, Monitor,
-  Palette, Play, Plus, Radio, RefreshCw, Scissors, Search, Settings2, SlidersHorizontal,
+  Palette, Play, Plus, Radio, RefreshCw, RotateCcw, Scissors, Search, Settings2, SlidersHorizontal,
   Sparkles, Square, WandSparkles, Workflow, Wrench, X,
 } from 'lucide-react';
-import { api, fileUrl, jobNames, outputPaths, resultWarnings, statusNames } from './api';
+import { api, downloadUrl, fileUrl, jobNames, outputPaths, resultWarnings, statusNames } from './api';
 import { kindLabel, localTemplates, resolveDesignSystems, resolveTemplates, sourceLabel } from './templates';
 import DesignWorkspace, { DesignCanvas } from './DesignWorkspace';
 import TimelineEditor from './TimelineEditor';
@@ -28,10 +28,19 @@ const imagePattern = /\.(png|jpe?g|webp|gif|avif|svg)(?:\?|$)/i;
 const displayDate = date => date ? new Date(date).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }) : '';
 const hasAudio = asset => asset.kind === 'audio' || (asset.kind === 'video'
   && (asset.probe?.streams?.some(stream => stream.codec_type === 'audio') ?? false));
-const productionCapabilities = new Set(['ffmpeg', 'browser', 'desktop', 'voice', 'music', 'transcription', 'captions', 'semantic-review']);
+const productionCapabilities = new Set(['ffmpeg', 'browser', 'desktop', 'voice', 'music', 'transcription', 'captions', 'semantic-review', 'grading', 'stock', 'nle-export']);
 const embeddedInHost = window.parent !== window;
 if (embeddedInHost) document.documentElement.setAttribute('data-embedded', '');
-const editableSettings = settings => ({ outputRoot: settings.outputRoot || '', ttsVoice: settings.ttsVoice || '', quality: settings.quality || 'draft' });
+const editableSettings = settings => ({ outputRoot: settings.outputRoot || '', ttsVoice: settings.ttsVoice || '', quality: settings.quality || 'draft',
+  jianyingDraftRoot: settings.jianyingDraftRoot || '' });
+// Provider credentials are write-only: the API returns only *Configured booleans, never key values.
+// An untouched secret is omitted from the save body so the stored value stays exactly as it is.
+const secretSettings = [
+  ['pexelsApiKey', 'Pexels API Key', 'pexels.com/api 免费注册'],
+  ['pixabayApiKey', 'Pixabay API Key', 'pixabay.com/api/docs 免费注册'],
+  ['jamendoClientId', 'Jamendo Client ID', 'devportal.jamendo.com 免费注册（CC 配乐）'],
+];
+const secretConfigured = (settings, key) => Boolean(settings?.[`${key}Configured`]);
 const pickerIdPattern = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/;
 const pickerQuery = new URLSearchParams(window.location.search);
 const pickerPage = pickerQuery.get('view') === 'templates';
@@ -274,18 +283,50 @@ function ClipStrip({ project, onPlan, busy }) {
 
 function SettingsView({ settings, capabilities, onSave, busy, connected }) {
   const [draft, setDraft] = useState(() => editableSettings(settings));
+  // Secret drafts hold only new typed values; stored keys are never fetched. `cleared` records the
+  // keys the user explicitly asked to remove, so an empty untouched field is not sent at all.
+  const [secrets, setSecrets] = useState(() => Object.fromEntries(secretSettings.map(([key]) => [key, ''])));
+  const [cleared, setCleared] = useState(() => new Set());
   const [dirty, setDirty] = useState(false);
   const [section, setSection] = useState('production');
   useEffect(() => { if (!dirty) setDraft(editableSettings(settings)); }, [settings, dirty]);
   const set = (key, value) => { setDraft(current => ({ ...current, [key]: value })); setDirty(true); };
+  const setSecret = (key, value) => {
+    setSecrets(current => ({ ...current, [key]: value }));
+    setCleared(current => { if (!current.has(key)) return current; const next = new Set(current); next.delete(key); return next; });
+    setDirty(true);
+  };
+  const clearSecret = key => {
+    setSecrets(current => ({ ...current, [key]: '' }));
+    setCleared(current => new Set(current).add(key));
+    setDirty(true);
+  };
+  const resetSecrets = () => { setSecrets(Object.fromEntries(secretSettings.map(([key]) => [key, '']))); setCleared(new Set()); };
+  const submit = async event => {
+    event.preventDefault();
+    const body = { ...draft };
+    for (const [key] of secretSettings) {
+      const typed = (secrets[key] || '').trim();
+      // Omit untouched credentials entirely; only a typed replacement or an explicit clear is sent.
+      if (cleared.has(key)) body[key] = '';
+      else if (typed) body[key] = typed;
+    }
+    if (await onSave(body)) { setDirty(false); resetSecrets(); }
+  };
   const sections = [['production', Folder, '输出与制作'], ['capabilities', Radio, '服务能力']];
   return <div className="settings-workspace">
     <nav className="settings-subnav" aria-label="设置分区">{sections.map(([id, Icon, label]) => <button key={id} className={section === id ? 'active' : ''} onClick={() => setSection(id)}><Icon size={15} />{label}</button>)}</nav>
     <div className="settings-pane">
-      {section === 'production' && <form className="settings-form" onSubmit={async event => { event.preventDefault(); if (await onSave(draft)) setDirty(false); }}>
+      {section === 'production' && <form className="settings-form" onSubmit={submit}>
         <div className="section-heading"><Folder size={19} /><div><h2>输出与制作</h2><p>项目文件位置与默认制作规格</p></div></div>
         <label>输出目录<input required value={draft.outputRoot || ''} placeholder="D:\EAC design world\output" onChange={event => set('outputRoot', event.target.value)} /></label>
         <div className="form-row"><label>旁白声音<input value={draft.ttsVoice || ''} placeholder="输入服务支持的 voice ID" onChange={event => set('ttsVoice', event.target.value)} /></label><label>默认画质<select aria-label="默认画质" value={draft.quality || 'draft'} onChange={event => set('quality', event.target.value)}><option value="draft">草稿 · Draft</option><option value="production">正式 · Production</option></select></label></div>
+        <div className="section-heading small"><Search size={16} /><div><h3>网络素材与配乐</h3><p>免费注册获取 API Key 后填入；已保存的 Key 不会显示，留空即保持不变</p></div></div>
+        <div className="form-row">{secretSettings.slice(0, 2).map(([key, label, hint]) => <SecretField key={key} settingKey={key} label={label} hint={hint} configured={secretConfigured(settings, key)}
+          value={secrets[key]} cleared={cleared.has(key)} disabled={busy === 'settings'} onChange={value => setSecret(key, value)} onClear={() => clearSecret(key)} />)}</div>
+        <div className="form-row"><SecretField settingKey="jamendoClientId" label="Jamendo Client ID" hint="devportal.jamendo.com 免费注册（CC 配乐）" configured={secretConfigured(settings, 'jamendoClientId')}
+          value={secrets.jamendoClientId} cleared={cleared.has('jamendoClientId')} disabled={busy === 'settings'} onChange={value => setSecret('jamendoClientId', value)} onClear={() => clearSecret('jamendoClientId')} />
+          <label>剪映草稿目录<input value={draft.jianyingDraftRoot || ''} placeholder="留空自动检测 JianyingPro 草稿目录" onChange={event => set('jianyingDraftRoot', event.target.value)} /></label></div>
         <div className="settings-actions"><span className="muted">{dirty ? '有未保存的更改' : '配置与服务保持同步'}</span><Button icon={Check} variant="primary" busy={busy} disabled={!connected || !dirty} type="submit">保存设置</Button></div>
       </form>}
       {section === 'capabilities' && <div className="settings-capabilities">
@@ -297,12 +338,126 @@ function SettingsView({ settings, capabilities, onSave, busy, connected }) {
   </div>;
 }
 
+function SecretField({ settingKey, label, hint, configured, value, cleared, disabled, onChange, onClear }) {
+  return <div className={`secret-field ${configured && !cleared ? 'configured' : ''}`}>
+    <label htmlFor={`setting-${settingKey}`}>{label}</label>
+    <input id={`setting-${settingKey}`} type="password" autoComplete="new-password" spellCheck={false}
+      aria-describedby={`setting-${settingKey}-status`}
+      value={value} disabled={disabled}
+      placeholder={configured && !cleared ? '已配置 · 留空保持不变' : hint}
+      onChange={event => onChange(event.target.value)} />
+    <div className="secret-status-row">
+      <span id={`setting-${settingKey}-status`} className={`secret-status ${configured && !cleared ? 'on' : ''}`} role="status">
+        {configured && !cleared ? `${label} 已配置` : `${label} 未配置`}
+      </span>
+      {cleared && <span className="secret-clearing">保存后清除</span>}
+      {configured && !cleared && <button type="button" className="secret-clear" aria-label={`清除 ${label}`} disabled={disabled} onClick={onClear}><X size={12} />清除</button>}
+    </div>
+  </div>;
+}
+
 function CapabilityList({ capabilities, connected }) {
   if (!connected || !capabilities.length) return <div className="capability-empty"><span className="status-dot" />{connected ? '尚未返回服务能力' : '等待 API 连接'}</div>;
   return <div className="capabilities">{capabilities.map(capability => <div className="capability" key={capability.id}><div><span className={`availability ${capability.available ? 'available' : ''}`} /><strong>{capability.name}</strong><span>{capability.available ? '可用' : '不可用'}</span></div>{capability.detail && <p>{capability.detail}</p>}</div>)}</div>;
 }
 
-function WorkflowView({ project, busy, onJob, onPlan, jobs, capabilities, connected, template }) {
+const exportTargets = [
+  ['jianying', '剪映草稿', '生成草稿，具体兼容性需在目标软件确认'],
+  ['premiere-xml', 'Premiere · Resolve XML', 'FCP7 XML，PR / 达芬奇还原轨道与剪辑点'],
+  ['srt', 'SRT 字幕', '独立字幕文件，剪映 / PR / 必剪通用'],
+  ['lut', '.cube LUT', '调色与外部 LUT 拷贝，按交接顺序应用；空间蒙版需重建'],
+  ['bundle', '交付说明', 'README 逐项说明哪些能力已保留、哪些需人工重建'],
+];
+
+function ExportPanel({ project, jobs = [], busy, settings = {}, capabilities = [], onJob, focusToken }) {
+  const [targets, setTargets] = useState(() => exportTargets.map(([id]) => id));
+  const [notice, setNotice] = useState('');
+  const [error, setError] = useState('');
+  const submitting = useRef(false);
+  const panel = useRef(null);
+  const exportJobs = jobs.filter(job => job.type === 'export');
+  const latest = exportJobs[0];
+  const active = exportJobs.find(isActive);
+  const failed = latest?.status === 'failed' ? latest : null;
+  const done = exportJobs.find(job => job.status === 'completed');
+  const record = project?.exports?.at(-1);
+  const files = done?.result?.files || [];
+  const zip = done?.result?.zip || files.find(file => /\.zip$/i.test(file)) || '';
+  const manifest = done?.result?.manifest || files.find(file => /manifest\.json$/i.test(file)) || '';
+  const exportDir = record?.outputDir || (manifest ? manifest.replace(/[\\/][^\\/]+$/, '') : '');
+  const draftDir = done?.result?.jianYingDraftInstalled || record?.installedTo || '';
+  const sourceRevision = done?.result?.sourceRevision ?? record?.revision;
+  // The panel header always reflects the revision that would be exported now; the result card
+  // keeps its own sourceRevision badge so an older export is never mistaken for the current cut.
+  const exportedRevision = project?.revision;
+  const notes = [...new Set([...(done?.result?.notes || []), ...resultWarnings(done?.result)])];
+  const capability = capabilities.find(item => item.id === 'nle-export');
+  const toggle = (id, checked) => setTargets(current => exportTargets.map(([key]) => key).filter(key => (key === id ? checked : current.includes(key))));
+  const submit = async () => {
+    if (submitting.current || active) return;
+    if (!targets.length) { setError('请至少选择一个导出目标。'); return; }
+    submitting.current = true;
+    setError(''); setNotice('');
+    try { await onJob('export', { targets: exportTargets.map(([id]) => id).filter(id => targets.includes(id)) }); }
+    finally { submitting.current = false; }
+  };
+  const retry = async () => {
+    if (submitting.current || active) return;
+    submitting.current = true;
+    setError('');
+    try { await onJob('export', { targets: failed?.params?.targets?.length ? failed.params.targets : targets }); }
+    finally { submitting.current = false; }
+  };
+  const copy = async (text, label) => {
+    if (!text) return;
+    try { await navigator.clipboard.writeText(text); setNotice(`${label}已复制：${text}`); }
+    catch { setNotice(`请手动复制：${text}`); }
+  };
+  useEffect(() => {
+    if (!focusToken) return;
+    panel.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    document.getElementById('export-submit')?.focus({ preventScroll: true });
+  }, [focusToken]);
+  return <section ref={panel} id="export-panel" className="workflow-step export-panel">
+    <div className="step-heading"><span>07</span><div><h2>导出续剪工程</h2><p>选择目标后导出到本地，再把工程交给剪映 / PR / 达芬奇人工续剪</p></div><ExternalLink size={20} /></div>
+    <p className="export-revision" role="status">导出已保存修订 r{exportedRevision ?? '—'} · {project?.clips?.length || 0} 个片段{project?.captions?.length ? ` · ${project.captions.length} 段字幕` : ''}{project?.look ? ' · 项目 look' : ''}</p>
+    <div role="group" aria-label="导出目标" className="export-targets">
+      {exportTargets.map(([id, label, hint]) => <label key={id} className={`export-target ${targets.includes(id) ? 'selected' : ''}`}>
+        <input type="checkbox" aria-label={`导出目标 ${label}`} checked={targets.includes(id)} disabled={Boolean(busy) || Boolean(active)} onChange={event => toggle(id, event.target.checked)} />
+        <span>{label}</span><small>{hint}</small>
+      </label>)}
+    </div>
+    <div className="export-actions">
+      <div className="button-row">
+        <button type="button" className="button ghost" disabled={Boolean(busy) || Boolean(active)} onClick={() => setTargets(exportTargets.map(([id]) => id))}>全部</button>
+        <button type="button" className="button ghost" disabled={Boolean(busy) || Boolean(active)} onClick={() => setTargets(['jianying'])}>仅剪映</button>
+        <button type="button" className="button ghost" disabled={Boolean(busy) || Boolean(active)} onClick={() => setTargets([])}>清空选择</button>
+      </div>
+      <Button id="export-submit" icon={ArrowDownToLine} variant="primary" busy={busy === 'export' || Boolean(active)} disabled={!project?.clips?.length || Boolean(active) || Boolean(busy)} onClick={submit}>{active ? '导出中…' : '开始导出'}</Button>
+    </div>
+    <p className="muted export-hint">{capability?.detail || '剪映草稿 / Premiere FCP7 XML / SRT / .cube LUT'} · 剪映草稿目录：{settings.jianyingDraftRoot?.trim() || '自动检测'}{project?.exports?.length ? ' · 导出只使用已保存修订，未保存的时间线草稿不会写入' : ''}</p>
+    {error && <p className="inline-error" role="alert">{error}</p>}
+    {notice && <p className="export-notice" role="status">{notice}</p>}
+    {failed && <div className="export-failed" role="alert">
+      <p><CircleAlert size={14} /><strong>最近一次导出失败</strong><span>{typeof failed.error === 'string' ? failed.error : JSON.stringify(failed.error)}</span></p>
+      <div className="button-row"><Button icon={RotateCcw} disabled={Boolean(active) || Boolean(busy)} onClick={retry}>重试导出</Button></div>
+    </div>}
+    {done && <div className="export-result" role="status">
+      <p className="export-result-title"><CircleCheck size={15} /><strong>导出完成 · 共 {files.length} 个文件</strong>{sourceRevision != null && <span className="tag teal-tag">修订 r{sourceRevision}</span>}{done.result?.jianYingDraftInstalled && <span className="tag">剪映草稿已写入草稿目录</span>}</p>
+      <div className="button-row">
+        {zip && <a className="button primary" href={downloadUrl(zip)} download={zip.split(/[\\/]/).pop()}><ArrowDownToLine size={15} />下载交接包 ZIP</a>}
+        <Button icon={Copy} disabled={!exportDir} onClick={() => copy(exportDir, '导出目录')}>复制导出目录</Button>
+        <Button icon={Copy} disabled={!draftDir} onClick={() => copy(draftDir, '剪映草稿目录')}>复制剪映草稿目录</Button>
+      </div>
+      {draftDir && <p className="export-draft-path">剪映草稿：<span className="mono">{draftDir}</span></p>}
+      <ul className="export-files">{files.map(file => <li key={file}><FileText size={13} /><a href={downloadUrl(file)} download={file.split(/[\\/]/).pop()}>{file.split(/[\\/]/).pop()}</a><span className="mono">{file.replace(/^.*?[\\/](outputs|export)[\\/]?/i, '')}</span></li>)}</ul>
+      <Warnings messages={notes} />
+    </div>}
+    <p className="muted timeline-note">PR / 达芬奇导入 XML 后可继续调色与精剪；剪映草稿引用原始素材绝对路径，移动素材后需重新链接。必剪为封闭格式，使用 SRT + LUT 方案。</p>
+  </section>;
+}
+
+function WorkflowView({ project, busy, onJob, onPlan, jobs, capabilities, connected, template, settings, exportFocus }) {
   const [url, setUrl] = useState('');
   const [actions, setActions] = useState('');
   const [duration, setDuration] = useState(15);
@@ -374,6 +529,11 @@ function WorkflowView({ project, busy, onJob, onPlan, jobs, capabilities, connec
       {analysisAsset?.beats && <p className="beat-result" role="status">{analysisAsset.beats.bpm ? `${analysisAsset.beats.bpm} BPM · ${analysisAsset.beats.beats?.length ?? 0} 个节拍` : '未检测到稳定节拍'}</p>}
     </section>
     <section className="workflow-step"><div className="step-heading"><span>05</span><div><h2>配乐与渲染</h2></div><Film size={20} /></div><div className="music-controls"><label>用户配乐路径 <span className="muted">可选</span><input value={musicPath} placeholder="D:\assets\music.wav" onChange={event => setMusicPath(event.target.value)} /></label>{musicPath.trim() && <label className="checkbox-label"><input type="checkbox" checked={followMusic} onChange={event => setFollowMusic(event.target.checked)} />一键制作跟随配乐节拍</label>}</div><div className="button-row"><Button icon={AudioLines} busy={busy === 'compose'} disabled={!project || !duration || !bpm} onClick={() => onJob('compose', { duration: Number(duration), bpm: Number(bpm) })}>生成原创配乐</Button><Button icon={Play} variant="primary" busy={busy === 'render'} disabled={!project} onClick={() => onJob('render')}>渲染项目</Button><Button icon={Clapperboard} busy={busy === 'render-template'} disabled={!project || !template || template.renderable === false} title={template?.renderable === false ? '此镜头需定制源码；可先从选片单导入视频素材' : undefined} onClick={() => onJob('render-template')}>渲染所选模板</Button></div><Warnings messages={resultWarnings(project?.lastOutput)} /></section>
+    <section className="workflow-step"><div className="step-heading"><span>06</span><div><h2>AI 调色迭代</h2><p>生成前后对比帧与统计护栏，配合时间线调色参数迭代</p></div><Palette size={20} /></div>
+      <div className="button-row"><Button icon={Palette} busy={busy === 'grade-preview'} disabled={!project || !project.clips?.length} onClick={() => onJob('grade-preview', {})}>生成调色对比预览</Button><Button icon={AudioLines} busy={busy === 'scopes'} disabled={!project} onClick={() => onJob('scopes', {})}>生成示波器图</Button></div>
+      <Warnings messages={resultWarnings(project?.lastGradePreview)} />
+    </section>
+    <ExportPanel project={project} jobs={jobs} busy={busy} settings={settings} capabilities={capabilities} onJob={onJob} focusToken={exportFocus} />
   </div><aside className="capability-panel"><div className="section-title"><Radio size={16} /><h2>制作环境</h2></div><CapabilityList capabilities={capabilities} connected={connected} /></aside></div>;
 }
 
@@ -400,7 +560,7 @@ function FileRow({ path, name, onPreview }) {
 function App() {
   const picker = pickerPage;
   const [view, setView] = useState(picker ? 'templates' : maintenancePage ? 'maintenance' : 'studio');
-  const [data, setData] = useState({ projects: [], jobs: [], templates: [], settings: {}, capabilities: [] });
+  const [data, setData] = useState({ projects: [], jobs: [], templates: [], settings: {}, capabilities: [], gradingPresets: [] });
   const [library, setLibrary] = useState({ templates: [], designSystems: [] });
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -416,6 +576,7 @@ function App() {
   const [dialog, setDialog] = useState(null);
   const [previewTemplate, setPreviewTemplate] = useState(null);
   const [studioTab, setStudioTab] = useState('overview');
+  const [exportFocus, setExportFocus] = useState(0);
   const [jobFilter, setJobFilter] = useState('all');
   const requestInFlight = useRef(false);
   const mounted = useRef(true);
@@ -445,7 +606,7 @@ function App() {
         setData(current => ({ projects: state.projects.map(item => {
           const known = current.projects.find(existing => existing.id === item.id);
           return known?.revision > item.revision ? known : item;
-        }), jobs: state.jobs.filter(job => Object.hasOwn(jobNames, job.type)), templates: state.templates || [], settings: state.settings || {}, capabilities: (state.capabilities || []).filter(capability => productionCapabilities.has(capability.id)) }));
+        }), jobs: state.jobs.filter(job => Object.hasOwn(jobNames, job.type)), templates: state.templates || [], settings: state.settings || {}, capabilities: (state.capabilities || []).filter(capability => productionCapabilities.has(capability.id)), gradingPresets: state.gradingPresets || [] }));
         setConnected(true);
         setConnectionError('');
       }
@@ -580,7 +741,7 @@ function App() {
         </div><aside className="brief-panel"><header><div className="section-title"><FileImage size={16} /><h2>制作简报</h2></div><span className={`tag ${project ? 'teal-tag' : ''}`}>{project ? '已创建' : '新项目'}</span></header>
           {project ? <><div className="project-summary"><h3>{project.title}</h3><p>{project.brief}</p><dl><div><dt>视觉风格</dt><dd>{templates.find(item => item.id === project.templateId)?.name || project.templateId}</dd></div><div><dt>画面规格</dt><dd>{project.width} × {project.height}</dd></div><div><dt>帧率</dt><dd>{project.fps} fps</dd></div><div><dt>项目素材</dt><dd>{project.assets?.length || 0} 个文件</dd></div><div><dt>更新时间</dt><dd>{displayDate(project.updatedAt) || '—'}</dd></div></dl></div>{templateId && templateId !== project.templateId && <div className="template-change"><Sparkles size={15} /><span>{selectedTemplate.renderable === false ? '创作参考' : '模板渲染'}将使用「{selectedTemplate.name}」</span></div>}<div className="brief-actions"><Button variant="primary" icon={Workflow} onClick={() => changeView('workflow')}>一键制作与工作流<ArrowRight size={14} /></Button><Button icon={Play} busy={busy === 'render'} onClick={() => runJob('render')}>渲染项目</Button><Button icon={Clapperboard} busy={busy === 'render-template'} disabled={!templateId || selectedTemplate.renderable === false} title={selectedTemplate.renderable === false ? '此镜头需定制源码；可先从选片单导入视频素材' : undefined} onClick={() => runJob('render-template')}>渲染所选模板</Button></div></> : <ProjectForm form={form} setForm={setForm} templates={templates} onSubmit={createProject} busy={busy === 'project'} onTemplateChange={setTemplateId} />}
           <div className="brief-bottom"><span className="tiny-dot" />{data.settings.quality === 'production' ? '正式制作' : '草稿制作'}<span>本地工作空间</span></div>
-        </aside></div> : studioTab === 'timeline' ? (project ? <TimelineEditor key={project.id} project={project} busy={busy === 'timeline'} onSave={async inputs => {
+        </aside></div> : studioTab === 'timeline' ? (project ? <TimelineEditor key={project.id} project={project} presets={data.gradingPresets} busy={busy === 'timeline'} onExport={() => { setExportFocus(token => token + 1); changeView('workflow'); }} onSave={async inputs => {
           const saved = await mutate('timeline', () => api(`/projects/${encodeURIComponent(project.id)}/timeline`, { method: 'PUT', body: inputs }), '时间线已保存');
           if (saved?.id) updateProject(saved);
           return saved;
@@ -588,7 +749,7 @@ function App() {
       </>}
       {view === 'templates' && <TemplateGallery templates={templates} selectedId={templateId} onSelect={selectTemplate} onImportShots={project ? importShots : undefined} />}
       {view === 'design' && <DesignWorkspace sessionId={appSessionId} initialView="library" embedded={window.parent !== window} library={library} />}
-      {view === 'workflow' && <WorkflowView key={project?.id || 'none'} project={project} template={templateId ? selectedTemplate : null} busy={busy} onJob={runJob} onPlan={planProject} jobs={projectJobs} capabilities={data.capabilities} connected={connected} />}
+      {view === 'workflow' && <WorkflowView key={project?.id || 'none'} project={project} template={templateId ? selectedTemplate : null} busy={busy} onJob={runJob} onPlan={planProject} jobs={projectJobs} capabilities={data.capabilities} connected={connected} settings={data.settings} exportFocus={exportFocus} />}
       {view === 'jobs' && <><div className="jobs-toolbar"><div className="filter-tabs">{[['all', '全部任务'], ['active', '进行中'], ['completed', '已完成'], ['failed', '失败']].map(([id, label]) => <button key={id} className={jobFilter === id ? 'selected' : ''} onClick={() => setJobFilter(id)}>{label}{id === 'active' && <span className="count">{activeJobs.length}</span>}</button>)}</div><IconButton icon={RefreshCw} label="刷新任务" onClick={refresh} /></div><JobList jobs={data.jobs.filter(job => jobFilter === 'all' || (jobFilter === 'active' ? isActive(job) : job.status === jobFilter))} onCancel={cancelJob} busy={busy} projects={data.projects} /></>}
       {view === 'assets' && <AssetsView project={project} jobs={data.jobs} onImport={importAsset} busy={busy === 'asset'} />}
       {view === 'settings' && <SettingsView settings={data.settings} capabilities={data.capabilities} connected={connected} onSave={draft => mutate('settings', () => api('/settings', { method: 'PUT', body: draft }), '设置已保存')} busy={busy === 'settings'} />}

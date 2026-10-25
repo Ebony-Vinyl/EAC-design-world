@@ -1,0 +1,43 @@
+{
+  "purpose": "Self-contained data-directory lock for in-place updates retaining existing dependencies",
+  "entry": "proper-lockfile.cjs",
+  "sha256": "a95fc9e61954e011dc36fa0dd184ab45c4932549cc66e4519f2b5bb5c392863b",
+  "packages": [
+    {
+      "name": "proper-lockfile",
+      "version": "4.1.2",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git@github.com:moxystudio/node-proper-lockfile.git"
+      }
+    },
+    {
+      "name": "graceful-fs",
+      "version": "4.2.11",
+      "license": "ISC",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/isaacs/node-graceful-fs"
+      }
+    },
+    {
+      "name": "retry",
+      "version": "0.12.0",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git://github.com/tim-kos/node-retry.git"
+      }
+    },
+    {
+      "name": "signal-exit",
+      "version": "3.0.7",
+      "license": "ISC",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/tapjs/signal-exit.git"
+      }
+    }
+  ]
+}

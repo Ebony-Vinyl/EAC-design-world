@@ -51,6 +51,8 @@ export function createRemoteEngine(url, request = fetch) {
         asset_import: [`${project}/assets`, 'POST'],
         timeline_plan: [`${project}/plan`, 'POST'],
         timeline_update: [`${project}/timeline`, 'PUT'],
+        color_workflow: [`${project}/color`, 'POST'],
+        stock_search: ['/api/stock/search', 'POST'],
         job_submit: ['/api/jobs', 'POST'],
         job_status: [job, 'GET'],
         job_cancel: [`${job}/cancel`, 'POST'],

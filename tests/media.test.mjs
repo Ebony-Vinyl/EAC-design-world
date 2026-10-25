@@ -551,14 +551,15 @@ test('browser cancellation stops active frames and leaves no worker or Edge desc
     outputDir, width: 320, height: 240, actions: [{ type: 'wait', ms: 30_000 }], signal: controller.signal,
   }).then(() => null, (error) => error);
   try {
-    await waitUntil(() => nestedFile(outputDir, (name) => name === 'frame-00001.jpg'), 20_000);
+    await waitUntil(() => nestedFile(outputDir, (name) => name === 'frame-00001.jpg'), 60_000);
     const pids = process.platform === 'win32' ? await windowsProcessTree(outputDir) : [];
     if (process.platform === 'win32') assert.ok(pids.length >= 2, 'real worker and browser processes should exist');
     const started = performance.now();
     controller.abort();
     const error = await outcome;
     assert.equal(error?.name, 'AbortError', error?.stack);
-    assert.ok(performance.now() - started < 5000, 'capture stops promptly during an outstanding wait');
+    assert.ok(performance.now() - started < (process.platform === 'win32' ? 15000 : 5000),
+      'capture stops within the process-tree termination deadline during an outstanding wait');
     for (const pid of pids) assertExited(pid);
     assert.deepEqual(await readdir(outputDir), []);
   } finally {

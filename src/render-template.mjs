@@ -1,3 +1,4 @@
+import { browserLaunchOptions } from './browser.mjs';
 import http from 'node:http';
 import { createReadStream } from 'node:fs';
 import { mkdir, mkdtemp, stat, writeFile, rm, realpath, rename } from 'node:fs/promises';
@@ -65,7 +66,7 @@ export async function renderTemplate({ templateId, htmlPath, outputPath, duratio
   const errors = [];
   const missing = new Set();
   try {
-    browser = await chromium.launch({ ...(process.env.EAC_BROWSER ? { executablePath: process.env.EAC_BROWSER } : { channel: 'msedge' }), headless: true });
+    browser = await chromium.launch(browserLaunchOptions(chromium));
     const abort = () => { void browser.close(); };
     signal?.addEventListener('abort', abort, { once: true });
     try {

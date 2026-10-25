@@ -83,6 +83,25 @@ OFL/HarmonyOS fonts retain the original notices shipped with their source record
 - Importer: `scripts/import-shotcraft.mjs`; integration and usage:
   `docs/shotcraft-library.md`.
 
+## Data directory lock runtime
+
+`vendor/eac-runtime/proper-lockfile.cjs` bundles proper-lockfile 4.1.2 (MIT),
+graceful-fs 4.2.11 (ISC), retry 0.12.0 (MIT), and signal-exit 3.0.7 (ISC).
+The adjacent license files and `PROVENANCE.json` retain exact versions and
+upstream attribution. `scripts/build-lock-runtime.mjs` reproduces the bundle
+from package-lock.json. It lets an in-place update protect existing user data
+without requiring new dependencies in an older installation's node_modules.
+
+## JianYing draft format reference
+
+`vendor/pyJianYingDraft` contains the Apache-2.0 reference implementation from
+https://github.com/GuanYixuan/pyJianYingDraft at revision
+`1e228479dda361e312e85f6037002346cf6dca9a`. Its LICENSE and
+`EAC-PROVENANCE.json` are retained.
+EAC's Node exporter uses the plaintext draft schema as a reference and does not
+install or execute the Python library. Export compatibility is format-tested;
+actual import behavior depends on the installed NLE version.
+
 ## Other Inspiration
 
 Video-Use, HyperFrames, Manim, Remotion, OpenMontage and FFmpeg are referenced for

@@ -143,7 +143,7 @@ test('parseManifest refuses unsafe, protected and oversized entries', () => {
 })
 
 test('isProtectedPath protects local EAC assets and keeps deployable vendor content', () => {
-  for (const rel of ['vendor/motion-web/a.mp4', 'vendor/onetake/x', '.eac/keys/k.pem', 'release/x', 'artifacts/y', 'runtime/z', 'node_modules/p/index.js', '.git/config']) {
+  for (const rel of ['vendor/motion-web/a.mp4', 'vendor/onetake/x', '.eac/keys/k.pem', 'release/x', 'artifacts/y', 'runtime/z', 'node_modules/p/index.js', '.git/config', 'ui/bundle.js', 'ui/bundle.css']) {
     assert.equal(isProtectedPath(rel), true, `${rel} should be protected`)
   }
   for (const rel of ['vendor/open-design/catalog.json', 'vendor/mg-styles-15/style.css', 'vendor/mg-styles-15/assets/covers/a.webp', 'scripts/import-motion-libraries.mjs', 'feed/announcements.json', 'catalog/integrity.json', 'plugin/host.mjs', 'src/server.mjs', 'locale/en.json', 'ui/app.tsx', 'dist/bundle.js', 'package.json']) {
@@ -756,3 +756,22 @@ test('buildManifest + copyRelease produce an importable local package', async ()
     assert.equal(result.signed, true)
   })
 })
+
+test('signed local updates enforce minSupported before staging or altering installed files', async () => {
+  await withTemp(async dir => {
+    const pkg = join(dir, 'pkg'), release = join(dir, 'release');
+    await makePackage(pkg, { version: '0.1.0' });
+    await makePackage(release, { version: '0.5.0' });
+    const keys = keypair();
+    await writeManifest(release, { privateKey: keys.privateKey, minSupported: '0.3.0' });
+    const updater = new MaintenanceUpdater({ pkgDir: pkg, dataDir: join(dir, 'data'), settings: () => ({}), manifestPublicKey: keys.publicKey });
+    const before = await readFile(join(pkg, 'package.json'), 'utf8');
+    await assert.rejects(updater.applyLocal({ manifestPath: join(release, 'feed/manifest.json') }), /requires at least 0.3.0/);
+    assert.equal(await readFile(join(pkg, 'package.json'), 'utf8'), before);
+    assert.equal(existsSync(updater.stageDir), false);
+    await makePackage(pkg, { version: '0.3.0' });
+    const result = await updater.applyLocal({ manifestPath: join(release, 'feed/manifest.json') });
+    assert.equal(result.version, '0.5.0');
+    assert.equal(result.signed, true);
+  });
+});

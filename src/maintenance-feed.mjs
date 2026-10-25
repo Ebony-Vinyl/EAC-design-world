@@ -24,6 +24,7 @@
  */
 
 import fs from 'node:fs'
+import net from 'node:net'
 import path from 'node:path'
 
 const REPO = 'Ebony-Vinyl/EAC-design-world'
@@ -250,10 +251,10 @@ export class AnnouncementFeed {
     const expanded = override.includes('{repo}') ? override.replace('{repo}', REPO) : override
     let parsed = null
     try { parsed = new URL(expanded) } catch { parsed = null }
-    // URL.hostname keeps brackets on IPv6 (`[::1]`); everything loopback never
-    // leaves the machine, so plain http stays acceptable there.
+    // URL.hostname retains IPv6 brackets; 127.* must be an IP literal, not a domain prefix.
     const host = (parsed?.hostname ?? '').toLowerCase()
-    const loopback = host === 'localhost' || host === '[::1]' || host === '::1' || host.startsWith('127.')
+    const loopback = host === 'localhost' || host === '[::1]' || host === '::1'
+      || (net.isIP(host) === 4 && host.startsWith('127.'))
     const acceptable = parsed !== null && parsed.username === '' && parsed.password === ''
       && (parsed.protocol === 'https:' || (parsed.protocol === 'http:' && loopback))
     if (!acceptable) {

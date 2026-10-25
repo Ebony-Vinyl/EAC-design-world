@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/GuanYixuan/pyJianYingDraft",
+  "revision": "1e228479dda361e312e85f6037002346cf6dca9a",
+  "license": "Apache-2.0",
+  "role": "Reference plaintext JianYing draft schema; not installed or executed by EAC",
+  "import": "Working source files only; nested Git metadata and Python bytecode excluded"
+}

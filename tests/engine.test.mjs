@@ -1,17 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createEngine } from '../src/engine.mjs';
 import { startServer } from '../src/server.mjs';
-import { synthesizeVoice, probeMedia } from '../src/media/index.mjs';
 
-async function setup(fn) {
+
+async function setup(fn, options = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'eac-engine-'));
-  const engine = await createEngine({ dataDir: directory });
+  const engine = await createEngine({ dataDir: directory, ...options });
   try { return await fn(engine, directory); }
   finally { await engine.close(); await rm(directory, { recursive: true, force: true }); }
 }
@@ -93,43 +93,47 @@ test('closing with a second queued task waits for the active worker to cancel', 
   assert.equal((await engine.handle('job_status', { jobId: first.id })).status, 'cancelled');
 }));
 
-test('a background rough cut preserves a timeline manually edited during transcription', { skip: process.platform !== 'win32' }, () => setup(async (engine, dir) => {
-  const voice = join(dir, 'spoken.wav');
-  await synthesizeVoice({ text: 'Welcome to this local speech transcription test. These words should remain in the edited video.', outputPath: voice });
-  const duration = (await probeMedia(voice)).duration;
-  const source = join(dir, 'talking.mp4');
-  const child = spawn('ffmpeg', ['-hide_banner', '-y', '-loglevel', 'error', '-f', 'lavfi',
-    '-i', `testsrc2=s=160x90:r=12:d=${duration}`, '-i', voice,
-    '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', source], { windowsHide: true });
-  assert.equal((await once(child, 'close'))[0], 0);
-  const p = await engine.handle('project_create', { title: 'Human cut protection', width: 160, height: 90, fps: 12 });
-  const imported = await engine.handle('asset_import', { projectId: p.id, path: source });
-  const planned = await engine.handle('timeline_plan', { projectId: p.id, duration: 1 });
-  const job = await engine.handle('job_submit', { projectId: p.id, type: 'rough-cut', params: { assetId: imported.assets[0].id, language: 'en' } });
-  while ((await engine.handle('job_status', { jobId: job.id })).status === 'queued') {
-    await new Promise((done) => setTimeout(done, 10));
-  }
-  await new Promise((done) => setTimeout(done, 150));
-  const current = await engine.handle('project_get', { projectId: p.id });
-  const manual = { ...planned.clips[0], id: 'human-cut', duration: 0.5 };
-  await engine.handle('timeline_update', { projectId: p.id, revision: current.revision, clips: [manual] });
-  const result = await finished(engine, job.id);
-  assert.equal(result.status, 'failed');
-  assert.match(result.error, /人工修改/);
-  const preserved = await engine.handle('project_get', { projectId: p.id });
-  assert.equal(preserved.clips[0].id, 'human-cut');
-  assert.ok(preserved.assets[0].transcript.srtPath);
-  const captionJob = await engine.handle('job_submit', { projectId: p.id, type: 'captions', params: { assetId: imported.assets[0].id } });
-  const captionResult = await finished(engine, captionJob.id);
-  assert.equal(captionResult.status, 'completed', captionResult.error);
-  assert.ok(captionResult.result.count > 0);
-  const captioned = await engine.handle('project_get', { projectId: p.id });
-  assert.ok(captioned.captions.every((row) => row.start >= 0 && row.end <= manual.duration + 0.001));
-  const renderJob = await engine.handle('job_submit', { projectId: p.id, type: 'render' });
-  const rendered = await finished(engine, renderJob.id);
-  assert.equal(rendered.status, 'completed', rendered.error);
-  assert.equal(rendered.result.qa.ok, true);
-}));
+test('a background rough cut preserves a timeline manually edited during transcription', async () => {
+  const started = Promise.withResolvers();
+  const resume = Promise.withResolvers();
+  await setup(async (engine, dir) => {
+    const source = join(dir, 'talking.mp4');
+    await fixture(source);
+    const p = await engine.handle('project_create', { title: 'Human cut protection', width: 160, height: 90, fps: 12 });
+    const imported = await engine.handle('asset_import', { projectId: p.id, path: source });
+    const planned = await engine.handle('timeline_plan', { projectId: p.id, duration: 1 });
+    const job = await engine.handle('job_submit', { projectId: p.id, type: 'rough-cut', params: { assetId: imported.assets[0].id, language: 'en' } });
+    await started.promise;
+    const manual = { ...planned.clips[0], id: 'human-cut', duration: 0.5 };
+    try {
+      const current = await engine.handle('project_get', { projectId: p.id });
+      await engine.handle('timeline_update', { projectId: p.id, revision: current.revision, clips: [manual] });
+    } finally { resume.resolve(); }
+    const result = await finished(engine, job.id);
+    assert.equal(result.status, 'failed');
+    assert.match(result.error, /人工修改/);
+    const preserved = await engine.handle('project_get', { projectId: p.id });
+    assert.equal(preserved.clips[0].id, 'human-cut');
+    assert.ok(preserved.assets[0].transcript.srtPath);
+    const captionJob = await engine.handle('job_submit', { projectId: p.id, type: 'captions', params: { assetId: imported.assets[0].id } });
+    const captionResult = await finished(engine, captionJob.id);
+    assert.equal(captionResult.status, 'completed', captionResult.error);
+    assert.ok(captionResult.result.count > 0);
+    const captioned = await engine.handle('project_get', { projectId: p.id });
+    assert.ok(captioned.captions.every((row) => row.start >= 0 && row.end <= manual.duration + 0.001));
+    const renderJob = await engine.handle('job_submit', { projectId: p.id, type: 'render' });
+    const rendered = await finished(engine, renderJob.id);
+    assert.equal(rendered.status, 'completed', rendered.error);
+    assert.equal(rendered.result.qa.ok, true);
+  }, { transcribeMedia: async ({ outputDir }) => {
+    started.resolve();
+    await resume.promise;
+    await mkdir(outputDir, { recursive: true });
+    const srtPath = join(outputDir, 'fixture.srt');
+    await writeFile(srtPath, '1\n00:00:00,000 --> 00:00:01,000\nFixture speech\n');
+    return { srtPath, segments: [{ start: 0, end: 1, text: 'Fixture speech' }] };
+  } });
+});
 
 test('missing input fails a job without discarding project state', () => setup(async (engine) => {
   const p = await engine.handle('project_create', { title: 'Failure recovery' });
@@ -145,7 +149,7 @@ test('storage persists projects and only accepts production settings', () => set
   await engine.settingsUpdate({ quality: 'draft', ttsVoice: '' });
   const state = await engine.state();
   assert.equal(state.templates.filter(item => !['motion-web', 'onetake', 'video-shotcraft'].includes(item.source)).length, 17);
-  assert.deepEqual(Object.keys(state.settings).sort(), ['outputRoot', 'quality', 'ttsVoice']);
+  assert.deepEqual(Object.keys(state.settings).sort(), ['jamendoClientIdConfigured', 'jianyingDraftRoot', 'outputRoot', 'pexelsApiKeyConfigured', 'pixabayApiKeyConfigured', 'quality', 'ttsVoice']);
   const disk = JSON.parse(await readFile(engine.store.file, 'utf8'));
   assert.equal(disk.projects[0].title, 'Persistent');
   assert.equal(disk.settings.quality, 'draft');

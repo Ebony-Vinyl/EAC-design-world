@@ -220,6 +220,7 @@ test('remote proxy maps every engine operation and preserves HTTP failures', asy
   assert.deepEqual(requests.map(r => [r.method, r.url.split('4173')[1]]), [
     ['GET', '/api/state'], ['POST', '/api/projects'], ['GET', '/api/projects/p'],
     ['POST', '/api/projects/p/assets'], ['POST', '/api/projects/p/plan'], ['PUT', '/api/projects/p/timeline'],
+    ['POST', '/api/projects/p/color'], ['POST', '/api/stock/search'],
     ['POST', '/api/jobs'], ['GET', '/api/jobs/j'], ['POST', '/api/jobs/j/cancel'],
     ['POST', '/api/tools/template_read'], ['POST', '/api/tools/library_read'],
     ['POST', '/api/design/projects'], ['POST', '/api/design/artifacts'], ['GET', '/api/design/state'],

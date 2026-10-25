@@ -157,8 +157,10 @@ export function remapTranscriptToTimeline({ segments, clips, assetId } = {}) {
     const start = time(clip.start, 'clip.start', 0);
     const sourceIn = time(clip.sourceIn, 'clip.sourceIn', 0);
     const duration = time(clip.duration, 'clip.duration');
+    const speed = clip.speed ?? 1;
+    if (typeof speed !== 'number' || !Number.isFinite(speed) || speed < 0.25 || speed > 4) throw new TypeError('clip.speed must be between 0.25 and 4');
     if (!duration || start + duration > MAX_TIME) throw new TypeError('clip duration must be positive and fit the timeline');
-    return { start, sourceIn, duration };
+    return { start, sourceIn, duration, speed };
   });
   const output = [];
   for (const [index, segment] of validated.entries()) {
@@ -167,7 +169,7 @@ export function remapTranscriptToTimeline({ segments, clips, assetId } = {}) {
     const mapped = [];
     for (const clip of selected) {
       const start = Math.max(segment.start, clip.sourceIn);
-      const end = Math.min(segment.end, clip.sourceIn + clip.duration);
+      const end = Math.min(segment.end, clip.sourceIn + clip.duration * clip.speed);
       if (end <= start) continue;
       let text = segment.text;
       if (words) {
@@ -178,8 +180,8 @@ export function remapTranscriptToTimeline({ segments, clips, assetId } = {}) {
       }
       if (!text.trim()) continue;
       mapped.push({
-        start: Math.max(clip.start, clip.start + (start - clip.sourceIn)),
-        end: Math.min(clip.start + clip.duration, clip.start + (end - clip.sourceIn)),
+        start: Math.max(clip.start, clip.start + (start - clip.sourceIn) / clip.speed),
+        end: Math.min(clip.start + clip.duration, clip.start + (end - clip.sourceIn) / clip.speed),
         text, sourceStart: start, sourceEnd: end,
       });
     }

@@ -10,6 +10,17 @@ import { kindLabel, resolveDesignSystems, resolveLibraryTemplates, sourceLabel }
 import './design-workspace.css';
 import LibraryThumbnail from './LibraryThumbnail';
 import Dialog from './Dialog';
+import { previewCsp } from '../src/preview-policy.mjs';
+
+function isolatedPreview(content) {
+  const doc = new DOMParser().parseFromString(content || '', 'text/html');
+  const policy = doc.createElement('meta');
+  policy.httpEquiv = 'Content-Security-Policy';
+  policy.content = previewCsp('html', location.origin, location.origin).replace('sandbox allow-scripts allow-downloads; ', '');
+  doc.head.prepend(policy);
+  return `<!doctype html>${doc.documentElement.outerHTML}`;
+}
+
 
 const videoPattern = /\.(mp4|webm|mov|m4v)(?:\?|$)/i;
 const designKinds = ['website', 'motion', 'deck', 'document', 'image'];
@@ -220,7 +231,7 @@ function ArtifactPreview({ artifact, content, revision, device }) {
     </div>}
     <div className="dw-preview-frame dw-device" data-device={device} style={{ width }}>
       <iframe key={`${artifact.id}-${revision}-${decking ? deckIndex : 'all'}`} title={`${artifact.name} 预览`}
-        srcDoc={decking ? pages[deckIndex] : content}
+        srcDoc={isolatedPreview(decking ? pages[deckIndex] : content)}
         sandbox="allow-scripts allow-downloads" loading="lazy" />
     </div>
   </div>;
@@ -563,11 +574,12 @@ export default function DesignWorkspace({ sessionId = '', initialView = 'library
 
 function CanvasItemPreview({ item, device }) {
   const width = deviceWidths[device] || '100%';
+  const previewUrl = `${item.url}?revision=${item.revision}`;
   if (item.type === 'video') return <div className="dw-preview-frame dw-device dw-dark" data-device={device} style={{ width }}><video src={fileUrl(item.path)} controls playsInline preload="metadata" /></div>;
-  if (item.type === 'image') return <div className="dw-preview-frame dw-device dw-dark" data-device={device} style={{ width }}><img src={item.url} alt={item.name} /></div>;
+  if (item.type === 'image') return <div className="dw-preview-frame dw-device dw-dark" data-device={device} style={{ width }}><img src={previewUrl} alt={item.name} /></div>;
   if (item.type === 'markdown') return <div className="dw-preview-frame dw-device" data-device={device} style={{ width }}><pre className="dw-doc-text">{item.content || '（空文档）'}</pre></div>;
   if (item.projectKind === 'deck' && item.content) return <ArtifactPreview artifact={item} content={item.content} revision={item.revision} device={device} />;
-  return <div className="dw-preview-frame dw-device" data-device={device} style={{ width }}><iframe title={`${item.name} 预览`} src={item.url} sandbox="allow-scripts allow-downloads" loading="lazy" /></div>;
+  return <div className="dw-preview-frame dw-device" data-device={device} style={{ width }}><iframe key={`${item.id}:${item.revision}`} title={`${item.name} 预览`} src={previewUrl} sandbox="allow-scripts allow-downloads" loading="lazy" /></div>;
 }
 
 export function DesignCanvas({ sessionId = '', mode = 'design' }) {

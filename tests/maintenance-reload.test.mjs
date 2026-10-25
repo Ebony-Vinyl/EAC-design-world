@@ -114,6 +114,24 @@ test('packageCacheKeys keeps only package-local keys and skips node_modules, cas
   ]);
 });
 
+test('npm and pnpm package roots purge their own modules while sparing nested dependencies', () => {
+  for (const base of [
+    'file:///D:/workspace/node_modules/eac-design-world/',
+    'file:///D:/workspace/node_modules/.pnpm/eac-design-world@0.6.0/node_modules/eac-design-world/',
+  ]) {
+    const own = [`${base}plugin/host.mjs`, `${base}src/engine.mjs`, `${base}src/version.mjs`];
+    const nested = `${base}node_modules/react/index.js`;
+    const sibling = new URL('../other-package/index.js', base).href;
+    const cache = new Map([...own, nested, sibling].map(key => [key, {}]));
+    assert.deepEqual(packageCacheKeys(cache, base), own);
+    const backup = purgeCaches({ loadCache: cache }, base);
+    assert.deepEqual([...backup.esm.keys()], own);
+    assert.deepEqual([...cache.keys()], [nested, sibling]);
+    restoreCaches({ loadCache: cache }, backup);
+    assert.equal(cache.size, 5);
+  }
+});
+
 test('purge/restore round-trips a Node 24 sticky-delete LoadCache and the CJS require cache', () => {
   const base = 'file:///D:/EAC%20design%20world/';
   const moduleKey = `${base}src/engine.mjs`;
@@ -418,7 +436,8 @@ test('real kernel: the actual EAC host activates, serves, and hot-reloads in pla
   const before = await (await fetch(`http://127.0.0.1:${port}/api/health`)).json();
   assert.equal(before.ok, true);
   assert.equal(before.version, VERSION);
-  assert.equal(tools.size, 15, 'all native EAC tools registered');
+  const { toolDefinitions } = await import('../src/tools.mjs');
+  assert.deepEqual([...tools.keys()].sort(), toolDefinitions.map((tool) => `eac_${tool.name}`).sort(), 'all native EAC tools registered');
 
   // Native tool output is strict, lossless JSON on the real engine.
   const status = await tools.get('eac_status').execute({}, { signal: new AbortController().signal });
@@ -445,7 +464,7 @@ test('real kernel: the actual EAC host activates, serves, and hot-reloads in pla
   assert.equal(after.ok, true, 'the reloaded host serves again on the same port');
   assert.equal(after.version, VERSION);
   assert.notEqual(after.instanceId, before.instanceId, 'the old service was disposed and a fresh runtime owns the port');
-  assert.equal(tools.size, 15, 'the new activation re-registered every native tool');
+  assert.deepEqual([...tools.keys()].sort(), toolDefinitions.map((tool) => `eac_${tool.name}`).sort(), 'the new activation re-registered every native tool');
   assert.equal(globalThis[Symbol.for('eac-design-world.last-reload')] !== undefined, true);
   // The old host closed its server during disposal; the new fiber owns the port
   // with no deadlock, so a fresh native call still succeeds.

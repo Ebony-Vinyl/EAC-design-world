@@ -1,8 +1,8 @@
 import http from 'node:http';
 import { createReadStream, existsSync } from 'node:fs';
 import { readFile, stat, realpath } from 'node:fs/promises';
-import { resolve, join, extname, relative, isAbsolute } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { resolve, join, extname, relative, isAbsolute, basename } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { ROOT, getTemplates } from './catalog.mjs';
 import { createEngine } from './engine.mjs';
 import { designArtifactKinds } from './design-store.mjs';
@@ -98,12 +98,22 @@ async function serveArtifact(request, response, file, { preview, origin, assetBa
   if (request.method === 'HEAD') { response.end(); return; }
   createReadStream(file.path).pipe(response);
 }
-async function serveFile(request, response, file) {
+async function serveFile(request, response, file, { download = false } = {}) {
   const info = await stat(file);
   if (!info.isFile()) { response.writeHead(404); response.end(); return; }
   const extension = extname(file).toLowerCase();
   const headers = { 'content-type': mime[extension] || 'application/octet-stream', 'accept-ranges': 'bytes', 'x-content-type-options': 'nosniff',
     ...(['.woff2', '.woff', '.ttf'].includes(extension) ? { 'access-control-allow-origin': '*' } : {}) };
+  if (download) {
+    const name = basename(file);
+    const fallback = name.replace(/[^A-Za-z0-9._-]+/g, '_');
+    headers['content-disposition'] = `attachment; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(name)}`;
+  }
+  if (request.method === 'HEAD') {
+    response.writeHead(200, { ...headers, 'content-length': info.size });
+    response.end();
+    return;
+  }
   if (request.headers.range) {
     const match = /^bytes=(\d*)-(\d*)$/.exec(request.headers.range);
     if (!match || (!match[1] && !match[2])) { response.writeHead(416, { 'content-range': `bytes */${info.size}` }); response.end(); return; }
@@ -119,12 +129,14 @@ async function serveFile(request, response, file) {
 }
 
 export async function startServer({ engine: suppliedEngine, port = Number(process.env.EAC_PORT || 4173), dev = false, maintenanceOptions = {} } = {}) {
-  const engine = suppliedEngine || await createEngine();
-  const maintenance = createMaintenance({ engine, manifestPublicKey: RELEASE_PUBLIC_KEY, ...maintenanceOptions });
-  const vite = dev ? await (await import('vite')).createServer({ root: ROOT, server: { middlewareMode: true }, appType: 'spa' }) : null;
+  let engine, maintenance, vite;
+  let resolveReady, rejectReady;
+  const ready = new Promise((accept, reject) => { resolveReady = accept; rejectReady = reject; });
+  ready.catch(() => {});
   let origin;
   const server = http.createServer(async (request, response) => {
     try {
+      await ready;
       const url = new URL(request.url, 'http://127.0.0.1');
       const host = request.headers.host?.split(':')[0];
       if (!['localhost', '127.0.0.1', '['].includes(host)) return json(response, 403, { error: 'Invalid host' });
@@ -135,7 +147,7 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
         if (requestOrigin && !loopback(requestOrigin) && !(composerRoute && trustedOrigin(requestOrigin))) {
           return json(response, 403, { error: '跨来源请求被拒绝' });
         }
-        if (url.pathname === '/api/health') return json(response, 200, { ok: true, name: 'EAC design world', version: VERSION, instanceId: maintenance.status().instanceId });
+        if (url.pathname === '/api/health') return json(response, 200, { ok: true, name: 'EAC design world', version: VERSION, pid: process.pid, instanceId: maintenance.status().instanceId });
         if (url.pathname === '/api/maintenance' && request.method === 'GET') return json(response, 200, maintenance.status());
         if (url.pathname.startsWith('/api/maintenance/') && ['POST', 'PUT'].includes(request.method)) {
           const input = await body(request);
@@ -201,15 +213,16 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
           if (['.html', '.htm', '.svg'].includes(extension)) {
             return await serveUntrusted(request, response, resolve(path), extension === '.svg' ? 'svg' : 'html', origin);
           }
-          return await serveFile(request, response, resolve(path));
+          return await serveFile(request, response, resolve(path), { download: url.searchParams.get('download') === '1' });
         }
         if (url.pathname === '/api/projects' && request.method === 'POST') return json(response, 201, await engine.handle('project_create', await body(request)));
         if (url.pathname === '/api/jobs' && request.method === 'POST') return json(response, 202, await engine.handle('job_submit', await body(request)));
-        const projectMatch = /^\/api\/projects\/([^/]+)(?:\/(assets|plan|timeline))?$/.exec(url.pathname);
+        if (url.pathname === '/api/stock/search' && request.method === 'POST') return json(response, 200, await engine.handle('stock_search', await body(request)));
+        const projectMatch = /^\/api\/projects\/([^/]+)(?:\/(assets|plan|timeline|color))?$/.exec(url.pathname);
         if (projectMatch) {
           const projectId = decodeURIComponent(projectMatch[1]);
           if (request.method === 'GET' && !projectMatch[2]) return json(response, 200, await engine.handle('project_get', { projectId }));
-          const methods = { assets: 'asset_import', plan: 'timeline_plan', timeline: 'timeline_update' };
+          const methods = { assets: 'asset_import', plan: 'timeline_plan', timeline: 'timeline_update', color: 'color_workflow' };
           if (['POST', 'PUT'].includes(request.method) && methods[projectMatch[2]]) {
             return json(response, 200, await engine.handle(methods[projectMatch[2]], { ...await body(request), projectId }));
           }
@@ -260,13 +273,24 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
   try {
     await new Promise((accept, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', accept); });
   } catch (error) {
-    await maintenance.close();
-    await vite?.close();
-    if (!suppliedEngine) await engine.close();
+    rejectReady(error);
     throw error;
   }
   const actualPort = server.address().port;
   origin = `http://127.0.0.1:${actualPort}`;
+  try {
+    engine = suppliedEngine || await createEngine();
+    maintenance = createMaintenance({ engine, manifestPublicKey: RELEASE_PUBLIC_KEY, ...maintenanceOptions });
+    vite = dev ? await (await import('vite')).createServer({ root: ROOT, server: { middlewareMode: true }, appType: 'spa' }) : null;
+    resolveReady();
+  } catch (error) {
+    rejectReady(error);
+    await maintenance?.close();
+    await vite?.close();
+    if (!suppliedEngine) await engine?.close();
+    await new Promise(done => { server.close(done); server.closeAllConnections(); });
+    throw error;
+  }
   return {
     port: actualPort, url: origin, engine, maintenance,
     async close() {
@@ -278,7 +302,8 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
   };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+const entryPath = process.argv[1] ? await realpath(resolve(process.argv[1])).catch(() => null) : null;
+if (entryPath && entryPath === await realpath(fileURLToPath(import.meta.url))) {
   const app = await startServer({ dev: process.argv.includes('--dev') });
   console.log(`EAC design world: ${app.url}`);
   let stopping = false;

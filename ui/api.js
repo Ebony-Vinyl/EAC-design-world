@@ -20,6 +20,14 @@ export function fileUrl(path) {
   return `/api/files?path=${encodeURIComponent(path)}`;
 }
 
+/** Attachment URL: forces Content-Disposition on the server instead of inline preview. */
+export function downloadUrl(path) {
+  if (!path || typeof path !== 'string') return '';
+  if (/^https?:\/\//i.test(path)) return path;
+  const base = path.startsWith('/api/files?') ? path : `/api/files?path=${encodeURIComponent(path)}`;
+  return `${base}${base.includes('?') ? '&' : '?'}download=1`;
+}
+
 export function outputPaths(result) {
   if (!result) return [];
   if (typeof result === 'string') return [result];
@@ -43,6 +51,7 @@ export const jobNames = {
   voice: '旁白生成', analyze: '素材分析', 'render-template': '模板渲染',
   produce: '一键制作', 'record-desktop': '桌面录制', beats: '节拍分析',
   transcribe: '语音转录', 'rough-cut': '口播初剪', captions: '时间线字幕',
+  'grade-preview': '调色对比预览', scopes: '示波器图', 'stock-download': '网络素材下载', export: '剪辑工程导出',
 };
 
 export const statusNames = {

@@ -21,7 +21,7 @@ DeepSeek Harness 的本地视频制作与设计工作室
 
 EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 提供原生创作模式、模板选择和右侧作品画布，同时拥有可独立运行的本地工作台。视频录制、配音、配乐、字幕、编码与检查产生真实文件；网站、幻灯片、SVG 和文档保留源文件及版本历史。
 
-当前版本为 **v0.5.0 开发预览版**。本版将界面整体切换为墨蓝玻璃设计系统，加入视图切换与列表入场动效，并修复设计库卡片横向溢出，详见 [发布说明](docs/release-v0.5.0.md)。上一版引入 150 个 Shotcraft 镜头、动态选片与项目素材导入。保留插件维护、签名更新与回滚、草稿恢复和隔离预览。Windows 上的录屏、语音、转录和渲染流程已执行测试；其他平台的桌面录制与本地语音未实现。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
+当前版本为 **v0.6.0 开发预览版**。本版加入参数化调色、变速运镜、网络素材和人工续剪工程导出，并修复凭据状态输出、柔光偏色、预览一致性和导出时序等审查问题，详见 [发布说明](docs/release-v0.6.0.md)。保留 150 个 Shotcraft 镜头、设计库、签名更新与回滚、草稿恢复和隔离预览。独立 MCP 入口支持 macOS 与 Windows，自动发现 Chrome / Edge；旁白使用 macOS say 或 Windows SAPI，桌面录制仍仅支持 Windows。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
 
 <p align="center"><b>以下两条宣传片均为 deepseek harness + EAC design world + deepseek v4.1 flash（非 1017）一轮出的结果</b></p>
 
@@ -50,12 +50,18 @@ https://github.com/user-attachments/assets/ca081273-1061-4656-a1b7-41d50af0aec7
 | 浏览与挑选动效镜头 | Shotcraft 本地快照含 150 个镜头、10 类动效、59 个精选；可见视频预览、选片单、名单复制与下载、导入项目素材 |
 | 录下真实产品 | Edge 网页操作录制；Windows 桌面录制；原素材不被改写 |
 | 编排实际镜头 | 多轨时间线，调整开始时间、素材入点、时长、音量和轨道；带修订号保存 |
+| 找网络风景素材与配乐 | `stock_search`/`stock-download`：Pexels、Pixabay（免费 API Key）、维基共享 Commons（免 Key）风景视频与 Jamendo CC 配乐；作者与许可随素材持久化 |
+| 参数化调色与迭代 | 曲线（主/RGB）、HSL 二级、色相曲线、分区轮、静态局部蒙版与相机输入 LUT；全局色彩调整可导出 `.cube`，空间蒙版在原生渲染生效、续剪时需重建；`grade-preview` 对比帧、`scopes` 示波器与 `color_workflow` 调色版本/曝光匹配建议辅助 AI 迭代 |
+| 卡点变速与运镜 | `beats` 节拍分析驱动音乐卡点剪辑；`clip.speed` 变速、`clip.motion` 数字运镜（推拉摇移）、片尾淡出/锐化/暗角；大时间线自动分块多 Pass 渲染防内存溢出 |
+| 交付人工续剪 | 导出面板选择剪映草稿、Premiere/达芬奇 FCP7 XML、SRT 与 LUT；下载交接文件并保留人工修改的已有草稿；交换格式的效果保留以交接说明为准 |
 | 处理语音与字幕 | 本地语音转录、去停顿初稿、SRT、时间线字幕与 ASS 烧录；转录需自行准备本地模型 |
 | 完成声音与编码 | Windows SAPI 旁白、本地确定性器乐、源音轨混音、H.264 输出与技术检查 |
 | 制作图形动效 | `renderAt(t)` / `__seek(t)`、CSS 动画和 GSAP 时间线的确定性驱动与抽帧审查；可选接入 Motion Web 交互案例和 Onetake 函数库 |
 | 创建网站和演示稿 | HTML、SVG、Markdown 编辑、隔离预览、不可变修订与源文件下载 |
 | 检查与导出作品 | Harness 原生右侧作品画布、HTML 幻灯片分页、PDF / PNG / PPTX 整页图像导出 |
 | 维护插件 | 顶部导航中的独立维护中心：运行/安装版本、签名更新、本地更新、备份回滚、宿主热重载、公告与已读记录 |
+
+剪辑、调色和渲染由插件自身执行，不需要安装达芬奇或 Premiere。当前覆盖范围与尚未实现的能力见[专业能力说明](docs/professional-capabilities.md)，不宣称包含这两款软件的所有功能。
 
 <p align="center"><img src="docs/assets/templates.png" alt="EAC design world 两行模板推荐与真实页面封面" width="960" /><br /><sub>按创作类型推荐模板，保留真实封面与可移除的选择标签。</sub></p>
 
@@ -100,9 +106,9 @@ npm run motion:verify
 
 | 文件 | 用途 |
 | --- | --- |
-| `eac-design-world-v0.5.0-plugin.zip` | 插件源码、预构建 Web UI、Shotcraft 镜头视频与源码、设计体系、封面、安装脚本及许可说明；不包含 Node 依赖 |
-| `eac-design-world-v0.5.0-media.zip` | 可选大媒体包：MG 原始预览视频、字体、渲染素材及宣传片素材 |
-| `eac-design-world-v0.5.0-update.zip` | 维护中心使用的签名本地更新包，解压后选择其中 `manifest.json` |
+| `eac-design-world-v0.6.0-plugin.zip` | 插件源码、预构建 Web UI、Shotcraft 镜头视频与源码、设计体系、封面、安装脚本及许可说明；不包含 Node 依赖 |
+| `eac-design-world-v0.6.0-media.zip` | 可选大媒体包：MG 原始预览视频、字体、渲染素材及宣传片素材 |
+| `eac-design-world-v0.6.0-update.zip` | 维护中心使用的签名本地更新包，解压后选择其中 `manifest.json` |
 | `SHA256SUMS.txt` | 发布产物的 SHA-256 校验值 |
 | GitHub 自动生成的 Source code | 与仓库提交对应的源码快照，不含预构建 `dist` 和可选大媒体 |
 
@@ -113,10 +119,10 @@ npm run motion:verify
 ### 环境要求
 
 - **Node.js 22 或更新版本**，附带 npm。
-- 视频剪辑与导出需要 **FFmpeg / FFprobe**，并位于 `PATH`。
-- 浏览器录制、HTML 逐帧渲染和文档导出默认使用 **Microsoft Edge**；可通过 `EAC_BROWSER` 指定兼容 Chromium 可执行文件。
+- 视频剪辑与导出需要 **FFmpeg / FFprobe 7 或更新版本**，并位于 `PATH`。
+- 浏览器录制、HTML 逐帧渲染和文档导出自动查找已安装的 **Chrome / Edge**；可通过 `EAC_BROWSER` 指定兼容 Chromium 可执行文件。
 - Harness 插件模式要求宿主提供 conversation、settings 和 right-sidebar 槽位；也可独立打开本地工作台。
-- 桌面录制与 SAPI 旁白目前仅支持 Windows。
+- 桌面录制目前仅支持 Windows；旁白支持 Windows SAPI 与 macOS 系统 say。
 - 可选转录：Python、`faster-whisper` 及已下载到本地的兼容模型目录。通过 `EAC_WHISPER_MODEL_PATH` 指定模型；运行时不会替你下载模型。
 
 ## 快速开始
@@ -134,15 +140,17 @@ node scripts/install-harness.mjs
 
 重新加载 Harness 后，即可在输入框工具栏选择剪辑或 Design 模式，在设置中进入 EAC 工作台。安装器会备份宿主配置，只增加当前插件的包链接和组合包选择，不覆盖其他插件。
 
-也可通过 npm 安装同一版本，再运行包内安装器：
+也可用 npm 或 pnpm 直接安装 GitHub Release 中的同版本 `.tgz`，再运行包内安装器：
 
 ```powershell
-npm install eac-design-world@0.5.0
+npm install https://github.com/Ebony-Vinyl/EAC-design-world/releases/download/v0.6.0/eac-design-world-0.6.0.tgz
 node node_modules/eac-design-world/scripts/install-harness.mjs --dry-run
 node node_modules/eac-design-world/scripts/install-harness.mjs
 ```
 
-npm 版对完全相同的二进制资源进行无损去重，安装时从包内恢复原始文件；禁用安装脚本时，首次启动也会补齐。恢复不下载媒体、不覆盖已有文件，并按版本隔离，模板和镜头内容保持不变。GitHub ZIP 保留完整文件布局。
+npm 版对完全相同的二进制资源进行无损去重，在首次启动加载目录时从包内还原原始文件，不依赖 `postinstall`。恢复不下载媒体、不覆盖已有文件，并按版本隔离；重新构建发布的 npm 包时也会先还原资源。GitHub ZIP 保留完整文件布局。
+
+使用 pnpm 11 时，修复后的包不需要为 EAC 单独批准安装脚本；依赖包如有构建脚本，仍遵循 pnpm 自身的审批策略。旧版包触发 `ERR_PNPM_IGNORED_BUILDS` 时，可用 `pnpm add eac-design-world@<版本> --ignore-scripts` 安装，首次启动仍会还原包内资源。
 
 自定义宿主 profile：
 
@@ -166,6 +174,14 @@ npm start
 
 打开 <http://127.0.0.1:4173>。如果 Harness 已经启动插件服务，可直接使用它，不要再启动第二份监听同一端口的服务。端口可通过 `EAC_PORT` 更改，但 Harness 客户端入口默认连接 4173。
 
+通过 pnpm 安装的包也可从消费项目直接启动：
+
+```powershell
+node node_modules/eac-design-world/src/server.mjs
+```
+
+入口会归一化符号链接/目录联接的真实路径；启动成功会输出 `EAC design world: http://127.0.0.1:<端口>`。作为模块导入 `startServer()` 时不会自动监听端口。
+
 ### 方式三：从源码构建
 
 ```powershell
@@ -185,6 +201,10 @@ npm start
 3. 在工作台创建项目、导入素材、编辑时间线或设计文件，再保存新版本。
 4. 点击画布按钮，在 Harness 右侧预览设计作品与实际视频输出；工作台的固定宣传片预览与项目交付文件分开。
 5. 完成任务后检查真实输出、音量与抽帧。机器质检不能替代构图、文字、品牌和叙事审查。
+
+## Codex 本地 MCP
+
+安装依赖并执行 `npm run build` 后，通过 `src/mcp-local.mjs` 接入 Codex。它自动启动或复用本地工作台，MCP 断开后服务继续运行，项目默认保存在用户数据目录。macOS 与 Windows 自动查找 Chrome / Edge，支持 Windows 非 C 盘和按用户安装；配音分别使用系统 say 与 SAPI。详见 [安装、配置与生命周期](docs/local-mcp.md)。
 
 ## AI 与 MCP
 
