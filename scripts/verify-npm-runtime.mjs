@@ -78,6 +78,9 @@ for (const manager of values.manager ? [values.manager] : ['npm', 'pnpm']) {
       await new Promise(done => setTimeout(done, 100));
     }
     assert.equal(health?.version, VERSION, logs);
+    for (let attempt = 0; attempt < 30 && !logs.includes('EAC design world:'); attempt++) {
+      await new Promise(done => setTimeout(done, 100));
+    }
     assert.match(logs, /EAC design world:/);
     assert.ok(existsSync(join(root, asset.to)), 'First startup restores local assets without lifecycle scripts');
     const page = await fetch(url);
