@@ -79,3 +79,9 @@ Windows 使用对应环境的 `Scripts/python.exe`。前四个字段都必须是
 - `npm test` 全仓共 410 项：394 通过、4 失败、12 跳过。4 项失败分别是设计库中缺失的 `agentic/system/artifacts/deck.html`、缺失的 `skill/motion-web-skill` 条目，以及默认 Windows Whisper 模型路径在本机不存在导致的 2 项转录测试失败。
 - 从未修改的 `main` 基准提交 `afae459` 导出独立目录复跑这 3 份测试文件：37 项中 32 通过、相同 4 项失败、1 跳过，确认上述失败在基线上已存在。远端 CI 和 Windows 实际推理仍待验证。
 - 界面截图：[桌面](images/audio-templates-desktop.png)、[390 px 窄屏](images/audio-templates-mobile.png)。
+
+### 后续全仓回归修复
+
+清理未发布的生成文件索引，修正可选动效库的测试边界，并将转录模型默认位置改为用户数据目录。非法音频、无音轨和超长输入在启动 ASR 前校验；空转录结果的输出协议使用受控 worker 测试，真实静音识别保留在需配置模型的集成测试中。
+
+2026-10-25 再次执行 `npm test`：411 项，399 通过、0 失败、12 跳过；比修复前新增 1 项路径优先级测试，跳过数量不变。`npm run build` 和 `git diff --check` 通过。上述 4 项历史失败已解决；本机未安装用于验收的 Whisper 模型，真实 ASR 集成仍未执行。

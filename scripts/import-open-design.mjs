@@ -202,7 +202,8 @@ const VENDOR = {
 };
 
 // ── copy plan ───────────────────────────────────────────────────────────────
-const COPY_EXCLUDE = new Set(['node_modules', '.git', '.DS_Store', '__pycache__']);
+// Generated design-system output is not part of the published source snapshot.
+const COPY_EXCLUDE = new Set(['node_modules', '.git', '.DS_Store', '__pycache__', 'artifacts']);
 const copyTasks = []; // { from, to, kind }
 
 function planCopy(fromDir, toDir, kind, { includeFiles = false } = {}) {

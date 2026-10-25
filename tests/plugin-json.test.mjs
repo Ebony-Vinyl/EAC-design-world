@@ -7,6 +7,7 @@ import { createEngine } from '../src/engine.mjs';
 import { createToolRegistrations } from '../plugin/host.mjs';
 import { toLosslessJson, isLosslessJson, LosslessJsonError } from '../src/lossless-json.mjs';
 import { toolDefinitions } from '../src/tools.mjs';
+import { motionSkills, motionTemplates } from '../src/motion-libraries.mjs';
 
 // Walk a value and report every path holding `undefined` (JSON.stringify would
 // silently drop object fields and coerce array holes to null).
@@ -79,7 +80,12 @@ test('real engine library_list and library_read outputs are lossless plain JSON 
     assert.match(builtinSource.entry.text, /<html|<!doctype/i);
 
     // Optional Motion Web / Onetake skill entries must not carry undefined `entry`/`resource`.
+    const installedSkills = new Set(motionSkills().map(item => item.id));
     for (const id of ['motion-web-skill', 'onetake-skill']) {
+      if (!installedSkills.has(id)) {
+        await assert.rejects(read.execute({ kind: 'skill', id }, { signal: new AbortController().signal }), { code: 'ENOENT' });
+        continue;
+      }
       for (const source of [false, true]) {
         const skill = await read.execute({ kind: 'skill', id, source }, { signal: new AbortController().signal });
         assertLossless(skill, `library_read ${id} source=${source}`);
@@ -95,7 +101,12 @@ test('real engine library_list and library_read outputs are lossless plain JSON 
     // library_read schema only enumerates template/design-system/skill/atom/scenario/prompt,
     // so optional motion entries are read through the engine's 'template' kind (which the
     // engine treats identically for mw-* / onetake-studio).
+    const installedTemplates = new Set(motionTemplates().map(item => item.id));
     for (const id of ['mw-string-clock', 'onetake-studio']) {
+      if (!installedTemplates.has(id)) {
+        await assert.rejects(read.execute({ kind: 'template', id }, { signal: new AbortController().signal }), { code: 'ENOENT' });
+        continue;
+      }
       const item = await read.execute({ kind: 'template', id, source: true }, { signal: new AbortController().signal });
       assertLossless(item, `library_read ${id}`);
       assert.equal(item.id, id);
@@ -105,9 +116,13 @@ test('real engine library_list and library_read outputs are lossless plain JSON 
     }
 
     // Engine-level motion read (outside the host schema enum) must also be lossless.
-    const motionEngine = await engine.handle('library_read', { kind: 'motion', id: 'mw-string-clock', source: true });
-    assertLossless(motionEngine, 'engine library_read motion');
-    assert.equal(motionEngine.id, 'mw-string-clock');
+    if (installedTemplates.has('mw-string-clock')) {
+      const motionEngine = await engine.handle('library_read', { kind: 'motion', id: 'mw-string-clock', source: true });
+      assertLossless(motionEngine, 'engine library_read motion');
+      assert.equal(motionEngine.id, 'mw-string-clock');
+    } else {
+      await assert.rejects(engine.handle('library_read', { kind: 'motion', id: 'mw-string-clock', source: true }), { code: 'ENOENT' });
+    }
 
     const status = await toolFor(engine, 'eac_status').execute({}, { signal: new AbortController().signal });
     assertLossless(status, 'status');

@@ -7,7 +7,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { synthesizeVoice } from '../src/media/index.mjs';
-import { generateKeepRanges, transcribeMedia, transcriptCapabilities } from '../src/transcript.mjs';
+import { generateKeepRanges, transcribeMedia, transcriptCapabilities, transcriptModelPath } from '../src/transcript.mjs';
+import { localDataDirectory } from '../src/local-runtime.mjs';
 
 async function workspace(t) {
   const directory = await mkdtemp(join(tmpdir(), "eac \u4e2d\u6587 ' transcript "));
@@ -34,6 +35,25 @@ function command(executable, args) {
 
 const word = (start, end, word) => ({ start, end, word, probability: 0.9 });
 const segment = (start, end, text, words) => ({ start, end, text, ...(words ? { words } : {}) });
+
+async function silence(path, duration = '1') {
+  await command('ffmpeg', ['-hide_banner', '-nostdin', '-y', '-v', 'error',
+    '-f', 'lavfi', '-i', 'anullsrc=r=8000:cl=mono', '-t', duration, path]);
+}
+
+test('model selection uses portable local data and explicit configuration precedence', () => {
+  const before = process.env.EAC_WHISPER_MODEL_PATH;
+  try {
+    delete process.env.EAC_WHISPER_MODEL_PATH;
+    assert.equal(transcriptModelPath(), join(localDataDirectory(), 'models', 'faster-whisper-tiny'));
+    process.env.EAC_WHISPER_MODEL_PATH = join(tmpdir(), 'configured model');
+    assert.equal(transcriptModelPath(), process.env.EAC_WHISPER_MODEL_PATH);
+    assert.equal(transcriptModelPath(join(tmpdir(), 'requested model')), join(tmpdir(), 'requested model'));
+  } finally {
+    if (before === undefined) delete process.env.EAC_WHISPER_MODEL_PATH;
+    else process.env.EAC_WHISPER_MODEL_PATH = before;
+  }
+});
 
 test('keep ranges preserve repeats, merge short pauses, and remove sufficiently long silence', () => {
   const segments = [
@@ -111,7 +131,7 @@ test('SRT formats hour boundaries, millisecond carry, and Unicode without loadin
 });
 
 test('real local tiny ASR transcribes synthesized English with word timestamps and caption files', {
-  skip: process.platform !== 'win32', timeout: 180_000,
+  skip: !process.env.EAC_WHISPER_MODEL_PATH, timeout: 180_000,
 }, async (t) => {
   const capabilities = await transcriptCapabilities();
   assert.equal(capabilities.available, true, capabilities.detail);
@@ -120,7 +140,7 @@ test('real local tiny ASR transcribes synthesized English with word timestamps a
   const input = join(directory, '\u82f1\u6587 voice.wav');
   await synthesizeVoice({
     text: 'Welcome to this local speech transcription test. We are making a short video today. Please listen to this clear English sentence.',
-    voice: 'Microsoft Zira Desktop', outputPath: input,
+    voice: process.platform === 'win32' ? 'Microsoft Zira Desktop' : undefined, outputPath: input,
   });
   const outputDir = join(directory, 'captions');
   const result = await transcribeMedia({ path: input, outputDir, language: 'en' });
@@ -146,22 +166,28 @@ test('real local tiny ASR transcribes synthesized English with word timestamps a
     result.jsonPath.slice(outputDir.length + 1), result.srtPath.slice(outputDir.length + 1),
   ].sort());
   t.diagnostic(`Actual tiny ASR: ${result.segments.length} segments, ${words.length} words; ${result.segments[0].text}`);
+  const silent = join(directory, 'silent.wav');
+  await silence(silent);
+  const empty = await transcribeMedia({ path: silent, outputDir, language: 'en' });
+  assert.deepEqual(empty.segments, [], 'real ASR must not invent speech for silence');
+  assert.equal(await readFile(empty.srtPath, 'utf8'), '');
 });
 
 test('missing model and invalid input fail honestly without caption artifacts', { timeout: 60_000 }, async (t) => {
   const directory = await workspace(t);
   const input = join(directory, 'invalid audio.wav');
-  await writeFile(input, 'not an audio file');
+  await silence(input);
   const outputDir = join(directory, 'output');
   await assert.rejects(transcribeMedia({ path: input, outputDir, modelPath: join(directory, 'missing') }),
     /Local model directory does not exist/);
   assert.deepEqual(await readdir(outputDir), []);
+  await writeFile(input, 'not an audio file');
   await assert.rejects(transcribeMedia({ path: input, outputDir }), /InvalidDataError|Invalid data/i);
   assert.deepEqual(await readdir(outputDir), []);
   await assert.rejects(transcribeMedia({ path: input, outputDir, language: '--bad' }), /language/);
 });
 
-test('silence stays empty, video without audio fails, and long audio is rejected before ASR', {
+test('empty worker output publishes captions; invalid media preserves them without starting ASR', {
   timeout: 60_000,
 }, async (t) => {
   const directory = await workspace(t);
@@ -169,18 +195,26 @@ test('silence stays empty, video without audio fails, and long audio is rejected
   const silent = join(directory, 'silent.wav');
   const long = join(directory, 'over thirty minutes.flac');
   const video = join(directory, 'no audio.mp4');
-  await command('ffmpeg', ['-hide_banner', '-nostdin', '-y', '-v', 'error',
-    '-f', 'lavfi', '-i', 'anullsrc=r=8000:cl=mono', '-t', '1', silent]);
-  const empty = await transcribeMedia({ path: silent, outputDir, language: 'en' });
-  assert.deepEqual(empty.segments, [], 'VAD must not invent speech for silence');
+  await silence(silent);
+  let calls = 0;
+  const runWorker = async args => {
+    calls++;
+    const destination = args[args.indexOf('--output-dir') + 1];
+    const modelPath = args[args.indexOf('--model-path') + 1];
+    await writeFile(join(destination, 'transcript.json'), JSON.stringify({ segments: [], language: 'en', modelPath }));
+    await writeFile(join(destination, 'transcript.srt'), '');
+  };
+  const empty = await transcribeMedia({ path: silent, outputDir, language: 'en' }, { runWorker });
+  assert.deepEqual(empty.segments, [], 'an empty transcript must stay empty at the API boundary');
   assert.equal(await readFile(empty.srtPath, 'utf8'), '');
   const retained = (await readdir(outputDir)).sort();
   await command('ffmpeg', ['-hide_banner', '-nostdin', '-y', '-v', 'error',
     '-f', 'lavfi', '-i', 'color=s=16x16:r=1', '-frames:v', '1', video]);
-  await assert.rejects(transcribeMedia({ path: video, outputDir }), /no audio stream/i);
+  await assert.rejects(transcribeMedia({ path: video, outputDir }, { runWorker }), /no audio stream/i);
   await command('ffmpeg', ['-hide_banner', '-nostdin', '-y', '-v', 'error',
     '-f', 'lavfi', '-i', 'anullsrc=r=8000:cl=mono', '-t', '1800.1', '-c:a', 'flac', long]);
-  await assert.rejects(transcribeMedia({ path: long, outputDir }), /1800-second transcription limit/);
+  await assert.rejects(transcribeMedia({ path: long, outputDir }, { runWorker }), /1800-second transcription limit/);
+  assert.equal(calls, 1, 'invalid inputs must not reach the ASR worker');
   assert.deepEqual((await readdir(outputDir)).sort(), retained, 'failures must preserve existing captions');
 });
 
@@ -188,7 +222,7 @@ test('worker deadline kills Python and cleans staged captions', { timeout: 15_00
   const directory = await workspace(t);
   const input = join(directory, 'input.wav');
   const outputDir = join(directory, 'output');
-  await writeFile(input, 'worker will be stopped before decoding');
+  await silence(input);
   const events = channel('child_process');
   let pid;
   let started;
@@ -219,7 +253,7 @@ test('worker deadline kills Python and cleans staged captions', { timeout: 15_00
 test('pre-abort creates no output and active abort terminates Python before rejecting', { timeout: 30_000 }, async (t) => {
   const directory = await workspace(t);
   const input = join(directory, 'input.wav');
-  await writeFile(input, 'worker will be cancelled before decoding');
+  await silence(input);
   const outputDir = join(directory, 'output');
   const pre = new AbortController();
   pre.abort();
