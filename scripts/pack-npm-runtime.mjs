@@ -33,6 +33,28 @@ export function npmRuntimeManifest(input) {
   return manifest;
 }
 
+export function validateNpmArchive(bytes, expectedEntries) {
+  const tar = gunzipSync(bytes);
+  let offset = 0, entries = 0;
+  while (offset + 512 <= tar.length) {
+    const header = tar.subarray(offset, offset + 512);
+    if (header.every(byte => byte === 0)) break;
+    const type = String.fromCharCode(header[156]);
+    const name = header.subarray(0, 100).toString('utf8').replace(/\0.*$/s, '');
+    // PAX records describe Unicode/long paths; they are metadata, never installed file entries.
+    const metadata = type === 'x' || type === 'g';
+    assert.ok(metadata || type === '0' || type === '\0', `npm archive entry "${name}" has non-regular type "${type.trim()}"`);
+    const sizeField = header.subarray(124, 136).toString('utf8').replace(/\0.*$/s, '').trim();
+    const size = sizeField === '' ? 0 : parseInt(sizeField, 8);
+    assert.ok(Number.isInteger(size) && size >= 0, `npm archive entry "${name}" has an unreadable size`);
+    offset += 512 + Math.ceil(size / 512) * 512;
+    assert.ok(offset <= tar.length, `npm archive entry "${name}" exceeds the archive`);
+    if (!metadata) entries += 1;
+  }
+  assert.equal(entries, expectedEntries, 'npm archive entry count disagrees with the pack report');
+  return entries;
+}
+
 export async function packNpmRuntime({ source, output, npmCli = process.env.npm_execpath } = {}) {
   assert.ok(npmCli, 'Provide npmCli or run through npm');
   source = resolve(source);
@@ -108,24 +130,7 @@ export async function packNpmRuntime({ source, output, npmCli = process.env.npm_
   // A tarball entry that is not a regular file (hard link, symlink, device…)
   // would either be rejected by the registry or silently alias another file's
   // content on install, so refuse to ship one.
-  {
-    const bytes = await readFile(join(output, packed.filename));
-    const tar = gunzipSync(bytes);
-    let offset = 0, entries = 0;
-    while (offset + 512 <= tar.length) {
-      const header = tar.subarray(offset, offset + 512);
-      if (header.every(byte => byte === 0)) break;
-      const type = String.fromCharCode(header[156]);
-      const name = header.subarray(0, 100).toString('utf8').replace(/\0.*$/s, '');
-      assert.ok(type === '0' || type === '\0', `npm archive entry "${name}" has non-regular type "${type.trim()}"`);
-      const sizeField = header.subarray(124, 136).toString('utf8').replace(/\0.*$/s, '').trim();
-      const size = sizeField === '' ? 0 : parseInt(sizeField, 8);
-      assert.ok(Number.isInteger(size) && size >= 0, `npm archive entry "${name}" has an unreadable size`);
-      offset += 512 + Math.ceil(size / 512) * 512;
-      entries += 1;
-    }
-    assert.equal(entries, packed.entryCount, 'npm archive entry count disagrees with the pack report');
-  }
+  validateNpmArchive(await readFile(join(output, packed.filename)), packed.entryCount);
   const result = { ...packed, deduplication: { assets: assets.length, savedBytes, originalFiles: files.length, restoredFiles: files.length + (files.includes(bootstrap) ? 1 : 2) } };
   await writeFile(join(output, 'npm-package.json'), JSON.stringify(result, null, 2) + '\n');
   console.log(JSON.stringify({ filename: packed.filename, bytes: packed.size, files: packed.entryCount, deduplicatedAssets: assets.length, savedBytes }));
