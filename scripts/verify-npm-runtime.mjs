@@ -9,7 +9,8 @@ import net from 'node:net';
 import { parseArgs } from 'node:util';
 import { VERSION } from '../src/version.mjs';
 
-const { values, positionals } = parseArgs({ allowPositionals: true, options: { report: { type: 'string' } } });
+const { values, positionals } = parseArgs({ allowPositionals: true, options: { report: { type: 'string' }, manager: { type: 'string' } } });
+assert.ok(!values.manager || ['npm', 'pnpm'].includes(values.manager), 'manager must be npm or pnpm');
 const archive = resolve(positionals[0] || `release/publish-v${VERSION}/eac-design-world-${VERSION}.tgz`);
 const npmCli = process.env.npm_execpath;
 assert.ok(npmCli, 'Run through npm run verify:npm');
@@ -33,7 +34,7 @@ async function unusedPort() {
   await new Promise(done => probe.close(done));
   return port;
 }
-for (const manager of ['npm', 'pnpm']) {
+for (const manager of values.manager ? [values.manager] : ['npm', 'pnpm']) {
   const directory = await mkdtemp(join(tmpdir(), `eac-${manager}-install-`));
   let server;
   try {

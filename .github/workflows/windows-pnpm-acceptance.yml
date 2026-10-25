@@ -1,0 +1,27 @@
+name: Windows pnpm release install
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  windows-pnpm:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: Ebony-Vinyl/EAC-design-world
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm install --global pnpm@11.7.0
+      - run: gh release download v0.6.0 --pattern "*.tgz" --dir release/publish-v0.6.0
+      - run: npm run verify:npm -- release/publish-v0.6.0/eac-design-world-0.6.0.tgz --manager pnpm
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: package-v0.6.0-windows-pnpm
+          path: artifacts/maintenance-qa/npm-install-v0.6.0.json
