@@ -1,3 +1,4 @@
+import { previewCsp } from './preview-policy.mjs';
 import http from 'node:http';
 import { createReadStream, existsSync } from 'node:fs';
 import { readFile, stat, realpath } from 'node:fs/promises';
@@ -31,12 +32,6 @@ const inside = (root, path) => {
 // loads are limited to the server's own loopback origin (so source-ready HTML still finds its local
 // assets); connect-src and forms stay blocked. Only an optional template project can
 // resolve a base URL on the current local server origin.
-function previewCsp(kind, origin, assetBase = "'none'") {
-  const local = `http://127.0.0.1:* http://localhost:*${origin ? ` ${origin}` : ''}`;
-  if (kind === 'svg') return `sandbox; default-src 'none'; style-src 'unsafe-inline' ${local}; img-src data: blob: ${local}; font-src data: ${local}`;
-  if (kind === 'markdown') return "sandbox; default-src 'none'; style-src 'unsafe-inline'";
-  return `sandbox allow-scripts allow-downloads; default-src 'none'; script-src 'unsafe-inline' ${local}; style-src 'unsafe-inline' ${local}; img-src data: blob: ${local}; font-src data: ${local}; media-src data: blob: ${local}; connect-src 'none'; base-uri ${assetBase}; form-action 'none'`;
-}
 // The composer controls live inside the Harness dsh-app context and must reach this one
 // endpoint across origins. Only this route relaxes CORS, and only for trusted origins.
 const trustedOrigin = (value) => Boolean(value) && (

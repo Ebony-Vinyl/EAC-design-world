@@ -1,7 +1,8 @@
+import { releaseInputs } from './release-inputs.mjs';
 import assert from 'node:assert/strict';
 import { cp, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
-import { createReadStream, existsSync } from 'node:fs';
-import { resolve, join, dirname, relative, isAbsolute } from 'node:path';
+import { createReadStream } from 'node:fs';
+import { resolve, join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash, createPrivateKey, createPublicKey } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -17,10 +18,7 @@ async function sha256File(path) {
   for await (const chunk of createReadStream(path)) hash.update(chunk);
   return hash.digest('hex');
 }
-const output = resolve(process.argv[2] || join(root, 'release', `publish-v${VERSION}`));
-const outputRelative = relative(join(root, 'release'), output);
-if (!outputRelative || outputRelative.startsWith('..') || isAbsolute(outputRelative)) throw new Error('Output must be a new release subdirectory');
-if (existsSync(output)) throw new Error(`Refusing to overwrite ${output}`);
+const { output, mediaPath: reusedMedia } = await releaseInputs({ root, version: VERSION, args: process.argv.slice(2) });
 if (!process.env.npm_execpath) throw new Error('Run this script through npm run release:prepare');
 const key = createPrivateKey(await readFile(join(root, '.eac/keys/release-private.pem')));
 assert.equal(createPublicKey(key).export({ type: 'spki', format: 'der' }).toString('base64'), RELEASE_PUBLIC_KEY, 'Release signing key must match the installed trust root');
@@ -61,11 +59,7 @@ function archive(directory, name, prefix) {
 }
 archive(packageRoot, `eac-design-world-v${VERSION}-plugin.zip`, 'eac-design-world/');
 archive(update, `eac-design-world-v${VERSION}-update.zip`, '');
-// One media zip is kept locally (release/publish-v0.5.0) and reused verbatim;
-// it is byte-identical to the media asset published since v0.3.0, and every
-// release re-uploads the same bytes under its own name.
-const reusedMedia = join(root, 'release/publish-v0.5.0/eac-design-world-v0.5.0-media.zip');
-assert.equal(await sha256File(reusedMedia), 'e25eaa79f91b030f2f5028d6b3515b9c1c4332303aa38086477f1d5fabb98166', 'Reused media must match the published 0.3.0 asset');
+// Media is validated before creating output; its cache is separate from release artifacts.
 await cp(reusedMedia, join(output, `eac-design-world-v${VERSION}-media.zip`));
 await cp(join(root, `docs/release-v${VERSION}.md`), join(output, 'RELEASE_NOTES.md'));
 const npmOutput = join(output, 'npm');

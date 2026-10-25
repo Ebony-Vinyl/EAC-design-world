@@ -1,3 +1,4 @@
+import lockfile from 'proper-lockfile';
 import { browserLaunchOptions } from './browser.mjs';
 import { mkdir, readFile, writeFile, realpath, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -47,8 +48,22 @@ export function designContextFor(record) {
 }
 
 export async function createEngine({ dataDir, transcribeMedia: suppliedTranscriber } = {}) {
-  const store = await new Store(dataDir).init();
-  const designStore = await new DesignStore(join(store.root, 'design')).init();
+  const store = new Store(dataDir);
+  await mkdir(store.root, { recursive: true });
+  const directory = await realpath(store.root);
+  let release;
+  try {
+    release = await lockfile.lock(directory, { lockfilePath: join(directory, '.writer.lock'), stale: 120000, update: 15000, retries: 0 });
+  } catch (error) {
+    if (error.code === 'ELOCKED') throw new Error(`数据目录已被另一个 EAC 服务使用：${directory}`);
+    throw error;
+  }
+  let designStore;
+  try {
+    await store.init();
+    designStore = await new DesignStore(join(store.root, 'design')).init();
+  } catch (error) { await release(); throw error; }
+  let closing;
   const controllers = new Map();
   let pumping = false;
   let scheduled = false;
@@ -394,6 +409,7 @@ export async function createEngine({ dataDir, transcribeMedia: suppliedTranscrib
       return { ...state, templates: includeTemplates ? getTemplates() : [], recipes: workflowRecipes, capabilities: await capabilities() };
     },
     async settingsUpdate(input) {
+      if (closed) throw new Error('EAC 服务已关闭');
       const allowed = ['outputRoot', 'ttsVoice', 'quality'];
       for (const key of allowed) {
         if (input[key] === undefined) continue;
@@ -412,6 +428,7 @@ export async function createEngine({ dataDir, transcribeMedia: suppliedTranscrib
       } catch { return false; }
     },
     async handle(name, args = {}) {
+      if (closed && !['status', 'project_get', 'job_status', 'template_read', 'library_read', 'library_list', 'library', 'design_state', 'composer_get'].includes(name)) throw new Error('EAC 服务已关闭');
       switch (name) {
         case 'status': return engine.state();
         case 'project_create': {
@@ -545,18 +562,24 @@ export async function createEngine({ dataDir, transcribeMedia: suppliedTranscrib
         default: throw new Error(`未知 EAC 工具：${name}`);
       }
     },
-    async close() {
-      closed = true;
-      for (const job of store.state.jobs) {
-        if (job.status === 'queued') {
-          job.status = 'cancelled';
-          job.finishedAt = new Date().toISOString();
+    close() {
+      if (closing) return closing;
+      closing = (async () => {
+        closed = true;
+        for (const job of store.state.jobs) {
+          if (job.status === 'queued') {
+            job.status = 'cancelled';
+            job.finishedAt = new Date().toISOString();
+          }
         }
-      }
-      for (const controller of controllers.values()) controller.abort(new Error('服务关闭'));
-      await pumpTask;
-      await designStore.flush();
-      await store.save();
+        for (const controller of controllers.values()) controller.abort(new Error('服务关闭'));
+        try {
+          await pumpTask;
+          await designStore.flush();
+          await store.save();
+        } finally { await release(); }
+      })();
+      return closing;
     }
   };
   return engine;
