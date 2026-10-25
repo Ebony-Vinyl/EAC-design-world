@@ -21,7 +21,7 @@ DeepSeek Harness 的本地视频制作与设计工作室
 
 EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 提供原生创作模式、模板选择和右侧作品画布，同时拥有可独立运行的本地工作台。视频录制、配音、配乐、字幕、编码与检查产生真实文件；网站、幻灯片、SVG 和文档保留源文件及版本历史。
 
-当前版本为 **v0.5.0 开发预览版**。本版将界面整体切换为墨蓝玻璃设计系统，加入视图切换与列表入场动效，并修复设计库卡片横向溢出，详见 [发布说明](docs/release-v0.5.0.md)。上一版引入 150 个 Shotcraft 镜头、动态选片与项目素材导入。保留插件维护、签名更新与回滚、草稿恢复和隔离预览。Windows 上的录屏、语音、转录和渲染流程已执行测试；其他平台的桌面录制与本地语音未实现。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
+当前版本为 **v0.5.0 开发预览版**。本版将界面整体切换为墨蓝玻璃设计系统，加入视图切换与列表入场动效，并修复设计库卡片横向溢出，详见 [发布说明](docs/release-v0.5.0.md)。上一版引入 150 个 Shotcraft 镜头、动态选片与项目素材导入。保留插件维护、签名更新与回滚、草稿恢复和隔离预览。历史发布在 Windows 验证录屏、语音、转录和渲染；新增本地 MCP 入口适配 macOS 与 Windows，支持浏览器自动发现及 Mac 系统 say 配音，桌面录制仍仅支持 Windows。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
 
 <p align="center"><b>以下两条宣传片均为 deepseek harness + EAC design world + deepseek v4.1 flash（非 1017）一轮出的结果</b></p>
 
@@ -113,10 +113,10 @@ npm run motion:verify
 ### 环境要求
 
 - **Node.js 22 或更新版本**，附带 npm。
-- 视频剪辑与导出需要 **FFmpeg / FFprobe**，并位于 `PATH`。
-- 浏览器录制、HTML 逐帧渲染和文档导出默认使用 **Microsoft Edge**；可通过 `EAC_BROWSER` 指定兼容 Chromium 可执行文件。
+- 视频剪辑与导出需要 **FFmpeg / FFprobe 7 或更新版本**，并位于 `PATH`。
+- 浏览器录制、HTML 逐帧渲染和文档导出自动查找已安装的 **Chrome / Edge**；可通过 `EAC_BROWSER` 指定兼容 Chromium 可执行文件。
 - Harness 插件模式要求宿主提供 conversation、settings 和 right-sidebar 槽位；也可独立打开本地工作台。
-- 桌面录制与 SAPI 旁白目前仅支持 Windows。
+- 桌面录制目前仅支持 Windows；旁白支持 Windows SAPI 与 macOS 系统 say。
 - 可选转录：Python、`faster-whisper` 及已下载到本地的兼容模型目录。通过 `EAC_WHISPER_MODEL_PATH` 指定模型；运行时不会替你下载模型。
 
 ## 快速开始
@@ -185,6 +185,10 @@ npm start
 3. 在工作台创建项目、导入素材、编辑时间线或设计文件，再保存新版本。
 4. 点击画布按钮，在 Harness 右侧预览设计作品与实际视频输出；工作台的固定宣传片预览与项目交付文件分开。
 5. 完成任务后检查真实输出、音量与抽帧。机器质检不能替代构图、文字、品牌和叙事审查。
+
+## Codex 本地 MCP
+
+安装依赖并执行 `npm run build` 后，通过 `src/mcp-local.mjs` 接入 Codex。它自动启动或复用本地工作台，MCP 断开后服务继续运行，项目默认保存在用户数据目录。macOS 与 Windows 自动查找 Chrome / Edge，支持 Windows 非 C 盘和按用户安装；配音分别使用系统 say 与 SAPI。详见 [安装、配置与生命周期](docs/local-mcp.md)。
 
 ## AI 与 MCP
 
