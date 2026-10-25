@@ -48,8 +48,11 @@ for (const manager of values.manager ? [values.manager] : ['npm', 'pnpm']) {
       const commands = locator.stdout.trim().split(/\r?\n/);
       const command = process.platform === 'win32' ? commands.find(path => /\.(?:cmd|exe)$/i.test(path)) : commands[0];
       assert.ok(command, 'No executable pnpm entry was found');
-      output = await execute(process.platform === 'win32' ? process.env.ComSpec || 'cmd.exe' : command,
-        process.platform === 'win32' ? ['/d', '/s', '/c', `""${command}" add "${archive}" --registry=https://registry.npmjs.org"`] : ['add', archive, '--registry=https://registry.npmjs.org'], directory);
+      if (process.platform === 'win32') {
+        const entry = join(dirname(command), 'node_modules', 'pnpm', 'bin', 'pnpm.cjs');
+        assert.ok(existsSync(entry), `Missing pnpm Node entry: ${entry}`);
+        output = await execute(process.execPath, [entry, 'add', archive, '--registry=https://registry.npmjs.org'], directory);
+      } else output = await execute(command, ['add', archive, '--registry=https://registry.npmjs.org'], directory);
     }
     assert.doesNotMatch(output, /ERR_PNPM_IGNORED_BUILDS/);
     const linked = join(directory, 'node_modules', 'eac-design-world');
