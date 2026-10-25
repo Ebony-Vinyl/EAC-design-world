@@ -18,6 +18,21 @@ const safe = (root, file) => {
   return path !== '' && !path.startsWith('..') && !isAbsolute(path);
 };
 
+export function npmRuntimeManifest(input) {
+  const manifest = structuredClone(input);
+  const bootstrapCommand = `node ${bootstrap}`;
+  if (manifest.scripts?.postinstall && manifest.scripts.postinstall !== bootstrapCommand) {
+    throw new Error('Cannot remove an unrelated postinstall script');
+  }
+  manifest.scripts = { ...manifest.scripts };
+  delete manifest.scripts.postinstall;
+  manifest.files = [...new Set([...(manifest.files || []), 'npm-asset-map.json'])];
+  if (manifest.scripts.build && !manifest.scripts.build.startsWith(bootstrapCommand)) {
+    manifest.scripts.build = `${bootstrapCommand} && ${manifest.scripts.build}`;
+  }
+  return manifest;
+}
+
 export async function packNpmRuntime({ source, output, npmCli = process.env.npm_execpath } = {}) {
   assert.ok(npmCli, 'Provide npmCli or run through npm');
   source = resolve(source);
@@ -49,16 +64,7 @@ export async function packNpmRuntime({ source, output, npmCli = process.env.npm_
   if (!catalog.includes("import './npm-assets-restore.mjs';")) {
     await writeFile(join(stage, 'src/catalog.mjs'), "import './npm-assets-restore.mjs';\n" + catalog);
   }
-  const manifest = JSON.parse(await readFile(join(stage, 'package.json'), 'utf8'));
-  const postinstall = 'node src/npm-assets-restore.mjs';
-  if (manifest.scripts?.postinstall && manifest.scripts.postinstall !== postinstall) {
-    throw new Error('Cannot replace an existing postinstall script');
-  }
-  manifest.scripts = { ...manifest.scripts, postinstall };
-  manifest.files = [...new Set([...(manifest.files || []), 'npm-asset-map.json'])];
-  if (manifest.scripts.build && !manifest.scripts.build.startsWith(postinstall)) {
-    manifest.scripts.build = `${postinstall} && ${manifest.scripts.build}`;
-  }
+  const manifest = npmRuntimeManifest(JSON.parse(await readFile(join(stage, 'package.json'), 'utf8')));
   await writeFile(join(stage, 'package.json'), JSON.stringify(manifest, null, 2) + '\n');
   const bySize = new Map();
   for (const file of files.filter(file => file.startsWith('vendor/') && image.test(file)

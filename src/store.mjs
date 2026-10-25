@@ -16,10 +16,12 @@ export class Store {
     } catch (error) {
       if (error.code !== 'ENOENT') throw new Error(`State file cannot be read: ${error.message}`);
       this.state = { version: 1, projects: [], jobs: [], settings: {
-        outputRoot: join(this.root, 'outputs'), ttsVoice: '', quality: 'production'
+        outputRoot: join(this.root, 'outputs'), ttsVoice: '', quality: 'production',
+        pexelsApiKey: '', pixabayApiKey: '', jamendoClientId: '', jianyingDraftRoot: ''
       }};
     }
-    this.state.settings = Object.fromEntries(['outputRoot', 'ttsVoice', 'quality']
+    this.state.settings = Object.fromEntries(['outputRoot', 'ttsVoice', 'quality',
+      'pexelsApiKey', 'pixabayApiKey', 'jamendoClientId', 'jianyingDraftRoot']
       .filter((key) => Object.hasOwn(this.state.settings, key)).map((key) => [key, this.state.settings[key]]));
     this.state.jobs = this.state.jobs.filter((job) => job.type !== 'concat-export');
     for (const project of this.state.projects) {
@@ -41,7 +43,18 @@ export class Store {
     this.tail = this.tail.catch(() => {}).then(async () => {
       const temporary = `${this.file}.${randomUUID()}.tmp`;
       await writeFile(temporary, content, 'utf8');
-      await rename(temporary, this.file);
+      // Windows Defender / search indexers can hold a freshly written file briefly;
+      // retry the atomic rename a few times before surfacing EPERM.
+      for (let attempt = 0; ; attempt += 1) {
+        try {
+          await rename(temporary, this.file);
+          return;
+        } catch (error) {
+          if (error.code !== 'EPERM' && error.code !== 'EACCES') throw error;
+          if (attempt >= 4) throw error;
+          await new Promise((done) => setTimeout(done, 120 * (attempt + 1)));
+        }
+      }
     });
     return this.tail;
   }

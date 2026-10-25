@@ -1,9 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, writeFile, rm, symlink } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { copyFile, mkdtemp, mkdir, readFile, writeFile, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { restoreNpmAssets } from '../src/npm-assets-restore.mjs';
 
 async function fixture(run) {
@@ -27,6 +30,21 @@ test('npm assets restore exact bytes without downloading and preserve later cust
   assert.deepEqual(restoreNpmAssets(root), { restored: 0 });
   assert.equal(await readFile(join(root, 'nested/copy.bin'), 'utf8'), 'customized');
   assert.deepEqual(await readFile(join(root, 'original.bin')), bytes);
+}));
+
+test('first catalog import restores assets with lifecycle scripts disabled', () => fixture(async ({ root, bytes, sha256, map }) => {
+  await mkdir(join(root, 'src'));
+  for (const file of ['catalog.mjs', 'npm-assets-restore.mjs', 'motion-libraries.mjs', 'shotcraft-library.mjs']) {
+    await copyFile(new URL(`../src/${file}`, import.meta.url), join(root, 'src', file));
+  }
+  await writeFile(join(root, 'package.json'), JSON.stringify({ version: '0.4.0', type: 'module' }));
+  await map([{ from: 'original.bin', to: 'vendor/restored.bin', sha256 }]);
+  assert.equal(existsSync(join(root, 'vendor/restored.bin')), false);
+  const catalog = pathToFileURL(join(root, 'src/catalog.mjs')).href;
+  execFileSync(process.execPath, ['--input-type=module', '-e', `await import(${JSON.stringify(catalog)});`], {
+    cwd: root, windowsHide: true, env: { ...process.env, npm_config_ignore_scripts: 'true' },
+  });
+  assert.deepEqual(await readFile(join(root, 'vendor/restored.bin')), bytes);
 }));
 
 test('npm assets ignore a previous version map after a full managed update', () => fixture(async ({ root, sha256, map }) => {

@@ -1,6 +1,15 @@
 {
   "announcements": [
     {
+      "id": "eac-060-production-review-fixes",
+      "title": "0.6.0：调色与续剪交接修复、兼容签名升级",
+      "level": "update",
+      "pinned": true,
+      "createdAt": "2026-10-25T06:00:00Z",
+      "html": "<p>新增网络素材、参数化调色、变速运镜和人工续剪导出，修复凭据明文状态输出、柔光偏色、竖屏与运镜预览、逐帧调色护栏、XML 音频速度与音量、NTSC 时基、重叠分轨和循环配乐。</p><p>0.3.0–0.5.0 可通过维护中心签名升级，保留项目、配置、依赖与可选媒体，并支持备份回滚。目录锁实现独立捆绑，旧安装无需新增依赖。实际商业剪辑软件导入兼容性仍需按发布说明确认。</p>",
+      "link": { "url": "https://github.com/Ebony-Vinyl/EAC-design-world/releases/tag/v0.6.0", "label": "查看发布与升级说明" }
+    },
+    {
       "id": "eac-050-design-refresh",
       "title": "0.5.0：墨蓝玻璃设计系统与动效打磨",
       "level": "update",

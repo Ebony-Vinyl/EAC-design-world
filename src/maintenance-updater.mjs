@@ -577,7 +577,7 @@ export function verifyPackageIdentity(dir, manifest) {
  */
 export const PROTECTED_PATH_PREFIXES = [
   '.git', 'node_modules', 'release', 'artifacts', 'runtime',
-  'vendor/motion-web', 'vendor/onetake', '.eac',
+  'vendor/motion-web', 'vendor/onetake', '.eac', 'ui/bundle.js', 'ui/bundle.css',
 ]
 
 /** Optional large media that is distributed as a separate archive, mirroring
@@ -1258,6 +1258,9 @@ export class MaintenanceUpdater {
       targetVersion = manifest.version
       if (version !== undefined && manifest.version !== version) throw new Error(`manifest offers ${manifest.version}, not ${version}`)
       if (compareVersions(manifest.version, previous) < 0) throw new Error(`installed ${previous} is newer than ${manifest.version}`)
+      if (manifest.minSupported !== undefined && compareVersions(previous, manifest.minSupported) < 0) {
+        throw new Error(`update path requires at least ${manifest.minSupported}; ${previous} is installed`)
+      }
 
       onProgress({ phase: 'download' })
       // `check` above only accepts signed manifests, but this guard is cheap and
@@ -1446,6 +1449,9 @@ export class MaintenanceUpdater {
     try {
       if (version !== undefined && manifest.version !== version) throw new Error(`package offers ${manifest.version}, not ${version}`)
       if (compareVersions(manifest.version, previous) < 0) throw new Error(`installed ${previous} is newer than ${manifest.version}`)
+      if (manifest.minSupported !== undefined && compareVersions(previous, manifest.minSupported) < 0) {
+        throw new Error(`update path requires at least ${manifest.minSupported}; ${previous} is installed`)
+      }
       const staged = await stage()
       verifyStaged(this.stageDir, manifest)
 

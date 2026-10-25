@@ -1,7 +1,11 @@
+// Bundled lock runtime: in-place updates retain the old node_modules, so a bare
+// 'proper-lockfile' import would break existing installs until a manual npm install.
+import lockfile from '../vendor/eac-runtime/proper-lockfile.cjs';
+import { browserLaunchOptions } from './browser.mjs';
 import { mkdir, readFile, writeFile, realpath, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { resolve, join, extname, basename, relative, isAbsolute } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { Store } from './store.mjs';
 import { DesignStore } from './design-store.mjs';
@@ -10,18 +14,95 @@ import { motionSkills, readMotionLibraryItem } from './motion-libraries.mjs';
 import { readShotcraftLibraryItem, resolveShotcraftPath, shotcraftLibraryInfo } from './shotcraft-library.mjs';
 import { productionInstructions } from './tools.mjs';
 
-const jobTypes = new Set(['record-browser', 'record-desktop', 'analyze', 'beats', 'transcribe', 'rough-cut', 'captions', 'voice', 'compose', 'render', 'render-template', 'produce']);
+const jobTypes = new Set(['record-browser', 'record-desktop', 'analyze', 'beats', 'transcribe', 'rough-cut', 'captions', 'voice', 'compose', 'render', 'render-template', 'produce', 'grade-preview', 'scopes', 'stock-download', 'export']);
 const finite = (n, fallback, min, max) => {
   const value = n === undefined ? fallback : Number(n);
   if (!Number.isFinite(value) || value < min || value > max) throw new Error(`数值必须在 ${min} 与 ${max} 之间`);
   return value;
 };
+const MOTION_TYPES = new Set(['zoom-in', 'zoom-out', 'pan-left', 'pan-right', 'pan-up', 'pan-down']);
+const WINDOW_SHAPES = new Set(['circle', 'rect', 'linear']);
+function validateMotion(motion) {
+  if (!MOTION_TYPES.has(motion?.type)) throw new Error(`运镜类型无效：${motion?.type}；可用：zoom-in、zoom-out、pan-left、pan-right、pan-up、pan-down`);
+  finite(motion.amount ?? 0.12, 0.12, 0, 0.5);
+}
+function validateWindows(windows) {
+  if (!Array.isArray(windows) || windows.length > 4) throw new Error('蒙版窗口最多 4 个');
+  for (const win of windows) {
+    if (!WINDOW_SHAPES.has(win?.shape)) throw new Error(`蒙版形状无效：${win?.shape}；可用：circle、rect、linear`);
+    if (win.grading === undefined || win.grading === null || typeof win.grading !== 'object' || Array.isArray(win.grading)) throw new Error('蒙版窗口需要 grading 调色参数（窗口内分区调色）');
+    for (const [key, min, max] of [['x', 0, 1], ['y', 0, 1], ['radius', 0.05, 1], ['width', 0.05, 2], ['height', 0.05, 2], ['angle', -180, 180], ['feather', 0, 0.45], ['opacity', 0, 1]]) {
+      if (win[key] !== undefined && (typeof win[key] !== 'number' || !Number.isFinite(win[key]) || win[key] < min || win[key] > max)) throw new Error(`蒙版窗口 ${key} 必须在 ${min} 与 ${max} 之间`);
+    }
+  }
+}
 const childOf = (root, path) => {
   const rel = relative(root, path);
   return rel === '' || (!rel.startsWith(`..`) && !isAbsolute(rel));
 };
 function safeOutputName(value) {
   return String(value || 'film').replace(/[<>:"/\\|?*\x00-\x1f]/g, '-').slice(0, 80);
+}
+// Provider credentials never leave the process. Public state and settings responses expose
+// only whether each credential is configured; the raw values stay in the store for providers.
+const SECRET_SETTINGS = Object.freeze({
+  pexelsApiKey: 'pexelsApiKeyConfigured',
+  pixabayApiKey: 'pixabayApiKeyConfigured',
+  jamendoClientId: 'jamendoClientIdConfigured'
+});
+const configured = (value) => typeof value === 'string' ? value.trim().length > 0 : Boolean(value);
+function withoutSecrets(settings) {
+  const { pexelsApiKey, pixabayApiKey, jamendoClientId, ...rest } = settings || {};
+  return rest;
+}
+export function publicSettings(settings) {
+  const safe = withoutSecrets(settings);
+  for (const [secret, flag] of Object.entries(SECRET_SETTINGS)) safe[flag] = configured(settings?.[secret]);
+  return safe;
+}
+// Draft names must stay unique after the exporter's own 60-character stem clamp. Reserve the
+// revision/job suffix first, then fill the remaining room with a sanitized, bounded title.
+const DRAFT_NAME_LIMIT = 60;
+function boundedText(value, limit) {
+  let text = '';
+  let used = 0;
+  for (const char of Array.from(String(value ?? ''))) {
+    if (used + char.length > limit) break;
+    text += char;
+    used += char.length;
+  }
+  return text;
+}
+function draftNameFor(project, jobId) {
+  const suffix = `-r${project.revision}-${String(jobId ?? '').replace(/[^A-Za-z0-9]/g, '').slice(0, 8)}`;
+  const prefix = 'EAC ';
+  const room = Math.max(1, DRAFT_NAME_LIMIT - prefix.length - suffix.length);
+  let title = String(project.title ?? '').normalize('NFC')
+    .replace(/[\u0000-\u001f\u007f<>:"/\\|?*]/g, ' ')
+    .replace(/\s+/g, ' ').trim().replace(/[. ]+$/g, '');
+  title = boundedText(title, room).replace(/[. ]+$/g, '');
+  if (!title) title = 'EAC';
+  return `${prefix}${title}${suffix}`;
+}
+// One replacement path for every music bed change: a new track resets the old offset and
+// removes only the previous auto-generated music credits, keeping video/unrelated credits.
+function stripMusicCredits(credits) {
+  return (Array.isArray(credits) ? credits : []).filter((credit) => credit?.type !== 'music');
+}
+function setMusic(project, path, { credit, musicStart } = {}) {
+  project.musicPath = path;
+  project.musicStart = musicStart === undefined ? 0 : musicStart;
+  project.credits = stripMusicCredits(project.credits);
+  if (credit) project.credits.push({ type: 'music', text: credit });
+}
+function clearMusic(project) {
+  delete project.musicPath;
+  project.musicStart = 0;
+  project.credits = stripMusicCredits(project.credits);
+}
+function gradingSignature(project) {
+  const state = { look: project.look, width: project.width, height: project.height, clips: project.clips };
+  return createHash('sha256').update(JSON.stringify(state)).digest('hex');
 }
 // Shared by local and remote host paths: builds explicit design context for one session's
 // composer record. Returns null unless that session actually selected design mode, so mode
@@ -45,9 +126,23 @@ export function designContextFor(record) {
   return lines.join('\n');
 }
 
-export async function createEngine({ dataDir } = {}) {
-  const store = await new Store(dataDir).init();
-  const designStore = await new DesignStore(join(store.root, 'design')).init();
+export async function createEngine({ dataDir, transcribeMedia: suppliedTranscriber } = {}) {
+  const store = new Store(dataDir);
+  await mkdir(store.root, { recursive: true });
+  const directory = await realpath(store.root);
+  let release;
+  try {
+    release = await lockfile.lock(directory, { lockfilePath: join(directory, '.writer.lock'), stale: 120000, update: 15000, retries: 0 });
+  } catch (error) {
+    if (error.code === 'ELOCKED') throw new Error(`数据目录已被另一个 EAC 服务使用：${directory}`);
+    throw error;
+  }
+  let designStore;
+  try {
+    await store.init();
+    designStore = await new DesignStore(join(store.root, 'design')).init();
+  } catch (error) { await release(); throw error; }
+  let closing;
   const controllers = new Map();
   let pumping = false;
   let scheduled = false;
@@ -64,10 +159,9 @@ export async function createEngine({ dataDir } = {}) {
         capabilityCache.set(name, spawnSync(name, ['-version'], { windowsHide: true, timeout: 5000 }).status === 0);
       }
     }
-    const browserPath = process.env.EAC_BROWSER || [
-      'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-      'C:/Program Files/Google/Chrome/Application/chrome.exe'
-    ].find(existsSync);
+    let browserPath, browserError;
+    try { browserPath = browserLaunchOptions((await import('playwright')).chromium).executablePath; }
+    catch (error) { browserError = error.message; }
     if (!capabilityCache.has('transcript')) {
       const { transcriptCapabilities } = await import('./transcript.mjs');
       capabilityCache.set('transcript', await transcriptCapabilities());
@@ -75,14 +169,29 @@ export async function createEngine({ dataDir } = {}) {
     const transcript = capabilityCache.get('transcript');
     return [
       { id: 'ffmpeg', name: '剪辑与编码', available: capabilityCache.get('ffmpeg') && capabilityCache.get('ffprobe'), detail: 'FFmpeg / FFprobe 本地执行' },
-      { id: 'browser', name: '真实网页录制', available: Boolean(browserPath), detail: browserPath || '配置 EAC_BROWSER 或安装 Edge' },
+      { id: 'browser', name: '真实网页录制', available: Boolean(browserPath), detail: browserPath || browserError },
       { id: 'desktop', name: '桌面录制', available: process.platform === 'win32' && capabilityCache.get('ffmpeg'), detail: 'Windows gdigrab，按任务时长录制' },
-      { id: 'voice', name: '本地旁白', available: process.platform === 'win32', detail: 'Windows SAPI；声线质量取决于已安装语音' },
+      { id: 'voice', name: '本地旁白', available: ['win32', 'darwin'].includes(process.platform), detail: process.platform === 'darwin' ? 'macOS say；声线质量取决于已安装语音' : 'Windows SAPI；声线质量取决于已安装语音' },
       { id: 'music', name: '原创器乐', available: true, detail: '共享节拍网格的本地合成器' },
       { id: 'captions', name: '时间线字幕', available: capabilityCache.get('ffmpeg'), detail: '时间戳映射、中文 ASS 字幕与成片烧录' },
       { id: 'transcription', name: '语音转录', available: transcript.available, detail: transcript.detail },
+      { id: 'grading', name: '参数化调色工作台', available: capabilityCache.get('ffmpeg'), detail: '曲线/HSL 二级/分区轮/色相曲线可导出 .cube；局部蒙版参与原生渲染，NLE 需重建。含对比预览、统计护栏、示波器、调色版本和曝光匹配建议' },
+      ...(await stockCapability()),
+      { id: 'nle-export', name: '剪辑工程导出', available: true, detail: '剪映草稿 / Premiere FCP7 XML / SRT / .cube LUT（必剪为封闭格式，走 SRT+LUT 方案）' },
       { id: 'semantic-review', name: '视觉与叙事审片', available: false, detail: '由宿主有视觉能力的 AI 检查抽帧；机器检查仅覆盖技术指标' }
     ];
+  }
+  // Providers may be absent in stripped-down installs; capabilities degrade instead of failing.
+  async function stockCapability() {
+    try {
+      const { providerStatus } = await import('./providers.mjs');
+      const status = providerStatus(store.state.settings);
+      const configured = status.filter((item) => item.configured);
+      const names = configured.map((item) => item.id).join('、') || '无可用源';
+      return [{ id: 'stock', name: '网络素材与配乐', available: configured.length > 0, detail: `已配置：${names}${status.some((i) => i.id === 'commons') ? '；commons 维基共享无需 Key' : ''}` }];
+    } catch {
+      return [{ id: 'stock', name: '网络素材与配乐', available: false, detail: '素材源模块不可用' }];
+    }
   }
 
   async function projectInput(args) {
@@ -199,7 +308,7 @@ export async function createEngine({ dataDir } = {}) {
         const asset = project.assets.find((a) => a.id === params.assetId || a.path === params.path);
         if (!asset) throw new Error('请提供要转录素材的 assetId');
         const { transcribeMedia, generateKeepRanges } = await import('./transcript.mjs');
-        const transcript = await transcribeMedia({ ...params, path: asset.path, outputDir: await jobOutput(job, 'transcript'), signal });
+        const transcript = await (suppliedTranscriber || transcribeMedia)({ ...params, path: asset.path, outputDir: await jobOutput(job, 'transcript'), signal });
         signal.throwIfAborted();
         const ranges = generateKeepRanges(transcript.segments, params);
         const metadata = await store.updateProject(project.id, (p) => {
@@ -251,7 +360,7 @@ export async function createEngine({ dataDir } = {}) {
         const outputPath = await jobOutput(job, 'music.wav');
         const duration = params.duration || Math.max(1, ...project.clips.map((c) => c.start + c.duration));
         const result = await tools.composeMusic({ ...params, duration, outputPath, ...signalOptions });
-        await store.updateProject(project.id, (p) => { p.musicPath = outputPath; });
+        await store.updateProject(project.id, (p) => { setMusic(p, outputPath); });
         return result;
       }
       case 'render': {
@@ -294,7 +403,7 @@ export async function createEngine({ dataDir } = {}) {
         if (params.musicPath) {
           const path = await realpath(resolve(params.musicPath));
           await importAsset(project.id, path);
-          await store.updateProject(project.id, (p) => { p.musicPath = path; });
+          await store.updateProject(project.id, (p) => { setMusic(p, path); });
           measuredBpm = (await invoke('beats', { path }, 0.3)).bpm;
         }
         if (JSON.stringify(store.project(project.id).clips) !== startingClips) throw new Error('制作期间时间线已被人工修改，请审查素材后重新提交');
@@ -304,6 +413,82 @@ export async function createEngine({ dataDir } = {}) {
         if (params.narration) await invoke('voice', { text: params.narration }, 0.55);
         const render = await invoke('render', {}, 0.65);
         return { path: render.path, steps, qa: render.qa, review: render.review, reviewRequired: true, reviewInstruction: '审查真实成片的抽帧、叙事和文字后决定交付，不能用技术质检代替艺术评价。' };
+      }
+      case 'grade-preview': {
+        const outputPath = await jobOutput(job, 'grade-preview.png');
+        const result = await tools.gradePreview({
+          project: structuredClone(project), outputPath,
+          framesPerClip: params.framesPerClip, signal,
+          onProgress: (n) => { void updateProgress(job, n, '调色对比帧'); },
+        });
+        await store.updateProject(project.id, (p) => {
+          p.lastGradePreview = { path: outputPath, warnings: result.warnings, frames: result.frames, gradedApplied: result.gradedApplied,
+            signature: gradingSignature(project), revision: project.revision, at: new Date().toISOString() };
+        });
+        return result;
+      }
+      case 'scopes': {
+        const path = params.path || project.lastOutput?.path;
+        if (!path) throw new Error('没有可生成示波器的视频；请先渲染成片或提供 params.path');
+        return tools.createScopes({ path, outputPath: await jobOutput(job, 'scopes.png'), signal });
+      }
+      case 'stock-download': {
+        const { resolveStockItem, downloadStockFile, PROVIDER_IDS } = await import('./providers.mjs');
+        const provider = String(params.provider || '');
+        const kind = params.kind === 'music' ? 'music' : 'video';
+        if (!PROVIDER_IDS.includes(provider)) throw new Error(`未知素材源：${provider || '(空)'}；可用：${PROVIDER_IDS.join('、')}`);
+        await updateProgress(job, 0.08, '解析素材条目');
+        const item = await resolveStockItem({ provider, kind, id: params.id, settings: store.state.settings, signal });
+        const mime = String(item.mimeType || '').toLowerCase();
+        const extension = kind === 'music'
+          ? (mime.includes('flac') ? '.flac' : mime.includes('ogg') ? '.oga' : '.mp3')
+          : (mime.includes('webm') ? '.webm' : '.mp4');
+        const outputPath = await jobOutput(job, `stock-${provider}-${String(params.id).replace(/[^\w.-]+/g, '_').slice(0, 60)}${extension}`);
+        await updateProgress(job, 0.2, '下载素材');
+        await downloadStockFile({
+          url: item.downloadUrl, outputPath, signal,
+          onProgress: ({ received, total }) => { if (total) void updateProgress(job, 0.2 + 0.6 * Math.min(1, received / total), '下载素材'); },
+        });
+        await updateProgress(job, 0.85, '导入项目');
+        await importAsset(project.id, outputPath);
+        const updated = await store.updateProject(project.id, (p) => {
+          const asset = p.assets.find((a) => a.path === outputPath) || p.assets.find((a) => a.name === basename(outputPath));
+          if (asset) {
+            asset.source = { provider, id: String(params.id), author: item.author, title: item.title, license: item.license,
+              url: item.previewUrl, attribution: item.attribution || null, downloadedAt: new Date().toISOString() };
+            if (kind === 'music' && params.setAsMusic) {
+              setMusic(p, asset.path, { credit: `音乐：${item.author} - ${item.title}（${item.license}）来源 ${item.previewUrl}` });
+            }
+          }
+        });
+        return { path: outputPath, kind, item: { provider, id: String(params.id), title: item.title, author: item.author, license: item.license },
+          assetPath: updated.assets.find((a) => a.name === basename(outputPath))?.path || outputPath, credit: item.attribution };
+      }
+      case 'export': {
+        const { runExport, jianYingDefaultDraftRoot } = await import('./export-nle.mjs');
+        const outputDir = await jobOutput(job, 'export');
+        await updateProgress(job, 0.2, '生成剪辑工程');
+        const result = await runExport({ project: structuredClone(project), outputDir, targets: params.targets,
+          settings: { ...withoutSecrets(store.state.settings), draftName: draftNameFor(project, job.id) }, signal });
+        await updateProgress(job, 0.8, '安装剪映草稿');
+        const notes = [...(result.notes || [])];
+        const draftRootSetting = String(store.state.settings.jianyingDraftRoot || '').trim();
+        const draftRoot = draftRootSetting || jianYingDefaultDraftRoot();
+        if (result.draftFolder && draftRoot) {
+          try {
+            let destination = join(resolve(draftRoot), result.draftName);
+            if (existsSync(destination)) destination = join(resolve(draftRoot), `${result.draftName}-${job.id}`);
+            await (await import('node:fs/promises')).cp(result.draftFolder, destination, { recursive: true, force: false, errorOnExist: true });
+            result.jianYingDraftInstalled = destination;
+          } catch (error) {
+            notes.push(`剪映草稿目录写入失败（${error.message}）；草稿文件仍保留在导出目录，可手动复制。`);
+          }
+        }
+        await store.updateProject(project.id, (p) => {
+          p.exports ??= [];
+          p.exports.push({ at: new Date().toISOString(), revision: project.revision, outputDir, files: result.files, draftName: result.draftName, installedTo: result.jianYingDraftInstalled || null });
+        });
+        return { ...result, notes, sourceRevision: project.revision };
       }
       default: throw new Error(`未知制作任务：${job.type}`);
     }
@@ -391,18 +576,27 @@ export async function createEngine({ dataDir } = {}) {
     setMaintenanceMode(value) { maintenanceMode = value; },
     async state({ includeTemplates = true } = {}) {
       const { composer, ...state } = store.snapshot();
-      return { ...state, templates: includeTemplates ? getTemplates() : [], recipes: workflowRecipes, capabilities: await capabilities() };
+      let gradingPresets = [];
+      try { const { GRADING_PRESETS } = await import('./media/grading.mjs'); gradingPresets = GRADING_PRESETS; }
+      catch { /* Grading module absent in stripped installs; the UI hides the panel. */ }
+      return { ...state, settings: publicSettings(state.settings), templates: includeTemplates ? getTemplates() : [], recipes: workflowRecipes, capabilities: await capabilities(), gradingPresets };
     },
     async settingsUpdate(input) {
-      const allowed = ['outputRoot', 'ttsVoice', 'quality'];
+      if (closed) throw new Error('EAC 服务已关闭');
+      const allowed = ['outputRoot', 'ttsVoice', 'quality', 'pexelsApiKey', 'pixabayApiKey', 'jamendoClientId', 'jianyingDraftRoot'];
+      // Validate every provided value before touching the store so a rejected field can
+      // never leave a partial settings mutation behind.
+      const next = {};
       for (const key of allowed) {
         if (input[key] === undefined) continue;
         if (typeof input[key] !== 'string') throw new Error(`无效设置：${key}`);
         if (key === 'quality' && !['draft', 'production'].includes(input[key])) throw new Error('无效质量档位');
-        store.state.settings[key] = input[key];
+        // Secret fields keep their stored value unless explicitly changed; an empty string clears.
+        next[key] = Object.hasOwn(SECRET_SETTINGS, key) ? input[key].trim() : input[key];
       }
+      Object.assign(store.state.settings, next);
       await store.save();
-      return (await engine.state()).settings;
+      return publicSettings(store.state.settings);
     },
     async canServeFile(file) {
       try {
@@ -412,6 +606,7 @@ export async function createEngine({ dataDir } = {}) {
       } catch { return false; }
     },
     async handle(name, args = {}) {
+      if (closed && !['status', 'project_get', 'job_status', 'template_read', 'library_read', 'library_list', 'library', 'design_state', 'composer_get'].includes(name)) throw new Error('EAC 服务已关闭');
       switch (name) {
         case 'status': return engine.state();
         case 'project_create': {
@@ -432,32 +627,120 @@ export async function createEngine({ dataDir } = {}) {
           const path = resolveShotcraftPath(template.preview.replace(/^\//, ''));
           if (!path || extname(path).toLowerCase() !== '.mp4') throw new Error('Shotcraft 本地 MP4 预览素材不存在');
           return importAsset(args.projectId, path);
+        }        case 'timeline_plan': return plan(args.projectId, args);
+        case 'color_workflow': {
+          const project = store.project(args.projectId);
+          if (args.action === 'match-shots') {
+            const preview = project.lastGradePreview;
+            if (!preview?.frames?.length || preview.signature !== gradingSignature(project)) throw new Error('调色预览缺失或已过时；请先重新生成 grade-preview');
+            const { suggestShotMatch } = await import('./color-workflow.mjs');
+            return suggestShotMatch(preview, { referenceClipId: args.referenceClipId });
+          }
+          if (!['save-version', 'restore-version'].includes(args.action)) throw new Error('未知调色工作流操作');
+          if (!Number.isInteger(args.revision)) throw new Error('调色版本写入需要当前项目修订号 revision');
+          if (args.revision !== project.revision) throw new Error('项目已被其他操作修改，请刷新后重试');
+          const { saveGradeVersion, restoreGradeVersion } = await import('./color-workflow.mjs');
+          const next = args.action === 'save-version'
+            ? saveGradeVersion(project, { name: args.name })
+            : restoreGradeVersion(project, args.versionId);
+          return store.updateProject(project.id, (p) => { Object.assign(p, next); }, args.revision);
         }
-        case 'timeline_plan': return plan(args.projectId, args);
+        case 'stock_search': {
+          const kind = args.kind === 'music' ? 'music' : args.kind === 'video' ? 'video' : null;
+          if (!kind) throw new Error('kind 必须是 video 或 music');
+          const query = String(args.query || '').trim();
+          if (!query) throw new Error('请提供搜索关键词');
+          const { searchStock } = await import('./providers.mjs');
+          return searchStock({ kind, query, provider: args.provider, perPage: args.perPage, settings: store.state.settings });
+        }
         case 'timeline_update': {
           if (!Array.isArray(args.clips) || args.clips.length > 128 || !Number.isInteger(args.revision)) throw new Error('请提供最多 128 个 clips 与当前 revision');
           const project = store.project(args.projectId);
+          const clipIds = new Set();
+          for (const clip of args.clips) {
+            if (!clip || typeof clip !== 'object' || Array.isArray(clip)) throw new Error('片段必须是对象');
+            if (clip.id !== undefined) {
+              if (typeof clip.id !== 'string' || !clip.id.trim() || clipIds.has(clip.id)) throw new Error('片段 ID 必须是非空且唯一的字符串');
+              clipIds.add(clip.id);
+            }
+            if (clip.track !== undefined && !Number.isInteger(clip.track)) throw new Error('轨道 track 必须是整数');
+            if (clip.motion !== undefined && clip.motion !== null) validateMotion(clip.motion);
+            if (clip.windows !== undefined && clip.windows !== null) validateWindows(clip.windows);
+          }
+          if (args.clips.some((clip) => clip.grading !== undefined || clip.windows !== undefined) || args.look !== undefined) {
+            const { normalizeGrading } = await import('./media/grading.mjs');
+            const checkGrading = (value, label) => {
+              try { normalizeGrading(value ?? null); } catch (error) { throw new Error(`${label}无效：${error.message}`); }
+            };
+            for (const [index, clip] of args.clips.entries()) {
+              if (clip.grading !== undefined) checkGrading(clip.grading, `片段 ${index} 调色参数`);
+              (clip.windows ?? []).forEach((win, windowIndex) => checkGrading(win.grading, `片段 ${index} 蒙版 ${windowIndex} `));
+            }
+            if (args.look !== undefined) checkGrading(args.look, '项目 look ');
+          }
+          const validatedLuts = new Map();
+          for (const clip of args.clips) {
+            for (const key of ['inputLut', 'lut']) {
+              if (clip[key] === undefined || clip[key] === null || clip[key] === '') continue;
+              if (typeof clip[key] !== 'string') throw new Error(`${key} LUT 必须是本地 .cube 文件路径`);
+              if (!validatedLuts.has(clip[key])) {
+                const { validateCubeFile } = await import('./color-workflow.mjs');
+                validatedLuts.set(clip[key], await validateCubeFile(clip[key]));
+              }
+            }
+          }
           const clips = args.clips.map((clip) => {
-            const asset = project.assets.find((a) => a.path === clip.path || a.id === clip.assetId);
-            if (!asset) throw new Error('时间线只能引用项目内素材');
-            const duration = finite(clip.duration, undefined, 0.01, 3600);
-            const sourceIn = finite(clip.sourceIn, 0, 0, 3600);
-            if (asset.kind !== 'image' && duration + sourceIn > asset.duration + 0.1) throw new Error('片段超出源素材时长');
-            return { ...clip, id: clip.id || randomUUID(), assetId: asset.id, path: asset.path, kind: asset.kind,
-              duration, sourceIn, start: finite(clip.start, 0, 0, 3600), volume: finite(clip.volume, 1, 0, 4), track: finite(clip.track, 0, 0, 100) };
-          });
-          if (args.captions || args.subtitleStyle) {
+          const asset = project.assets.find((a) => a.path === clip.path || a.id === clip.assetId);
+          if (!asset) throw new Error('时间线只能引用项目内素材');
+          const duration = finite(clip.duration, undefined, 0.01, 3600);
+          const sourceIn = finite(clip.sourceIn, 0, 0, 3600);
+          const speed = clip.speed === undefined || clip.speed === null ? 1 : finite(clip.speed, 1, 0.25, 4);
+          if (asset.kind !== 'image' && duration * speed + sourceIn > asset.duration + 0.1) throw new Error('片段超出源素材时长（按变速后的源消耗计算）');
+          return { ...clip, id: clip.id || randomUUID(), assetId: asset.id, path: asset.path, kind: asset.kind,
+            duration, sourceIn, speed,
+            ...(validatedLuts.has(clip.inputLut) ? { inputLut: validatedLuts.get(clip.inputLut).path } : {}),
+            ...(validatedLuts.has(clip.lut) ? { lut: validatedLuts.get(clip.lut).path } : {}),
+            start: finite(clip.start, 0, 0, 3600), volume: finite(clip.volume, 1, 0, 4), track: finite(clip.track, 0, 0, 100) };
+        });
+          if (args.captions !== undefined || args.subtitleStyle !== undefined) {
             const { createCaptionScript } = await import('./media/captions.mjs');
-            createCaptionScript({ captions: args.captions || [], subtitleStyle: args.subtitleStyle,
+            createCaptionScript({ captions: args.captions ?? project.captions ?? [], subtitleStyle: args.subtitleStyle ?? project.subtitleStyle,
               width: project.width, height: project.height, duration: Math.max(0, ...clips.map((c) => c.start + c.duration)) });
+          }
+          let musicPath;
+          let musicAsset;
+          if (args.musicPath !== undefined && args.musicPath !== null && args.musicPath !== '') {
+            if (typeof args.musicPath !== 'string') throw new Error('musicPath 必须是本地音频文件路径');
+            musicPath = await realpath(resolve(args.musicPath));
+            const probe = await (await getMedia()).probeMedia(musicPath);
+            if (!(probe.streams || []).some((stream) => stream.codec_type === 'audio')) throw new Error('配乐文件没有音频流');
+            musicAsset = { id: randomUUID(), path: musicPath, name: basename(musicPath), kind: 'audio',
+              duration: Number(probe.format?.duration || 0), probe, importedAt: new Date().toISOString() };
           }
           return store.updateProject(args.projectId, (p) => {
             p.history.push({ revision: p.revision, clips: p.clips, beatSheet: p.beatSheet, at: new Date().toISOString() });
             p.clips = clips;
-            p.captions = structuredClone(args.captions || []);
-            delete p.captionSource;
+            if (args.captions !== undefined) {
+              p.captions = structuredClone(args.captions);
+              delete p.captionSource;
+            }
             if (args.subtitleStyle) p.subtitleStyle = structuredClone(args.subtitleStyle);
+            if (args.look !== undefined) p.look = structuredClone(args.look ?? null);
+            if (args.musicStart !== undefined) p.musicStart = finite(args.musicStart, 0, 0, 3600);
+            if (args.fadeIn !== undefined) p.fadeIn = finite(args.fadeIn, 0, 0, 5);
+            if (args.fadeOut !== undefined) p.fadeOut = finite(args.fadeOut, 0, 0, 5);
+            if (args.sharpen !== undefined) p.sharpen = finite(args.sharpen, 0, 0, 2);
+            if (args.vignette !== undefined) p.vignette = finite(args.vignette, 0, 0, 1);
+            if (args.glow !== undefined) p.glow = finite(args.glow, 0, 0, 1);
             if (args.beatSheet) p.beatSheet = args.beatSheet;
+            if (args.musicPath === null || args.musicPath === '') {
+              clearMusic(p);
+            } else if (musicPath) {
+              // Replacing the bed resets its offset unless this same call sets one explicitly;
+              // only the previous track's auto music credits are dropped.
+              setMusic(p, musicPath, { musicStart: args.musicStart !== undefined ? p.musicStart : 0 });
+              if (!p.assets.some((asset) => asset.path === musicPath)) p.assets.push(musicAsset);
+            }
           }, args.revision);
         }
         case 'job_submit': {
@@ -545,18 +828,24 @@ export async function createEngine({ dataDir } = {}) {
         default: throw new Error(`未知 EAC 工具：${name}`);
       }
     },
-    async close() {
-      closed = true;
-      for (const job of store.state.jobs) {
-        if (job.status === 'queued') {
-          job.status = 'cancelled';
-          job.finishedAt = new Date().toISOString();
+    close() {
+      if (closing) return closing;
+      closing = (async () => {
+        closed = true;
+        for (const job of store.state.jobs) {
+          if (job.status === 'queued') {
+            job.status = 'cancelled';
+            job.finishedAt = new Date().toISOString();
+          }
         }
-      }
-      for (const controller of controllers.values()) controller.abort(new Error('服务关闭'));
-      await pumpTask;
-      await designStore.flush();
-      await store.save();
+        for (const controller of controllers.values()) controller.abort(new Error('服务关闭'));
+        try {
+          await pumpTask;
+          await designStore.flush();
+          await store.save();
+        } finally { await release(); }
+      })();
+      return closing;
     }
   };
   return engine;

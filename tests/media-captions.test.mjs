@@ -287,6 +287,22 @@ test('absent, incomplete or unusable alignment retains the whole bounded sentenc
   }), []);
 });
 
+test('remapping follows accelerated and slowed source time without drifting subtitles', () => {
+  const segments = [{ start: 2, end: 3, text: 'Speech in the cut.' }];
+  assert.deepEqual(remapTranscriptToTimeline({ assetId: 'a', segments, clips: [
+    { assetId: 'a', start: 10, sourceIn: 1, duration: 1, speed: 2 },
+    { assetId: 'a', start: 20, sourceIn: 2, duration: 2, speed: 0.5 },
+  ] }), [
+    { start: 10.5, end: 11, text: 'Speech in the cut.' },
+    { start: 20, end: 22, text: 'Speech in the cut.' },
+  ]);
+  for (const speed of [0, -1, 5, NaN]) {
+    assert.throws(() => remapTranscriptToTimeline({ assetId: 'a', segments, clips: [
+      { assetId: 'a', start: 0, sourceIn: 0, duration: 1, speed },
+    ] }), TypeError);
+  }
+});
+
 test('remapping rejects invalid source and timeline intervals', () => {
   const input = {
     segments: [{ start: 0, end: 2, text: 'Hello' }],

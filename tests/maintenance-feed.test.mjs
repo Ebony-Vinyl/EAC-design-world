@@ -167,6 +167,60 @@ test('feedUrl override must be https (loopback http allowed) and reorders source
   assert.equal(loop.sources()[0], 'http://127.0.0.1:8080/feed.json')
 })
 
+test('feedUrl override treats only real loopback as loopback', () => {
+  const sourcesFor = feedUrl => new AnnouncementFeed({ settings: () => ({ feedUrl }), cacheFile: 'x' }).sources()
+  const defaults = new AnnouncementFeed({ settings: () => ({}), cacheFile: 'x' }).sources()
+  const accepted = [
+    'http://127.0.0.1:8080/feed.json',
+    'http://127.0.0.2/feed.json',
+    'http://127.255.255.254/feed.json',
+    'http://localhost:3000/feed.json',
+    'http://[::1]:8080/feed.json',
+    'https://mirror.example/feed.json',
+    'https://192.168.1.5/feed.json',
+  ]
+  for (const url of accepted) {
+    assert.equal(sourcesFor(url)[0], url, `${url} must be accepted as the first source`)
+  }
+  const rejected = [
+    'http://127.0.0.1.evil.com/feed.json',
+    'http://127.evil.com/feed.json',
+    'http://127.0.0.1.nip.io/feed.json',
+    'http://localhost.evil.com/feed.json',
+    'http://[::1].evil.com/feed.json',
+    'http://192.168.1.5/feed.json',
+    'http://10.0.0.5/feed.json',
+    'http://169.254.169.254/feed.json',
+    'http://user:pass@127.0.0.1/feed.json',
+    'https://user:pass@mirror.example/feed.json',
+    'ftp://127.0.0.1/feed.json',
+    'file:///feed.json',
+    'javascript:alert(1)',
+    'not a url',
+  ]
+  for (const url of rejected) {
+    assert.deepEqual(sourcesFor(url), defaults, `${url} must be rejected`)
+  }
+})
+
+test('a rejected feedUrl override is never requested by poll', async () => {
+  await withTemp(async dir => {
+    const requested = []
+    const feed = new AnnouncementFeed({
+      settings: () => ({ feedUrl: 'http://127.0.0.1.evil.com/feed.json' }),
+      cacheFile: join(dir, 'feed.json'),
+      fetchImpl: async url => {
+        requested.push(String(url))
+        return { ok: false, status: 404, headers: { get: () => null }, text: async () => '', body: null }
+      },
+    })
+    await feed.poll()
+    assert.ok(requested.length > 0, 'the default sources are still polled')
+    assert.ok(!requested.some(url => url.includes('evil.com')), 'the rejected override must never be fetched')
+    assert.ok(!requested.some(url => url.startsWith('http://')), 'plain http is never used for the defaults')
+  })
+})
+
 test('sortItems is stable for equal timestamps', () => {
   const items = [
     { id: 'a', createdAt: 100 },

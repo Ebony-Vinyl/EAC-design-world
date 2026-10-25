@@ -1,6 +1,6 @@
 {
   "name": "eac-design-world",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "EAC design world: autonomous video production for DeepSeek Harness",
   "type": "module",
   "main": "./plugin/host.mjs",
@@ -45,7 +45,6 @@
     "THIRD_PARTY_NOTICES.md"
   ],
   "scripts": {
-    "postinstall": "node src/npm-assets-restore.mjs",
     "dev": "node src/server.mjs --dev",
     "start": "node src/server.mjs",
     "build": "vite build",
@@ -57,7 +56,10 @@
     "motion:verify": "node scripts/verify-motion-libraries.mjs",
     "release:prepare": "node scripts/prepare-release.mjs",
     "update:manifest": "node scripts/build-update-manifest.mjs",
-    "verify:maintenance": "node scripts/verify-maintenance-package.mjs"
+    "verify:maintenance": "node scripts/verify-maintenance-package.mjs",
+    "verify:npm": "node scripts/verify-npm-runtime.mjs",
+    "mcp:local": "node src/mcp-local.mjs",
+    "build:lock-runtime": "node scripts/build-lock-runtime.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.2",
@@ -66,14 +68,21 @@
     "opentype.js": "^2.0.0",
     "playwright": "^1.56.1",
     "pptxgenjs": "^4.0.1",
+    "proper-lockfile": "^4.1.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "simplex-noise": "^4.0.3",
     "three": "^0.186.1",
     "topojson-client": "^3.1.0",
-    "zod": "^3.25.0"
+    "zod": "^4.6.7"
+  },
+  "overrides": {
+    "pptxgenjs": {
+      "image-size": "^2.0.4"
+    }
   },
   "devDependencies": {
+    "esbuild": "^0.25.12",
     "vite": "^6.1.0"
   },
   "dsh": {
@@ -89,5 +98,8 @@
         "@deepseek-ai/dsh-client-ui-sidebar-right"
       ]
     }
+  },
+  "bin": {
+    "eac-design-world-mcp": "./src/mcp-local.mjs"
   }
 }

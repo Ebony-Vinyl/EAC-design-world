@@ -1,5 +1,7 @@
 node_modules/
 dist/
+ui/bundle.js
+ui/bundle.css
 .eac/
 artifacts/
 runtime/

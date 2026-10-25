@@ -30,7 +30,7 @@ function selectedModel(modelPath) {
 function runPython(args, { signal, timeout = 900_000 } = {}) {
   checkAbort(signal);
   return new Promise((complete, reject) => {
-    const executable = process.env.EAC_PYTHON || process.env.PYTHON || 'python';
+    const executable = process.env.EAC_PYTHON || process.env.PYTHON || (process.platform === 'win32' ? 'python' : 'python3');
     const child = spawn(executable, ['-X', 'utf8', SCRIPT, ...args], {
       shell: false, windowsHide: true, detached: process.platform !== 'win32',
       stdio: ['ignore', 'pipe', 'pipe'],

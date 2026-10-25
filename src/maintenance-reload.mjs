@@ -54,10 +54,12 @@ export function packageCacheKeys(loadCache, packageUrl) {
   const keys = []
   for (const key of loadCache.keys()) {
     if (typeof key !== 'string') continue
-    if (key.includes('/node_modules/')) continue
     let normalized
     try { normalized = decodeURIComponent(key).toLowerCase() } catch { normalized = key.toLowerCase() }
-    if (normalized.startsWith(base)) keys.push(key)
+    if (!normalized.startsWith(base)) continue
+    const local = normalized.slice(base.length)
+    if (local.startsWith('node_modules/') || local.includes('/node_modules/')) continue
+    keys.push(key)
   }
   return keys
 }
