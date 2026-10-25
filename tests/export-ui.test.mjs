@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, realpath } from 'node:fs/promises';
 import { createServer as createNetServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -195,8 +195,8 @@ test('timeline exposes camera and creative LUT paths and blocks exporting unsave
     await page.getByText(/时间线已保存/).waitFor();
     await page.getByRole('heading', { name: '导出续剪工程', exact: true }).waitFor();
     const saved = await engine.handle('project_get', { projectId: project.id });
-    assert.equal(saved.clips[0].inputLut, inputLut);
-    assert.equal(saved.clips[0].lut, creativeLut);
+    assert.equal(saved.clips[0].inputLut, await realpath(inputLut));
+    assert.equal(saved.clips[0].lut, await realpath(creativeLut));
     await page.getByText(new RegExp(`导出已保存修订 r${saved.revision}`)).waitFor();
     assert.deepEqual(errors, []);
   } finally { await context.close(); }

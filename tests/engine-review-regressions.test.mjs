@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createEngine } from '../src/engine.mjs';
@@ -200,7 +200,7 @@ test('replacing the music bed clears old auto music credits and offset across al
   }));
   assert.ok(produced.path);
   const afterProduce = await engine.handle('project_get', { projectId: project.id });
-  assert.equal(afterProduce.musicPath, second);
+  assert.equal(afterProduce.musicPath, await realpath(second));
   assert.equal(afterProduce.musicStart, 0);
   assert.deepEqual(afterProduce.credits, [{ type: 'video', text: 'Video credit' }, { type: 'photo', text: 'Photo credit' }]);
 
@@ -215,7 +215,7 @@ test('replacing the music bed clears old auto music credits and offset across al
   assert.equal(kept.musicStart, 3);
   assert.deepEqual(kept.credits, [{ type: 'music', text: 'Old auto music credit' }, { type: 'video', text: 'Video credit' }]);
   const replaced = await engine.handle('timeline_update', { projectId: project.id, revision: kept.revision, clips: kept.clips, musicPath: first });
-  assert.equal(replaced.musicPath, first);
+  assert.equal(replaced.musicPath, await realpath(first));
   assert.equal(replaced.musicStart, 0);
   assert.deepEqual(replaced.credits, [{ type: 'video', text: 'Video credit' }]);
   void revision; void timelineRevision;

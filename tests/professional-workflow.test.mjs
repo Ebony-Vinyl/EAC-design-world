@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile, mkdir, readFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, mkdir, readFile, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -28,7 +28,7 @@ test('timeline validates camera and creative LUT files before saving any changes
   await writeFile(inputLut, cube);
   await writeFile(lut, cube);
   const valid = await engine.handle('timeline_update', { projectId: planned.id, revision: planned.revision, clips: [{ ...planned.clips[0], inputLut, lut }] });
-  assert.equal(valid.clips[0].inputLut, inputLut);
+  assert.equal(valid.clips[0].inputLut, await realpath(inputLut));
   await writeFile(inputLut, 'LUT_3D_SIZE 2\n0 0 0\n');
   for (const patch of [{ inputLut }, { lut: join(dir, 'missing.cube') }]) {
     await assert.rejects(engine.handle('timeline_update', { projectId: valid.id, revision: valid.revision, clips: [{ ...planned.clips[0], ...patch }] }), /LUT|cube|不存在|ENOENT/i);

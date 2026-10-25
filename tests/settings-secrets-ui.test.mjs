@@ -102,7 +102,7 @@ test('settings show masked configured status without fetching key values and omi
 
     await page.getByLabel('旁白声音', { exact: true }).fill('zh-CN-test');
     await page.getByRole('button', { name: '保存设置', exact: true }).click();
-    await page.getByText('设置已保存', { exact: true }).waitFor();
+    await page.getByText('配置与服务保持同步', { exact: true }).waitFor();
     assert.equal(puts.length, 1);
     for (const key of SECRET_KEYS) assert.equal(Object.hasOwn(puts[0], key), false, `${key} untouched must be omitted from the save body`);
     assert.equal(puts[0].ttsVoice, 'zh-CN-test');
@@ -110,7 +110,7 @@ test('settings show masked configured status without fetching key values and omi
 
     await pexels.fill('pexels-new');
     await page.getByRole('button', { name: '保存设置', exact: true }).click();
-    await page.getByText('设置已保存', { exact: true }).waitFor();
+    await page.getByText('配置与服务保持同步', { exact: true }).waitFor();
     assert.equal(puts.at(-1).pexelsApiKey, 'pexels-new', 'an explicit new key is stored');
     assert.equal(Object.hasOwn(puts.at(-1), 'jamendoClientId'), false);
     assert.equal(engine.store.state.settings.pexelsApiKey, 'pexels-new');
@@ -119,7 +119,7 @@ test('settings show masked configured status without fetching key values and omi
 
     await page.getByRole('button', { name: '清除 Jamendo Client ID', exact: true }).click();
     await page.getByRole('button', { name: '保存设置', exact: true }).click();
-    await page.getByText('设置已保存', { exact: true }).waitFor();
+    await page.getByText('配置与服务保持同步', { exact: true }).waitFor();
     assert.equal(puts.at(-1).jamendoClientId, '', 'an explicit clear sends an empty string for that key');
     assert.equal(Object.hasOwn(puts.at(-1), 'pexelsApiKey'), false, 'other secrets stay untouched');
     assert.equal(engine.store.state.settings.jamendoClientId, '');
