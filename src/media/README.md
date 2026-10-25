@@ -3,9 +3,9 @@
 Dependency-light Node ESM; requires `ffmpeg` and `ffprobe` on PATH. Browser
 capture additionally requires root-installed `playwright` and Edge on Windows
 (Playwright Chromium elsewhere). `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` selects
-an installed Chromium executable explicitly. Desktop capture and voice require
-Windows and an interactive desktop / installed System.Speech SAPI voices,
-respectively. Missing providers and media throw; no placeholder output.
+an installed Chromium executable explicitly. Desktop capture requires Windows
+and an interactive desktop. System voice uses macOS say or installed Windows
+System.Speech SAPI voices. Missing providers and media throw; no placeholder output.
 
 Exports from `src/media/index.mjs`:
 
@@ -28,11 +28,14 @@ Exports from `src/media/index.mjs`:
 - `recordDesktop({ outputPath, duration, fps?, signal? })`: Windows gdigrab captures
   the full desktop, including cursor, to video without system audio.
   Duration 0.1..600 seconds, fps 1..60 (default 30).
-- `synthesizeVoice({ text, outputPath, voice?, rate?, signal? })`: real Windows SAPI
-  speech through `scripts/voice.ps1`. UTF-8 text is passed through a file,
+- `synthesizeVoice({ text, outputPath, voice?, rate?, signal? })`: macOS say or Windows SAPI
+  speech (the latter through `scripts/voice.ps1`). UTF-8 text is passed through a file,
   never interpolated into PowerShell code. Named voice must exist; omitted
   voice uses the OS default. Rate is an integer -10..10, default 0.
   WAV is generated then converted by FFmpeg to the requested audio extension.
+  `voice: "mambo-zh"` selects a locally configured, pinned GPT-SoVITS v2 voice
+  on any supported Python platform. Missing configuration or changed model hashes
+  fail explicitly. See [local voice setup](../../docs/local-mambo-voice.md).
 - `composeMusic({ outputPath, duration, bpm?, seed?, signal? })`: original stereo music
   synthesized locally with drums, bass, minor chords and a seeded melody.
   Deterministic PCM for the same arguments; WAV is lossless, other audio

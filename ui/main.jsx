@@ -15,6 +15,7 @@ import TimelineEditor from './TimelineEditor';
 import TemplatePickerGallery from './TemplatePickerGallery';
 import { TemplateDetail } from './TemplatePreview';
 import MaintenancePanel from './MaintenancePanel';
+import AudioTemplates from './AudioTemplates';
 import Dialog from './Dialog';
 import './styles.css';
 import './polish.css';
@@ -302,6 +303,7 @@ function SettingsView({ settings, capabilities, onSave, busy, connected }) {
     setDirty(true);
   };
   const resetSecrets = () => { setSecrets(Object.fromEntries(secretSettings.map(([key]) => [key, '']))); setCleared(new Set()); };
+  const mamboVoice = capabilities.find(item => item.id === 'voice')?.voices?.find(item => item.id === 'mambo-zh');
   const submit = async event => {
     event.preventDefault();
     const body = { ...draft };
@@ -320,7 +322,9 @@ function SettingsView({ settings, capabilities, onSave, busy, connected }) {
       {section === 'production' && <form className="settings-form" onSubmit={submit}>
         <div className="section-heading"><Folder size={19} /><div><h2>输出与制作</h2><p>项目文件位置与默认制作规格</p></div></div>
         <label>输出目录<input required value={draft.outputRoot || ''} placeholder="D:\EAC design world\output" onChange={event => set('outputRoot', event.target.value)} /></label>
-        <div className="form-row"><label>旁白声音<input value={draft.ttsVoice || ''} placeholder="输入服务支持的 voice ID" onChange={event => set('ttsVoice', event.target.value)} /></label><label>默认画质<select aria-label="默认画质" value={draft.quality || 'draft'} onChange={event => set('quality', event.target.value)}><option value="draft">草稿 · Draft</option><option value="production">正式 · Production</option></select></label></div>
+        <div className="form-row"><label>旁白声音<input list="narration-voices" value={draft.ttsVoice || ''} placeholder="系统默认或已安装声线名称" onChange={event => set('ttsVoice', event.target.value)} /></label><label>默认画质<select aria-label="默认画质" value={draft.quality || 'draft'} onChange={event => set('quality', event.target.value)}><option value="draft">草稿 · Draft</option><option value="production">正式 · Production</option></select></label></div>
+        <datalist id="narration-voices"><option value="mambo-zh">曼波中文 · 本地</option></datalist>
+        <div className="button-row"><Button type="button" variant="secondary" disabled={!mamboVoice?.available || draft.ttsVoice === 'mambo-zh'} onClick={() => set('ttsVoice', 'mambo-zh')}>使用曼波中文</Button><span className="muted">{draft.ttsVoice === 'mambo-zh' ? '已选择曼波中文' : '留空使用系统默认声音'}{mamboVoice?.available === false ? ` · ${mamboVoice.detail}` : ''}</span></div>
         <div className="section-heading small"><Search size={16} /><div><h3>网络素材与配乐</h3><p>免费注册获取 API Key 后填入；已保存的 Key 不会显示，留空即保持不变</p></div></div>
         <div className="form-row">{secretSettings.slice(0, 2).map(([key, label, hint]) => <SecretField key={key} settingKey={key} label={label} hint={hint} configured={secretConfigured(settings, key)}
           value={secrets[key]} cleared={cleared.has(key)} disabled={busy === 'settings'} onChange={value => setSecret(key, value)} onClear={() => clearSecret(key)} />)}</div>
@@ -457,6 +461,13 @@ function ExportPanel({ project, jobs = [], busy, settings = {}, capabilities = [
   </section>;
 }
 
+function NarrationOutput({ project }) {
+  const [error, setError] = useState(false);
+  useEffect(() => setError(false), [project?.voicePath]);
+  if (!project?.voicePath) return null;
+  return <div className="narration-output"><div className="button-row"><strong>旁白试听 · {project.voiceInfo?.name || '系统声音'}</strong><a className="button secondary" href={downloadUrl(project.voicePath)} download><ArrowDownToLine size={15} />下载旁白</a></div><audio key={project.voicePath} aria-label="旁白试听" src={fileUrl(project.voicePath)} controls preload="metadata" onError={() => setError(true)} />{error && <p className="inline-error" role="alert">旁白暂不可播放，请检查输出文件。</p>}</div>;
+}
+
 function WorkflowView({ project, busy, onJob, onPlan, jobs, capabilities, connected, template, settings, exportFocus }) {
   const [url, setUrl] = useState('');
   const [actions, setActions] = useState('');
@@ -506,6 +517,10 @@ function WorkflowView({ project, busy, onJob, onPlan, jobs, capabilities, connec
   const speechDisabled = !speechAsset || !connected || Boolean(busy) || Boolean(speechJob) || Boolean(captionJob) || transcription?.available === false;
   const latestSpeechJob = jobs.find(job => ['transcribe', 'rough-cut'].includes(job.type) && job.params?.assetId === speechAsset?.id);
   const latestCaptionJob = jobs.find(job => job.type === 'captions' && job.params?.assetId === speechAsset?.id);
+  const voiceCapability = capabilities.find(item => item.id === 'voice');
+  const voiceLabel = voiceCapability?.voices?.find(item => item.id === (settings?.ttsVoice || ''))?.name || settings?.ttsVoice || '系统默认';
+  const voiceJob = jobs.find(job => job.type === 'voice' && isActive(job));
+  const lastVoiceJob = jobs.find(job => job.type === 'voice');
   const captionDisabled = !connected || Boolean(busy) || Boolean(speechJob) || Boolean(captionJob)
     || !speechAsset?.transcript?.segments?.length || !project?.clips?.some(clip => clip.assetId === speechAsset?.id);
   return <div className="workflow-layout"><div className="workflow-main">
@@ -525,7 +540,7 @@ function WorkflowView({ project, busy, onJob, onPlan, jobs, capabilities, connec
       <Warnings messages={resultWarnings(latestSpeechJob?.result)} />
       <Warnings messages={resultWarnings(latestCaptionJob?.result)} />
     </section>
-    <section className="workflow-step"><div className="step-heading"><span>04</span><div><h2>旁白与素材分析</h2><p>为镜头准备音轨和素材信息</p></div><AudioLines size={20} /></div><form onSubmit={event => { event.preventDefault(); onJob('voice', { text: voiceText }); }}><label>旁白文案<textarea required rows={3} placeholder="输入需要生成的旁白内容…" value={voiceText} onChange={event => setVoiceText(event.target.value)} /></label><div className="button-row"><Button icon={AudioLines} busy={busy === 'voice'} disabled={!project} type="submit">生成旁白</Button></div></form><div className="analysis-controls"><label>分析素材<select aria-label="分析素材" value={analysisAssetId} onChange={event => setAssetId(event.target.value)} disabled={!project?.assets?.length}>{project?.assets?.length ? project.assets.map(asset => <option key={asset.id} value={asset.id}>{asset.name || asset.path?.split(/[\\/]/).pop() || asset.id}</option>) : <option value="">暂无项目素材</option>}</select></label><div className="button-row"><Button type="button" icon={Search} busy={busy === 'analyze'} disabled={!analysisAssetId || !connected || Boolean(busy)} onClick={() => onJob('analyze', { assetId: analysisAssetId })}>分析素材</Button><Button type="button" icon={AudioLines} busy={busy === 'beats'} disabled={!analysisAsset || !hasAudio(analysisAsset) || !connected || Boolean(busy)} onClick={() => onJob('beats', { assetId: analysisAssetId })}>分析节拍</Button></div></div>
+    <section className="workflow-step"><div className="step-heading"><span>04</span><div><h2>旁白与素材分析</h2><p>默认音色：{voiceLabel}</p></div><AudioLines size={20} /></div><form onSubmit={event => { event.preventDefault(); onJob('voice', { text: voiceText }); }}><label>旁白文案<textarea required rows={3} placeholder="输入需要生成的旁白内容…" value={voiceText} onChange={event => setVoiceText(event.target.value)} /></label><div className="button-row"><Button icon={AudioLines} busy={busy === 'voice' || Boolean(voiceJob)} disabled={!project || !connected || Boolean(voiceJob) || voiceCapability?.available === false} title={voiceCapability?.available === false ? voiceCapability.detail : undefined} type="submit">生成旁白</Button></div></form>{lastVoiceJob?.status === 'failed' && <p className="inline-error" role="alert">{lastVoiceJob.error}</p>}<NarrationOutput project={project} /><div className="analysis-controls"><label>分析素材<select aria-label="分析素材" value={analysisAssetId} onChange={event => setAssetId(event.target.value)} disabled={!project?.assets?.length}>{project?.assets?.length ? project.assets.map(asset => <option key={asset.id} value={asset.id}>{asset.name || asset.path?.split(/[\\/]/).pop() || asset.id}</option>) : <option value="">暂无项目素材</option>}</select></label><div className="button-row"><Button type="button" icon={Search} busy={busy === 'analyze'} disabled={!analysisAssetId || !connected || Boolean(busy)} onClick={() => onJob('analyze', { assetId: analysisAssetId })}>分析素材</Button><Button type="button" icon={AudioLines} busy={busy === 'beats'} disabled={!analysisAsset || !hasAudio(analysisAsset) || !connected || Boolean(busy)} onClick={() => onJob('beats', { assetId: analysisAssetId })}>分析节拍</Button></div></div>
       {analysisAsset?.beats && <p className="beat-result" role="status">{analysisAsset.beats.bpm ? `${analysisAsset.beats.bpm} BPM · ${analysisAsset.beats.beats?.length ?? 0} 个节拍` : '未检测到稳定节拍'}</p>}
     </section>
     <section className="workflow-step"><div className="step-heading"><span>05</span><div><h2>配乐与渲染</h2></div><Film size={20} /></div><div className="music-controls"><label>用户配乐路径 <span className="muted">可选</span><input value={musicPath} placeholder="D:\assets\music.wav" onChange={event => setMusicPath(event.target.value)} /></label>{musicPath.trim() && <label className="checkbox-label"><input type="checkbox" checked={followMusic} onChange={event => setFollowMusic(event.target.checked)} />一键制作跟随配乐节拍</label>}</div><div className="button-row"><Button icon={AudioLines} busy={busy === 'compose'} disabled={!project || !duration || !bpm} onClick={() => onJob('compose', { duration: Number(duration), bpm: Number(bpm) })}>生成原创配乐</Button><Button icon={Play} variant="primary" busy={busy === 'render'} disabled={!project} onClick={() => onJob('render')}>渲染项目</Button><Button icon={Clapperboard} busy={busy === 'render-template'} disabled={!project || !template || template.renderable === false} title={template?.renderable === false ? '此镜头需定制源码；可先从选片单导入视频素材' : undefined} onClick={() => onJob('render-template')}>渲染所选模板</Button></div><Warnings messages={resultWarnings(project?.lastOutput)} /></section>
@@ -559,7 +574,7 @@ function FileRow({ path, name, onPreview }) {
 
 function App() {
   const picker = pickerPage;
-  const [view, setView] = useState(picker ? 'templates' : maintenancePage ? 'maintenance' : 'studio');
+  const [view, setView] = useState(picker ? 'templates' : maintenancePage ? 'maintenance' : pickerQuery.get('view') === 'audio' ? 'audio' : 'studio');
   const [data, setData] = useState({ projects: [], jobs: [], templates: [], settings: {}, capabilities: [], gradingPresets: [] });
   const [library, setLibrary] = useState({ templates: [], designSystems: [] });
   const [connected, setConnected] = useState(false);
@@ -707,9 +722,9 @@ function App() {
     return updated;
   }, `已将 ${items.length} 个镜头加入项目素材`);
   const changeView = value => setView(value);
-  const title = { studio: '制作工作台', templates: '视觉模板', design: '设计工作台', workflow: '制作流程', jobs: '任务队列', assets: '素材与输出', maintenance: '插件维护', settings: '工作空间设置' }[view];
-  const subtitle = { studio: '从一份简报，开始下一支作品。', templates: '找到适合表达的视觉语言。', design: '从设计库选择体系与模板，创作网站、幻灯片、文档与图片。', workflow: '连接素材、镜头、声音与最终成片。', jobs: '追踪每一次录制、生成与渲染。', assets: '项目素材与真实制作输出。', maintenance: '版本、更新、热重载与公告。', settings: '设置输出目录、制作画质与旁白声音。' }[view];
-  const eyebrow = { studio: 'PRODUCTION STUDIO', templates: 'VISUAL LIBRARY', design: 'DESIGN WORKSPACE', workflow: 'PRODUCTION CONTROL', jobs: 'PRODUCTION CONTROL', assets: 'PRODUCTION CONTROL', maintenance: 'PLUGIN MAINTENANCE', settings: 'WORKSPACE PREFERENCES' }[view];
+  const title = { studio: '制作工作台', templates: '视觉模板', audio: '音频模板', design: '设计工作台', workflow: '制作流程', jobs: '任务队列', assets: '素材与输出', maintenance: '插件维护', settings: '工作空间设置' }[view];
+  const subtitle = { studio: '从一份简报，开始下一支作品。', templates: '找到适合表达的视觉语言。', audio: '选择声音，为下一段文案找到合适的表达。', design: '从设计库选择体系与模板，创作网站、幻灯片、文档与图片。', workflow: '连接素材、镜头、声音与最终成片。', jobs: '追踪每一次录制、生成与渲染。', assets: '项目素材与真实制作输出。', maintenance: '版本、更新、热重载与公告。', settings: '设置输出目录、制作画质与旁白声音。' }[view];
+  const eyebrow = { studio: 'PRODUCTION STUDIO', templates: 'VISUAL LIBRARY', audio: 'AUDIO LIBRARY', design: 'DESIGN WORKSPACE', workflow: 'PRODUCTION CONTROL', jobs: 'PRODUCTION CONTROL', assets: 'PRODUCTION CONTROL', maintenance: 'PLUGIN MAINTENANCE', settings: 'WORKSPACE PREFERENCES' }[view];
   const newProject = () => { setForm({ ...initialForm, templateId: templateId || initialForm.templateId }); setDialog('project'); };
   if (canvasPage) return <DesignCanvas sessionId={canvasSessionId} mode={canvasMode} />;
   if (designPage) return <div className="route-page"><DesignWorkspace sessionId={appSessionId} embedded={window.parent !== window} /></div>;
@@ -717,11 +732,11 @@ function App() {
     onSelect={selectTemplate} onSelectSystem={selectDesignSystem} onKindChange={setPickerKindState}
     onBrowseAll={() => pickerPost({ type: 'eac:open-picker' })}
     onState={state => { if (state.templateId !== null) setTemplateId(state.templateId); if (state.designSystemId !== null) setDesignSystemId(state.designSystemId); if (state.mode) setPickerModeState(state.mode); if (state.kind) setPickerKindState(state.kind); }} />;
-  const navEntries = [['studio', Clapperboard, '制作工作台'], ['templates', Grid2X2, '视觉模板'], ['design', Palette, '设计工作台'], ['workflow', Workflow, '制作流程'], ['jobs', ListVideo, '任务队列'], ['assets', FolderOpen, '素材与输出'], ['maintenance', Wrench, '插件维护']];
+  const navEntries = [['studio', Clapperboard, '制作工作台'], ['templates', Grid2X2, '视觉模板'], ['audio', AudioLines, '音频模板'], ['design', Palette, '设计工作台'], ['workflow', Workflow, '制作流程'], ['jobs', ListVideo, '任务队列'], ['assets', FolderOpen, '素材与输出'], ['maintenance', Wrench, '插件维护']];
   return <div className="app-shell">
     <header className="app-topnav">
       <Brand compact />
-      <nav className="topnav-items" aria-label="工作空间导航">{navEntries.map(([id, Icon, label]) => <button key={id} className={`topnav-item ${view === id ? 'active' : ''}`} onClick={() => changeView(id)}><Icon size={16} strokeWidth={1.7} /><span>{label}</span>{id === 'jobs' && activeJobs.length > 0 && <span className="nav-badge">{activeJobs.length}</span>}{id === 'templates' && <span className="nav-count">{templates.length}</span>}</button>)}</nav>
+      <nav className="topnav-items" aria-label="工作空间导航">{navEntries.map(([id, Icon, label]) => <button key={id} className={`topnav-item ${view === id ? 'active' : ''}`} onClick={() => changeView(id)}><Icon size={16} strokeWidth={1.7} /><span>{label}</span>{id === 'jobs' && activeJobs.length > 0 && <span className="nav-badge">{activeJobs.length}</span>}{id === 'templates' && <span className="nav-count">{templates.length}</span>}{id === 'audio' && <span className="nav-count">2</span>}</button>)}</nav>
       <div className="topnav-right">
         {project && !['settings', 'maintenance'].includes(view) && <span className="current-project"><Folder size={13} />{project.title}</span>}
         <span className="harness-label"><span className="tiny-dot" />DEEPSEEK HARNESS</span>
@@ -732,7 +747,7 @@ function App() {
     </header>
     <main className={`main-content view-${view}`}>
       <div className="view-swap" key={view}>
-      {view !== 'settings' && <div className="page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}<span className="heading-dot">.</span></h1><p>{subtitle}</p></div>{view !== 'maintenance' && <div className="heading-actions">{project && <span className="current-project"><Folder size={14} />{project.title}</span>}{view !== 'design' && <Button icon={Plus} variant="primary" onClick={newProject}>新建项目</Button>}</div>}</div>}
+      {view !== 'settings' && <div className="page-heading"><div><div className="eyebrow">{eyebrow}</div><h1>{title}<span className="heading-dot">.</span></h1><p>{subtitle}</p></div>{!['maintenance', 'audio'].includes(view) && <div className="heading-actions">{project && <span className="current-project"><Folder size={14} />{project.title}</span>}{view !== 'design' && <Button icon={Plus} variant="primary" onClick={newProject}>新建项目</Button>}</div>}</div>}
       {!connected && !loading && <div className="connection-banner" role="status"><CircleAlert size={16} /><span>本地 API 未连接<span className="connection-detail"> · {connectionError}</span></span><Button icon={RefreshCw} variant="ghost" onClick={refresh}>重试</Button></div>}
       {view === 'studio' && <>
         <div className="studio-tabs"><div role="tablist" aria-label="工作台视图"><button role="tab" aria-selected={studioTab === 'overview'} className={studioTab === 'overview' ? 'selected' : ''} onClick={() => setStudioTab('overview')}><SlidersHorizontal size={15} />制作概览</button><button role="tab" aria-selected={studioTab === 'jobs'} className={studioTab === 'jobs' ? 'selected' : ''} onClick={() => setStudioTab('jobs')}><Clock3 size={15} />项目任务<span>{projectJobs.length}</span></button><button role="tab" aria-selected={studioTab === 'timeline'} className={studioTab === 'timeline' ? 'selected' : ''} onClick={() => setStudioTab('timeline')}><Scissors size={15} />时间线编辑</button></div><span className="studio-format">{project ? `${project.width} × ${project.height} / ${project.fps} fps` : '1920 × 1080 / 30 fps'}</span></div>
@@ -748,6 +763,7 @@ function App() {
         }} /> : <Empty icon={Scissors} title="先创建制作项目" description="导入素材后可以在此调整每段素材的入点、时长、音量和轨道。" />) : <JobList jobs={projectJobs} onCancel={cancelJob} busy={busy} projects={data.projects} />}
       </>}
       {view === 'templates' && <TemplateGallery templates={templates} selectedId={templateId} onSelect={selectTemplate} onImportShots={project ? importShots : undefined} />}
+      {view === 'audio' && <AudioTemplates onChanged={refresh} notify={notify} />}
       {view === 'design' && <DesignWorkspace sessionId={appSessionId} initialView="library" embedded={window.parent !== window} library={library} />}
       {view === 'workflow' && <WorkflowView key={project?.id || 'none'} project={project} template={templateId ? selectedTemplate : null} busy={busy} onJob={runJob} onPlan={planProject} jobs={projectJobs} capabilities={data.capabilities} connected={connected} settings={data.settings} exportFocus={exportFocus} />}
       {view === 'jobs' && <><div className="jobs-toolbar"><div className="filter-tabs">{[['all', '全部任务'], ['active', '进行中'], ['completed', '已完成'], ['failed', '失败']].map(([id, label]) => <button key={id} className={jobFilter === id ? 'selected' : ''} onClick={() => setJobFilter(id)}>{label}{id === 'active' && <span className="count">{activeJobs.length}</span>}</button>)}</div><IconButton icon={RefreshCw} label="刷新任务" onClick={refresh} /></div><JobList jobs={data.jobs.filter(job => jobFilter === 'all' || (jobFilter === 'active' ? isActive(job) : job.status === jobFilter))} onCancel={cancelJob} busy={busy} projects={data.projects} /></>}
