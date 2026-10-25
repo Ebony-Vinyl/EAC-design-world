@@ -1,0 +1,33 @@
+name: Complete npm and pnpm release installs
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  package-install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: Ebony-Vinyl/EAC-design-world
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm install --global pnpm@11.7.0
+      - name: Download final package
+        run: gh release download v0.6.0 --pattern "*.tgz" --dir release/publish-v0.6.0
+      - name: Verify full dependency installs and startup
+        run: npm run verify:npm -- release/publish-v0.6.0/eac-design-world-0.6.0.tgz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: package-v0.6.0-${{ matrix.os }}
+          path: artifacts/maintenance-qa/npm-install-v0.6.0.json

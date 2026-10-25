@@ -19,9 +19,9 @@ async function execute(command, args, cwd) {
   return new Promise((complete, reject) => {
     const child = spawn(command, args, { cwd, windowsHide: true, env: { ...process.env, npm_config_registry: 'https://registry.npmjs.org', COREPACK_ENABLE_DOWNLOAD_PROMPT: '0' } });
     let output = '';
-    const timer = setTimeout(() => { child.kill(); reject(new Error('Package installation timed out')); }, 300000);
-    child.stdout.on('data', chunk => { output += chunk; });
-    child.stderr.on('data', chunk => { output += chunk; });
+    const timer = setTimeout(() => { child.kill(); reject(new Error(`Package installation timed out: ${output.slice(-12000)}`)); }, 900000);
+    child.stdout.on('data', chunk => { output += chunk; process.stdout.write(chunk); });
+    child.stderr.on('data', chunk => { output += chunk; process.stderr.write(chunk); });
     child.once('error', error => { clearTimeout(timer); reject(error); });
     child.once('close', code => { clearTimeout(timer); code === 0 ? complete(output) : reject(new Error(output)); });
   });
@@ -39,7 +39,8 @@ for (const manager of ['npm', 'pnpm']) {
   try {
     await writeFile(join(directory, 'package.json'), JSON.stringify({ name: 'eac-runtime-install-verification', version: '1.0.0', private: true }));
     let output;
-    if (manager === 'npm') output = await execute(process.execPath, [npmCli, 'install', archive, '--no-audit', '--no-fund'], directory);
+    console.log(`Installing complete release with ${manager}`);
+    if (manager === 'npm') output = await execute(process.execPath, [npmCli, 'install', archive, '--no-audit', '--no-fund', '--loglevel=verbose'], directory);
     else {
       const locator = spawnSync(process.platform === 'win32' ? 'where.exe' : 'which', ['pnpm'], { encoding: 'utf8', windowsHide: true });
       assert.equal(locator.status, 0, 'pnpm must be installed for verification');
