@@ -13,6 +13,7 @@ import { ROOT, getTemplates, resolveTemplate, loadLibrary, libraryCatalogEntry, 
 import { motionSkills, readMotionLibraryItem } from './motion-libraries.mjs';
 import { readShotcraftLibraryItem, resolveShotcraftPath, shotcraftLibraryInfo } from './shotcraft-library.mjs';
 import { productionInstructions } from './tools.mjs';
+import { localVoiceCapability } from './local-voice.mjs';
 
 const jobTypes = new Set(['record-browser', 'record-desktop', 'analyze', 'beats', 'transcribe', 'rough-cut', 'captions', 'voice', 'compose', 'render', 'render-template', 'produce', 'grade-preview', 'scopes', 'stock-download', 'export']);
 const finite = (n, fallback, min, max) => {
@@ -171,7 +172,7 @@ export async function createEngine({ dataDir, transcribeMedia: suppliedTranscrib
       { id: 'ffmpeg', name: '剪辑与编码', available: capabilityCache.get('ffmpeg') && capabilityCache.get('ffprobe'), detail: 'FFmpeg / FFprobe 本地执行' },
       { id: 'browser', name: '真实网页录制', available: Boolean(browserPath), detail: browserPath || browserError },
       { id: 'desktop', name: '桌面录制', available: process.platform === 'win32' && capabilityCache.get('ffmpeg'), detail: 'Windows gdigrab，按任务时长录制' },
-      { id: 'voice', name: '本地旁白', available: ['win32', 'darwin'].includes(process.platform), detail: process.platform === 'darwin' ? 'macOS say；声线质量取决于已安装语音' : 'Windows SAPI；声线质量取决于已安装语音' },
+      await localVoiceCapability(store.state.settings.ttsVoice),
       { id: 'music', name: '原创器乐', available: true, detail: '共享节拍网格的本地合成器' },
       { id: 'captions', name: '时间线字幕', available: capabilityCache.get('ffmpeg'), detail: '时间戳映射、中文 ASS 字幕与成片烧录' },
       { id: 'transcription', name: '语音转录', available: transcript.available, detail: transcript.detail },
@@ -353,7 +354,7 @@ export async function createEngine({ dataDir, transcribeMedia: suppliedTranscrib
       case 'voice': {
         const outputPath = await jobOutput(job, 'voice.wav');
         const result = await tools.synthesizeVoice({ ...params, voice: params.voice || store.state.settings.ttsVoice || undefined, outputPath, ...signalOptions });
-        await store.updateProject(project.id, (p) => { p.voicePath = outputPath; });
+        await store.updateProject(project.id, (p) => { p.voicePath = outputPath; p.voiceInfo = result.voice || null; });
         return result;
       }
       case 'compose': {

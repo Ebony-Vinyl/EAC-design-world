@@ -1,15 +1,17 @@
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createWriteStream, existsSync } from 'node:fs';
-import { access, copyFile, mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises';
+import { access, copyFile, mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { setImmediate as yieldTask } from 'node:timers/promises';
 import { createCaptionScript } from './captions.mjs';
+import { localVoiceConfiguration, MAMBO_VOICE_ID } from '../local-voice.mjs';
 import { describeGrading, mergeGrading, normalizeGrading, writeCubeLut } from './grading.mjs';
 
 export { remapTranscriptToTimeline } from './captions.mjs';
+export { run as runMediaProcess };
 
 const MAX_DURATION = 3600;
 const ANALYSIS_SECONDS = 120;
@@ -324,10 +326,11 @@ export async function recordDesktop({ outputPath, duration, fps = 30, signal } =
 
 export async function synthesizeVoice({ text, outputPath, voice, rate = 0, signal } = {}) {
   checkAbort(signal);
-  if (!['win32', 'darwin'].includes(process.platform)) throw new Error('Voice synthesis requires Windows SAPI or macOS say');
   if (typeof text !== 'string' || !text.trim() || text.length > 20_000) throw new TypeError('text must contain 1 to 20000 characters');
   if (voice !== undefined && (typeof voice !== 'string' || !voice.trim())) throw new TypeError('voice must be an installed system voice name');
   integer(rate, 'rate', -10, 10);
+  if (voice === MAMBO_VOICE_ID) return synthesizeMambo({ text, outputPath, rate, signal });
+  if (!['win32', 'darwin'].includes(process.platform)) throw new Error('Voice synthesis requires Windows SAPI or macOS say');
   const job = await workspace(outputPath);
   try {
     const textPath = join(job.temporary, 'speech.txt');
@@ -352,6 +355,24 @@ export async function synthesizeVoice({ text, outputPath, voice, rate = 0, signa
     }
     await ffmpeg(['-v', 'error', '-i', wavePath, '-vn', job.staged], { signal });
     return await publish(job, signal);
+  } finally { await rm(job.temporary, { recursive: true, force: true }); }
+}
+
+async function synthesizeMambo({ text, outputPath, rate, signal }) {
+  const config = await localVoiceConfiguration();
+  const job = await workspace(outputPath);
+  try {
+    const output = join(job.temporary, 'speech.wav');
+    const metadataPath = join(job.temporary, 'voice.json');
+    const request = join(job.temporary, 'speech-request.json');
+    await writeFile(request, JSON.stringify({ ...config, text, rate, outputPath: output, metadataPath }), { encoding: 'utf8', signal });
+    await run(config.pythonExecutable, ['-X', 'utf8', fileURLToPath(new URL('../../scripts/gpt-sovits-worker.py', import.meta.url)), request],
+      { signal, timeout: 900_000, processTree: true, cwd: config.engineRoot });
+    checkAbort(signal);
+    const voice = JSON.parse(await readFile(metadataPath, 'utf8'));
+    if (voice.id !== MAMBO_VOICE_ID || voice.profileId !== config.profileId || voice.profileSha256 !== config.profileSha256) throw new Error('曼波推理返回的音色与基准不一致');
+    await ffmpeg(['-v', 'error', '-i', output, '-vn', job.staged], { signal });
+    return { ...await publish(job, signal), voice };
   } finally { await rm(job.temporary, { recursive: true, force: true }); }
 }
 

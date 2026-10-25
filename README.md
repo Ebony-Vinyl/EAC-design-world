@@ -21,7 +21,7 @@ DeepSeek Harness 的本地视频制作与设计工作室
 
 EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 提供原生创作模式、模板选择和右侧作品画布，同时拥有可独立运行的本地工作台。视频录制、配音、配乐、字幕、编码与检查产生真实文件；网站、幻灯片、SVG 和文档保留源文件及版本历史。
 
-当前版本为 **v0.6.0 开发预览版**。本版加入参数化调色、变速运镜、网络素材和人工续剪工程导出，并修复凭据状态输出、柔光偏色、预览一致性和导出时序等审查问题，详见 [发布说明](docs/release-v0.6.0.md)。保留 150 个 Shotcraft 镜头、设计库、签名更新与回滚、草稿恢复和隔离预览。独立 MCP 入口支持 macOS 与 Windows，自动发现 Chrome / Edge；旁白使用 macOS say 或 Windows SAPI，桌面录制仍仅支持 Windows。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
+当前版本为 **v0.6.0 开发预览版**。本版加入参数化调色、变速运镜、网络素材和人工续剪工程导出，并修复凭据状态输出、柔光偏色、预览一致性和导出时序等审查问题，详见 [发布说明](docs/release-v0.6.0.md)。保留 150 个 Shotcraft 镜头、设计库、签名更新与回滚、草稿恢复和隔离预览。独立 MCP 入口支持 macOS 与 Windows，自动发现 Chrome / Edge；旁白支持 macOS say、Windows SAPI 和本地 GPT-SoVITS 曼波中文音色，桌面录制仍仅支持 Windows。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
 
 <p align="center"><b>以下两条宣传片均为 deepseek harness + EAC design world + deepseek v4.1 flash（非 1017）一轮出的结果</b></p>
 
@@ -34,6 +34,8 @@ https://github.com/user-attachments/assets/3f6641e0-e803-48cf-b61a-2baa57f2c088
 <p align="center"><b>Our Free Model · 65s</b></p>
 
 https://github.com/user-attachments/assets/ca081273-1061-4656-a1b7-41d50af0aec7
+
+顶部“音频模板”提供默认音色和曼波中文，可试听、设为默认，并将曼波模型下载到本机。本地曼波中文配音的安装、默认音色和验收方式见 [配音接入说明](docs/local-mambo-voice.md)。
 
 ## 目录
 
