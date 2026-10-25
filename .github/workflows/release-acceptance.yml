@@ -2,7 +2,7 @@ name: Release artifact and legacy upgrade acceptance
 on:
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   release-artifacts:
     runs-on: windows-latest
