@@ -1,0 +1,32 @@
+name: Local MCP on Windows and macOS
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  local-mcp:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install FFmpeg on Windows
+        if: runner.os == 'Windows'
+        run: choco install ffmpeg --no-progress -y
+      - name: Install FFmpeg on macOS
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg
+      - run: npm ci
+      - run: npx playwright install chromium
+      - run: npm run build
+      - name: Verify local MCP, browser capture, media queue and design export
+        run: node --test --test-concurrency=1 tests/platform-paths.test.mjs tests/local-mcp.test.mjs tests/engine.test.mjs tests/design-export.test.mjs tests/motion-recording.test.mjs

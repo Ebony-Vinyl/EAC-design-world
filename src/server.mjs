@@ -119,12 +119,14 @@ async function serveFile(request, response, file) {
 }
 
 export async function startServer({ engine: suppliedEngine, port = Number(process.env.EAC_PORT || 4173), dev = false, maintenanceOptions = {} } = {}) {
-  const engine = suppliedEngine || await createEngine();
-  const maintenance = createMaintenance({ engine, manifestPublicKey: RELEASE_PUBLIC_KEY, ...maintenanceOptions });
-  const vite = dev ? await (await import('vite')).createServer({ root: ROOT, server: { middlewareMode: true }, appType: 'spa' }) : null;
+  let engine, maintenance, vite;
+  let resolveReady, rejectReady;
+  const ready = new Promise((accept, reject) => { resolveReady = accept; rejectReady = reject; });
+  ready.catch(() => {});
   let origin;
   const server = http.createServer(async (request, response) => {
     try {
+      await ready;
       const url = new URL(request.url, 'http://127.0.0.1');
       const host = request.headers.host?.split(':')[0];
       if (!['localhost', '127.0.0.1', '['].includes(host)) return json(response, 403, { error: 'Invalid host' });
@@ -135,7 +137,7 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
         if (requestOrigin && !loopback(requestOrigin) && !(composerRoute && trustedOrigin(requestOrigin))) {
           return json(response, 403, { error: '跨来源请求被拒绝' });
         }
-        if (url.pathname === '/api/health') return json(response, 200, { ok: true, name: 'EAC design world', version: VERSION, instanceId: maintenance.status().instanceId });
+        if (url.pathname === '/api/health') return json(response, 200, { ok: true, name: 'EAC design world', version: VERSION, pid: process.pid, instanceId: maintenance.status().instanceId });
         if (url.pathname === '/api/maintenance' && request.method === 'GET') return json(response, 200, maintenance.status());
         if (url.pathname.startsWith('/api/maintenance/') && ['POST', 'PUT'].includes(request.method)) {
           const input = await body(request);
@@ -260,13 +262,24 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
   try {
     await new Promise((accept, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', accept); });
   } catch (error) {
-    await maintenance.close();
-    await vite?.close();
-    if (!suppliedEngine) await engine.close();
+    rejectReady(error);
     throw error;
   }
   const actualPort = server.address().port;
   origin = `http://127.0.0.1:${actualPort}`;
+  try {
+    engine = suppliedEngine || await createEngine();
+    maintenance = createMaintenance({ engine, manifestPublicKey: RELEASE_PUBLIC_KEY, ...maintenanceOptions });
+    vite = dev ? await (await import('vite')).createServer({ root: ROOT, server: { middlewareMode: true }, appType: 'spa' }) : null;
+    resolveReady();
+  } catch (error) {
+    rejectReady(error);
+    await maintenance?.close();
+    await vite?.close();
+    if (!suppliedEngine) await engine?.close();
+    await new Promise(done => { server.close(done); server.closeAllConnections(); });
+    throw error;
+  }
   return {
     port: actualPort, url: origin, engine, maintenance,
     async close() {

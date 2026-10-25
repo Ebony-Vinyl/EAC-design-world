@@ -323,21 +323,32 @@ export async function recordDesktop({ outputPath, duration, fps = 30, signal } =
 
 export async function synthesizeVoice({ text, outputPath, voice, rate = 0, signal } = {}) {
   checkAbort(signal);
-  if (process.platform !== 'win32') throw new Error('Voice synthesis currently requires Windows SAPI');
+  if (!['win32', 'darwin'].includes(process.platform)) throw new Error('Voice synthesis requires Windows SAPI or macOS say');
   if (typeof text !== 'string' || !text.trim() || text.length > 20_000) throw new TypeError('text must contain 1 to 20000 characters');
-  if (voice !== undefined && (typeof voice !== 'string' || !voice.trim())) throw new TypeError('voice must be an installed SAPI voice name');
+  if (voice !== undefined && (typeof voice !== 'string' || !voice.trim())) throw new TypeError('voice must be an installed system voice name');
   integer(rate, 'rate', -10, 10);
   const job = await workspace(outputPath);
   try {
     const textPath = join(job.temporary, 'speech.txt');
     const wavePath = join(job.temporary, 'speech.wav');
     await writeFile(textPath, text, { encoding: 'utf8', signal });
-    const script = fileURLToPath(new URL('../../scripts/voice.ps1', import.meta.url));
-    const powershell = join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
-    const args = ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
-      '-File', script, '-TextPath', textPath, '-OutputPath', wavePath, '-Rate', String(rate)];
-    if (voice !== undefined) args.push('-Voice', voice);
-    await run(powershell, args, { signal, timeout: 300_000 });
+    if (process.platform === 'darwin') {
+      const args = ['-f', textPath, '-o', wavePath, '--file-format=WAVE', '--data-format=LEI16@22050', '-r', String(Math.round(175 * 2 ** (rate / 10)))];
+      if (voice !== undefined) {
+        const voices = await run('/usr/bin/say', ['-v', '?'], { signal });
+        const names = voices.stdout.toString('utf8').split('\n').map(line => line.split(/\s+[a-z]{2,3}[_-][A-Z]{2}\s/)[0].trim());
+        if (!names.includes(voice)) throw new Error(`未安装 macOS 语音：${voice}`);
+        args.push('-v', voice);
+      }
+      await run('/usr/bin/say', args, { signal, timeout: 300_000 });
+    } else {
+      const script = fileURLToPath(new URL('../../scripts/voice.ps1', import.meta.url));
+      const powershell = join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+      const args = ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+        '-File', script, '-TextPath', textPath, '-OutputPath', wavePath, '-Rate', String(rate)];
+      if (voice !== undefined) args.push('-Voice', voice);
+      await run(powershell, args, { signal, timeout: 300_000 });
+    }
     await ffmpeg(['-v', 'error', '-i', wavePath, '-vn', job.staged], { signal });
     return await publish(job, signal);
   } finally { await rm(job.temporary, { recursive: true, force: true }); }
