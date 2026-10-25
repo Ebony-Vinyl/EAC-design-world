@@ -3,9 +3,10 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rename, rm, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { localDataDirectory } from './local-runtime.mjs';
+import { probeMedia } from './media/index.mjs';
 
 const SCRIPT = fileURLToPath(new URL('../scripts/transcribe.py', import.meta.url));
-const DEFAULT_MODEL = 'D:\\hf-cache\\hub\\models--Systran--faster-whisper-tiny\\snapshots\\d90ca5fe260221311c53c58e660288d3deb8d356';
 const MAX_JSON_BYTES = 16 * 1024 * 1024;
 
 function abortError() {
@@ -23,8 +24,9 @@ function filePath(value, name) {
   return resolve(value);
 }
 
-function selectedModel(modelPath) {
-  return filePath(modelPath ?? process.env.EAC_WHISPER_MODEL_PATH ?? DEFAULT_MODEL, 'modelPath');
+export function transcriptModelPath(modelPath) {
+  return filePath(modelPath ?? process.env.EAC_WHISPER_MODEL_PATH
+    ?? join(localDataDirectory(), 'models', 'faster-whisper-tiny'), 'modelPath');
 }
 
 function runPython(args, { signal, timeout = 900_000 } = {}) {
@@ -101,7 +103,7 @@ function runPython(args, { signal, timeout = 900_000 } = {}) {
 export async function transcriptCapabilities() {
   let modelPath;
   try {
-    modelPath = selectedModel();
+    modelPath = transcriptModelPath();
     const result = await runPython(['--capabilities', '--model-path', modelPath], { timeout: 30_000 });
     return { available: result.available === true, detail: result.detail, modelPath };
   } catch (error) {
@@ -110,11 +112,11 @@ export async function transcriptCapabilities() {
 }
 
 /** Local ASR; at most 30 minutes of decoded audio and 15 minutes of worker time. */
-export async function transcribeMedia({ path, outputDir, modelPath, language, signal } = {}) {
+export async function transcribeMedia({ path, outputDir, modelPath, language, signal } = {}, { runWorker = runPython } = {}) {
   checkAbort(signal);
   path = filePath(path, 'path');
   outputDir = filePath(outputDir, 'outputDir');
-  modelPath = selectedModel(modelPath);
+  modelPath = transcriptModelPath(modelPath);
   if (language !== undefined && (typeof language !== 'string' || !/^[a-z]{2,3}$/.test(language))) {
     throw new TypeError('language must be a two or three letter lowercase Whisper language code');
   }
@@ -124,6 +126,12 @@ export async function transcribeMedia({ path, outputDir, modelPath, language, si
   }
   checkAbort(signal);
   await mkdir(outputDir, { recursive: true });
+  // Reject invalid/oversized media without loading Python dependencies or ASR weights.
+  // The worker also enforces the limit on decoded samples, including misleading metadata.
+  const media = await probeMedia(path, { signal });
+  if (!media.hasAudio) throw new Error('Input has no audio stream');
+  if (media.duration > 1800) throw new Error('Audio exceeds the 1800-second transcription limit');
+  checkAbort(signal);
   const temporary = await mkdtemp(join(outputDir, '.eac-transcript-'));
   const stem = `transcript-${randomUUID()}`;
   const srtPath = join(outputDir, `${stem}.srt`);
@@ -134,7 +142,7 @@ export async function transcribeMedia({ path, outputDir, modelPath, language, si
   try {
     const args = ['--input', path, '--output-dir', temporary, '--model-path', modelPath];
     if (language !== undefined) args.push('--language', language);
-    await runPython(args, { signal });
+    await runWorker(args, { signal });
     checkAbort(signal);
     const stagedJson = join(temporary, 'transcript.json');
     if ((await stat(stagedJson)).size > MAX_JSON_BYTES) throw new Error('Transcript exceeds 16 MiB');

@@ -125,7 +125,7 @@ npm run motion:verify
 - 浏览器录制、HTML 逐帧渲染和文档导出自动查找已安装的 **Chrome / Edge**；可通过 `EAC_BROWSER` 指定兼容 Chromium 可执行文件。
 - Harness 插件模式要求宿主提供 conversation、settings 和 right-sidebar 槽位；也可独立打开本地工作台。
 - 桌面录制目前仅支持 Windows；旁白支持 Windows SAPI 与 macOS 系统 say。
-- 可选转录：Python、`faster-whisper` 及已下载到本地的兼容模型目录。通过 `EAC_WHISPER_MODEL_PATH` 指定模型；运行时不会替你下载模型。
+- 可选转录：Python、`faster-whisper` 及已下载到本地的兼容模型目录。默认使用用户数据目录中的 `models/faster-whisper-tiny`，也可通过 `EAC_WHISPER_MODEL_PATH` 指定模型，`EAC_PYTHON` 指定解释器；运行时不会替你下载模型。真实 ASR 集成测试需显式设置 `EAC_WHISPER_MODEL_PATH`，其余输入校验、取消和输出协议测试无需下载模型。
 
 ## 快速开始
 
