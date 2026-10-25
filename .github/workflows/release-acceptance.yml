@@ -1,0 +1,42 @@
+name: Release artifact and legacy upgrade acceptance
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  release-artifacts:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: Ebony-Vinyl/EAC-design-world
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: choco install ffmpeg --no-progress -y
+      - run: npm ci
+      - run: npm install --global pnpm@11.7.0
+      - run: npx playwright install chromium
+      - run: npm run build
+      - name: Download candidate and original published archives
+        shell: pwsh
+        run: |
+          gh release download v0.6.0 --pattern "*-update.zip" --pattern "*.tgz" --dir release/publish-v0.6.0
+          foreach ($version in @('0.1.0','0.3.0','0.4.0','0.5.0')) {
+            gh release download "v$version" --pattern "*-plugin.zip" --pattern "SHA256SUMS.txt" --dir "release/baseline-v$version"
+          }
+          python -c "import pathlib,zipfile; out=pathlib.Path('release/publish-v0.6.0');zipfile.ZipFile(out/'eac-design-world-v0.6.0-update.zip').extractall(out/'update');z=zipfile.ZipFile('release/baseline-v0.5.0/eac-design-world-v0.5.0-plugin.zip');p=pathlib.Path('release/legacy-dependencies-v0.5.0');p.mkdir();[(p/n).write_bytes(z.read('eac-design-world/'+n))for n in ['package.json','package-lock.json']]"
+      - name: Install unchanged original dependencies
+        run: npm ci --prefix release/legacy-dependencies-v0.5.0 --omit=dev --ignore-scripts --no-audit --no-fund
+      - name: Verify real old updater, render, data preservation and rollback
+        run: npm run verify:maintenance -- release/publish-v0.6.0/update/manifest.json release/baseline-v0.3.0/eac-design-world-v0.3.0-plugin.zip release/baseline-v0.4.0/eac-design-world-v0.4.0-plugin.zip release/baseline-v0.5.0/eac-design-world-v0.5.0-plugin.zip release/baseline-v0.1.0/eac-design-world-v0.1.0-plugin.zip
+      - name: Verify complete npm and pnpm artifact installs
+        run: npm run verify:npm -- release/publish-v0.6.0/eac-design-world-0.6.0.tgz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-v0.6.0-acceptance
+          path: artifacts/maintenance-qa/*.json
