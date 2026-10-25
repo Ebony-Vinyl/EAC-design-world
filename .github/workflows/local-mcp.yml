@@ -24,7 +24,11 @@ jobs:
         run: choco install ffmpeg --no-progress -y
       - name: Install FFmpeg on macOS
         if: runner.os == 'macOS'
-        run: brew install ffmpeg
+        run: |
+          brew install ffmpeg-full
+          echo "$(brew --prefix ffmpeg-full)/bin" >> "$GITHUB_PATH"
+      - name: Check subtitle renderer
+        run: node -e "const {spawnSync}=require('node:child_process'); const r=spawnSync('ffmpeg',['-hide_banner','-filters'],{encoding:'utf8'}); if(r.status!==0 || !/\bass\s/.test(r.stdout)) throw new Error('FFmpeg must include the libass subtitle renderer');"
       - run: npm ci
       - run: npx playwright install chromium
       - run: npm run build
