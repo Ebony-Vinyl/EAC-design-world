@@ -46,7 +46,7 @@ export function designContextFor(record) {
   return lines.join('\n');
 }
 
-export async function createEngine({ dataDir } = {}) {
+export async function createEngine({ dataDir, transcribeMedia: suppliedTranscriber } = {}) {
   const store = await new Store(dataDir).init();
   const designStore = await new DesignStore(join(store.root, 'design')).init();
   const controllers = new Map();
@@ -199,7 +199,7 @@ export async function createEngine({ dataDir } = {}) {
         const asset = project.assets.find((a) => a.id === params.assetId || a.path === params.path);
         if (!asset) throw new Error('请提供要转录素材的 assetId');
         const { transcribeMedia, generateKeepRanges } = await import('./transcript.mjs');
-        const transcript = await transcribeMedia({ ...params, path: asset.path, outputDir: await jobOutput(job, 'transcript'), signal });
+        const transcript = await (suppliedTranscriber || transcribeMedia)({ ...params, path: asset.path, outputDir: await jobOutput(job, 'transcript'), signal });
         signal.throwIfAborted();
         const ranges = generateKeepRanges(transcript.segments, params);
         const metadata = await store.updateProject(project.id, (p) => {

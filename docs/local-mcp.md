@@ -10,7 +10,7 @@
 
 ## 安装与接入
 
-需要 Node 22+、FFmpeg/FFprobe、Chrome 或兼容 Chromium。
+需要 Node 22+、FFmpeg/FFprobe 7+、Chrome 或兼容 Chromium。
 
 ```sh
 npm ci
@@ -28,7 +28,7 @@ codex mcp add eac-design-world -- /absolute/path/to/node /absolute/path/to/EAC-d
 
 ### Windows（PowerShell）
 
-安装 Node 22+ 和 FFmpeg，确保 `node --version`、`ffmpeg -version`、`ffprobe -version` 能运行。在仓库根目录执行：
+安装 Node 22+ 和 FFmpeg 7+，确保 `node --version`、`ffmpeg -version`、`ffprobe -version` 能运行。在仓库根目录执行：
 
 ```powershell
 npm ci

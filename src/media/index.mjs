@@ -560,7 +560,7 @@ export async function renderTimeline({ project, outputPath, onProgress, signal }
     }
     const script = join(job.temporary, 'filters.txt');
     await writeFile(script, filters.join(';\n'), { encoding: 'utf8', signal });
-    args.push('-filter_complex_script', script, '-map', `[${previous}]`);
+    args.push('-/filter_complex', script, '-map', `[${previous}]`);
     if (audioLabels.length) args.push('-map', '[audio]', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000');
     else args.push('-an');
     args.push(...videoEncoding(timeline.quality), '-r', String(timeline.fps), '-t', String(timeline.duration));

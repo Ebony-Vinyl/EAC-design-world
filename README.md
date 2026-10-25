@@ -113,7 +113,7 @@ npm run motion:verify
 ### 环境要求
 
 - **Node.js 22 或更新版本**，附带 npm。
-- 视频剪辑与导出需要 **FFmpeg / FFprobe**，并位于 `PATH`。
+- 视频剪辑与导出需要 **FFmpeg / FFprobe 7 或更新版本**，并位于 `PATH`。
 - 浏览器录制、HTML 逐帧渲染和文档导出自动查找已安装的 **Chrome / Edge**；可通过 `EAC_BROWSER` 指定兼容 Chromium 可执行文件。
 - Harness 插件模式要求宿主提供 conversation、settings 和 right-sidebar 槽位；也可独立打开本地工作台。
 - 桌面录制目前仅支持 Windows；旁白支持 Windows SAPI 与 macOS 系统 say。
