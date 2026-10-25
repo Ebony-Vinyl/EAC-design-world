@@ -756,3 +756,22 @@ test('buildManifest + copyRelease produce an importable local package', async ()
     assert.equal(result.signed, true)
   })
 })
+
+test('signed local updates enforce minSupported before staging or altering installed files', async () => {
+  await withTemp(async dir => {
+    const pkg = join(dir, 'pkg'), release = join(dir, 'release');
+    await makePackage(pkg, { version: '0.1.0' });
+    await makePackage(release, { version: '0.5.0' });
+    const keys = keypair();
+    await writeManifest(release, { privateKey: keys.privateKey, minSupported: '0.3.0' });
+    const updater = new MaintenanceUpdater({ pkgDir: pkg, dataDir: join(dir, 'data'), settings: () => ({}), manifestPublicKey: keys.publicKey });
+    const before = await readFile(join(pkg, 'package.json'), 'utf8');
+    await assert.rejects(updater.applyLocal({ manifestPath: join(release, 'feed/manifest.json') }), /requires at least 0.3.0/);
+    assert.equal(await readFile(join(pkg, 'package.json'), 'utf8'), before);
+    assert.equal(existsSync(updater.stageDir), false);
+    await makePackage(pkg, { version: '0.3.0' });
+    const result = await updater.applyLocal({ manifestPath: join(release, 'feed/manifest.json') });
+    assert.equal(result.version, '0.5.0');
+    assert.equal(result.signed, true);
+  });
+});

@@ -33,4 +33,4 @@ jobs:
       - run: npx playwright install chromium
       - run: npm run build
       - name: Verify local MCP, browser capture, media queue and design export
-        run: node --test --test-concurrency=1 tests/platform-paths.test.mjs tests/local-mcp.test.mjs tests/engine.test.mjs tests/design-export.test.mjs tests/motion-recording.test.mjs
+        run: node --test --test-concurrency=1 tests/data-lock.test.mjs tests/release-inputs.test.mjs tests/workspace-review.test.mjs tests/maintenance-updater.test.mjs tests/platform-paths.test.mjs tests/local-mcp.test.mjs tests/engine.test.mjs tests/design-export.test.mjs tests/motion-recording.test.mjs
