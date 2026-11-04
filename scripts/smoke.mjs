@@ -19,13 +19,13 @@ try {
     narration: 'EAC design world。从真实产品录制开始，选择视觉模板，编排镜头与声音。让人工智能和你，在同一个工程里完成创作。',
     actions: [
       { type: 'wait', ms: 1800 },
-      { type: 'click', selector: 'nav .nav-item:nth-child(2)' },
+      { type: 'click', selector: 'nav .topnav-item:nth-child(2)' },
       { type: 'wait', ms: 2400 },
       { type: 'scroll', deltaY: 500 },
       { type: 'wait', ms: 1800 },
-      { type: 'click', selector: 'button[aria-label="打开设置"]' },
+      { type: 'click', selector: '.topnav-item.settings-item' },
       { type: 'wait', ms: 2200 },
-      { type: 'click', selector: 'nav .nav-item:nth-child(1)' },
+      { type: 'click', selector: 'nav .topnav-item:nth-child(1)' },
       { type: 'wait', ms: 1800 }
     ]
   }});
@@ -50,7 +50,7 @@ try {
       const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
       page.on('pageerror', (error) => errors.push(error.message));
       await page.goto(app.url);
-      await page.waitForSelector('.nav-item');
+      await page.waitForSelector('.topnav-item');
       await page.screenshot({ path: join(directory, `${name}.png`), fullPage: true });
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
       if (overflow) errors.push(`${name}: horizontal overflow`);
