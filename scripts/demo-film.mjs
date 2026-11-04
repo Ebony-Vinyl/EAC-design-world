@@ -26,11 +26,11 @@ if (!project.clips.length) await api(`/projects/${project.id}/plan`, { duration:
 const capture = await api('/jobs', { projectId: project.id, type: 'record-browser', params: {
   url, actions: [
     { type: 'wait', ms: 1400 },
-    { type: 'click', selector: 'nav .nav-item:nth-child(2)' },
+    { type: 'click', selector: 'nav .topnav-item:nth-child(2)' },
     { type: 'wait', ms: 3400 },
-    { type: 'click', selector: 'nav .nav-item:nth-child(3)' },
+    { type: 'click', selector: 'nav .topnav-item:nth-child(3)' },
     { type: 'wait', ms: 3000 },
-    { type: 'click', selector: 'nav .nav-item:nth-child(5)' },
+    { type: 'click', selector: 'nav .topnav-item:nth-child(5)' },
     { type: 'wait', ms: 2400 }
   ]
 }});
@@ -50,7 +50,7 @@ try {
   await page.waitForSelector('.app-shell');
   await page.locator('.brand-mark').screenshot({ path: join(root, 'brand.png') });
   for (const [image, nav] of [['studio', 1], ['templates', 2], ['workflow', 3], ['outputs', 5]]) {
-    await page.locator(`nav .nav-item:nth-child(${nav})`).click();
+    await page.locator(`nav .topnav-item:nth-child(${nav})`).click();
     await page.evaluate(() => document.fonts.ready);
     await page.screenshot({ path: join(root, `${image}.png`) });
   }
