@@ -21,7 +21,7 @@ DeepSeek Harness 的本地视频制作与设计工作室
 
 EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 提供原生创作模式、模板选择和右侧作品画布，同时拥有可独立运行的本地工作台。视频录制、配音、配乐、字幕、编码与检查产生真实文件；网站、幻灯片、SVG 和文档保留源文件及版本历史。
 
-当前版本为 **v0.6.0 开发预览版**。本版加入参数化调色、变速运镜、网络素材和人工续剪工程导出，并修复凭据状态输出、柔光偏色、预览一致性和导出时序等审查问题，详见 [发布说明](docs/release-v0.6.0.md)。保留 150 个 Shotcraft 镜头、设计库、签名更新与回滚、草稿恢复和隔离预览。独立 MCP 入口支持 macOS 与 Windows，自动发现 Chrome / Edge；旁白使用 macOS say 或 Windows SAPI，桌面录制仍仅支持 Windows。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
+当前版本为 **v0.6.0 开发预览版**。本版加入参数化调色、变速运镜、网络素材和人工续剪工程导出，并修复凭据状态输出、柔光偏色、预览一致性和导出时序等审查问题，详见 [发布说明](docs/release-v0.6.0.md)。保留 150 个 Shotcraft 镜头、设计库、签名更新与回滚、草稿恢复和隔离预览。独立 MCP 入口支持 macOS 与 Windows，自动发现 Chrome / Edge；旁白使用 macOS say 或 Windows SAPI，桌面录制支持 Windows gdigrab 与 macOS avfoundation。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
 
 <p align="center"><b>以下两条宣传片均为 deepseek harness + EAC design world + deepseek v4.1 flash（非 1017）一轮出的结果</b></p>
 
@@ -48,14 +48,14 @@ https://github.com/user-attachments/assets/ca081273-1061-4656-a1b7-41d50af0aec7
 | 从对话开始创作 | 正常、剪辑、Design 三种模式；模板区独立铺开，选择状态不覆盖正文；重复点击或标签上的 × 可取消 |
 | 找到合适的视觉风格 | 152 套设计体系与 517 个 OpenDesign 模板条目，另有原有 17 个视频选项；按类型搜索、分类和分页 |
 | 浏览与挑选动效镜头 | Shotcraft 本地快照含 150 个镜头、10 类动效、59 个精选；可见视频预览、选片单、名单复制与下载、导入项目素材 |
-| 录下真实产品 | Edge 网页操作录制；Windows 桌面录制；原素材不被改写 |
+| 录下真实产品 | Edge / Chrome 网页操作录制；Windows gdigrab 或 macOS avfoundation 桌面录制；原素材不被改写 |
 | 编排实际镜头 | 多轨时间线，调整开始时间、素材入点、时长、音量和轨道；带修订号保存 |
 | 找网络风景素材与配乐 | `stock_search`/`stock-download`：Pexels、Pixabay（免费 API Key）、维基共享 Commons（免 Key）风景视频与 Jamendo CC 配乐；作者与许可随素材持久化 |
 | 参数化调色与迭代 | 曲线（主/RGB）、HSL 二级、色相曲线、分区轮、静态局部蒙版与相机输入 LUT；全局色彩调整可导出 `.cube`，空间蒙版在原生渲染生效、续剪时需重建；`grade-preview` 对比帧、`scopes` 示波器与 `color_workflow` 调色版本/曝光匹配建议辅助 AI 迭代 |
 | 卡点变速与运镜 | `beats` 节拍分析驱动音乐卡点剪辑；`clip.speed` 变速、`clip.motion` 数字运镜（推拉摇移）、片尾淡出/锐化/暗角；大时间线自动分块多 Pass 渲染防内存溢出 |
 | 交付人工续剪 | 导出面板选择剪映草稿、Premiere/达芬奇 FCP7 XML、SRT 与 LUT；下载交接文件并保留人工修改的已有草稿；交换格式的效果保留以交接说明为准 |
 | 处理语音与字幕 | 本地语音转录、去停顿初稿、SRT、时间线字幕与 ASS 烧录；转录需自行准备本地模型 |
-| 完成声音与编码 | Windows SAPI 旁白、本地确定性器乐、源音轨混音、H.264 输出与技术检查 |
+| 完成声音与编码 | Windows SAPI 或 macOS `say` 旁白、本地确定性器乐、源音轨混音、H.264 输出与技术检查 |
 | 制作图形动效 | `renderAt(t)` / `__seek(t)`、CSS 动画和 GSAP 时间线的确定性驱动与抽帧审查；可选接入 Motion Web 交互案例和 Onetake 函数库 |
 | 创建网站和演示稿 | HTML、SVG、Markdown 编辑、隔离预览、不可变修订与源文件下载 |
 | 检查与导出作品 | Harness 原生右侧作品画布、HTML 幻灯片分页、PDF / PNG / PPTX 整页图像导出 |
@@ -122,7 +122,7 @@ npm run motion:verify
 - 视频剪辑与导出需要 **FFmpeg / FFprobe 7 或更新版本**，并位于 `PATH`。
 - 浏览器录制、HTML 逐帧渲染和文档导出自动查找已安装的 **Chrome / Edge**；可通过 `EAC_BROWSER` 指定兼容 Chromium 可执行文件。
 - Harness 插件模式要求宿主提供 conversation、settings 和 right-sidebar 槽位；也可独立打开本地工作台。
-- 桌面录制目前仅支持 Windows；旁白支持 Windows SAPI 与 macOS 系统 say。
+- 桌面录制支持 Windows（gdigrab）与 macOS（avfoundation，需屏幕录制权限）；旁白支持 Windows SAPI 与 macOS 系统 say；Linux 尚未实现。
 - 可选转录：Python、`faster-whisper` 及已下载到本地的兼容模型目录。默认读取用户数据目录下的 `models/faster-whisper-tiny`，也可用 `EAC_WHISPER_MODEL_PATH` 指定；运行时不会替你下载模型。`PyAV` 19 起移除了 `metadata_errors` 参数，`scripts/transcribe.py` 已同时兼容新旧签名；若自行安装依赖遇到解码报错，可用 `pip install "av<19"`。
 
 ## 快速开始

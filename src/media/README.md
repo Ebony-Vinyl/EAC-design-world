@@ -1,11 +1,13 @@
 # Media execution
 
 Dependency-light Node ESM; requires `ffmpeg` and `ffprobe` on PATH. Browser
-capture additionally requires root-installed `playwright` and Edge on Windows
-(Playwright Chromium elsewhere). `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` selects
-an installed Chromium executable explicitly. Desktop capture and voice require
-Windows and an interactive desktop / installed System.Speech SAPI voices,
-respectively. Missing providers and media throw; no placeholder output.
+capture additionally requires root-installed `playwright`, plus Edge on Windows
+or a system Chromium on macOS/Linux (Playwright bundled Chromium otherwise).
+`EAC_BROWSER` / `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` selects an installed
+Chromium executable explicitly. Desktop capture needs Windows (gdigrab) or
+macOS (avfoundation) with Screen Recording permission; voice needs Windows
+(SAPI) or macOS (`say`) with installed system voices. Missing providers and
+media throw; no placeholder output.
 
 Exports from `src/media/index.mjs`:
 
@@ -25,13 +27,23 @@ Exports from `src/media/index.mjs`:
   No browser audio. Begins after DOM content loads. Defaults 1280x720.
   Selectors use Playwright syntax; scroll selector targets an element, otherwise
   the window. Wait defaults to 1000 ms, scroll deltaY defaults to 600.
-- `recordDesktop({ outputPath, duration, fps?, signal? })`: Windows gdigrab captures
-  the full desktop, including cursor, to video without system audio.
-  Duration 0.1..600 seconds, fps 1..60 (default 30).
-- `synthesizeVoice({ text, outputPath, voice?, rate?, signal? })`: real Windows SAPI
-  speech through `scripts/voice.ps1`. UTF-8 text is passed through a file,
-  never interpolated into PowerShell code. Named voice must exist; omitted
-  voice uses the OS default. Rate is an integer -10..10, default 0.
+- `recordDesktop({ outputPath, duration, fps?, signal? })`: captures the full
+  desktop, including cursor, to video without system audio. Windows uses
+  gdigrab; macOS uses avfoundation, discovering the screen device index from
+  `-list_devices` (override with `EAC_SCREEN_DEVICE`) and clamping fps to the
+  1..30 range those devices advertise. Both need Screen Recording permission.
+  Duration 0.1..600 seconds, fps 1..60 Windows / 1..30 macOS (default 30).
+  On macOS the capture is scaled to at most 1920 px wide, because avfoundation
+  reports the display in physical pixels (a Retina screen would otherwise
+  record at 2x); `EAC_SCREEN_MAX_WIDTH` changes that cap and `0` keeps the
+  native size.
+- `synthesizeVoice({ text, outputPath, voice?, rate?, signal? })`: real system
+  speech. Windows uses SAPI through `scripts/voice.ps1` (UTF-8 text passed
+  through a file, never interpolated into PowerShell code); macOS uses `say`
+  with the text as a positional argument after `--`, producing AIFF that FFmpeg
+  converts to WAV. Named voice must exist (macOS, see `say -v '?'`); omitted
+  voice uses the OS default. Rate is an integer -10..10, default 0; macOS maps
+  it onto a words-per-minute range around the 175 wpm default.
   WAV is generated then converted by FFmpeg to the requested audio extension.
 - `composeMusic({ outputPath, duration, bpm?, seed?, signal? })`: original stereo music
   synthesized locally with drums, bass, minor chords and a seeded melody.

@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { createWriteStream, existsSync } from 'node:fs';
 import { access, copyFile, mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises';
@@ -310,16 +310,77 @@ export async function recordBrowser({ url, actions = [], outputDir, width = 1280
 
 export async function recordDesktop({ outputPath, duration, fps = 30, signal } = {}) {
   checkAbort(signal);
-  if (process.platform !== 'win32') throw new Error('Desktop recording currently requires Windows gdigrab');
+  if (process.platform !== 'win32' && process.platform !== 'darwin') {
+    throw new Error('Desktop recording requires Windows (gdigrab) or macOS (avfoundation)');
+  }
   number(duration, 'duration', 0.1, 600);
   integer(fps, 'fps', 1, 60);
   const job = await workspace(outputPath);
   try {
-    await ffmpeg(['-v', 'error', '-f', 'gdigrab', '-framerate', String(fps), '-i', 'desktop',
-      '-t', String(duration), '-vf', 'pad=ceil(iw/2)*2:ceil(ih/2)*2', '-an',
+    await ffmpeg([...desktopCaptureInput(fps), '-t', String(duration),
+      '-vf', desktopCaptureFilter(), '-an',
       ...videoEncoding(), job.staged], { signal, timeout: duration * 1000 + 60_000 });
     return await publish(job, signal);
   } finally { await rm(job.temporary, { recursive: true, force: true }); }
+}
+
+/**
+ * Screen-capture input arguments per platform.
+ *
+ * Windows uses gdigrab. macOS uses AVFoundation, whose screen devices are
+ * identified by a positional index that depends on the machine (cameras and
+ * Continuity devices are enumerated first), so the index is discovered by
+ * parsing `-list_devices` and cached. `EAC_SCREEN_DEVICE` overrides it.
+ * AVFoundation rejects framerates a device does not advertise, so macOS fps is
+ * clamped to the 1-30 range those screen devices report.
+ *
+ * Both paths need the host process to hold Screen Recording permission
+ * (Windows: normal desktop session; macOS: System Settings > Privacy &
+ * Security > Screen Recording). Without it the capture fails at open time.
+ */
+let macScreenDevice;
+
+function avfoundationScreenIndex() {
+  if (macScreenDevice !== undefined) return macScreenDevice;
+  if (process.env.EAC_SCREEN_DEVICE) return (macScreenDevice = String(process.env.EAC_SCREEN_DEVICE));
+  const listed = spawnSync('ffmpeg', ['-hide_banner', '-f', 'avfoundation', '-list_devices', 'true', '-i', ''],
+    { encoding: 'utf8', timeout: 15_000, windowsHide: true });
+  const text = String(listed.stdout ?? '') + String(listed.stderr ?? '');
+  const match = text.match(/\[(\d+)\]\s+Capture screen\b/);
+  if (!match) throw new Error('No macOS screen capture device found; grant Screen Recording permission and retry');
+  return (macScreenDevice = match[1]);
+}
+
+function desktopCaptureInput(fps) {
+  if (process.platform === 'darwin') {
+    const device = avfoundationScreenIndex();
+    const rate = Math.min(30, Math.max(1, fps));
+    // AVFoundation screen devices expose only uyvy422/yuyv422. FFmpeg answers a
+    // yuv420p request with "Selected pixel format (yuv420p) is not supported" and
+    // then silently overrides it, so ask for uyvy422 explicitly instead of
+    // depending on that fallback staying in place.
+    return ['-v', 'error', '-f', 'avfoundation', '-pixel_format', 'uyvy422',
+      '-framerate', String(rate), '-i', device + ':none'];
+  }
+  return ['-v', 'error', '-f', 'gdigrab', '-framerate', String(fps), '-i', 'desktop'];
+}
+
+/**
+ * Capture-size filter per platform.
+ *
+ * macOS reports the screen in physical pixels, so a Retina display captures at
+ * 2x its logical size (3456x2234 on a 16" MacBook Pro). Full-size capture is
+ * slow and oversized for the video pipeline, so the width is capped and the
+ * height derived from it. `EAC_SCREEN_MAX_WIDTH` overrides the cap; set it to 0
+ * to keep the native size. The pad filter keeps the result even-dimensioned for
+ * H.264 on any display.
+ */
+function desktopCaptureFilter() {
+  const pad = 'pad=ceil(iw/2)*2:ceil(ih/2)*2';
+  if (process.platform !== 'darwin') return pad;
+  const max = Number(process.env.EAC_SCREEN_MAX_WIDTH ?? 1920);
+  if (!Number.isFinite(max) || max <= 0) return pad;
+  return `scale=w='min(${max},iw)':h=-2,${pad}`;
 }
 
 export async function synthesizeVoice({ text, outputPath, voice, rate = 0, signal } = {}) {
