@@ -95,6 +95,26 @@ test('keep ranges reject unsafe intervals and invalid options', () => {
     && (i === 0 || range.start > ranges[i - 1].end)));
 });
 
+test('the decode helper accepts both PyAV signatures (metadata_errors was removed in 19)', async () => {
+  const script = fileURLToPath(new URL('../scripts/transcribe.py', import.meta.url));
+  const source = [
+    'import importlib.util, json, sys',
+    'spec = importlib.util.spec_from_file_location("transcribe", sys.argv[1])',
+    'worker = importlib.util.module_from_spec(spec)',
+    'spec.loader.exec_module(worker)',
+    'class Modern:',
+    '    def open(self, path, mode="r", **kwargs):',
+    '        if kwargs: raise TypeError("open() got an unexpected keyword argument")',
+    '        return "modern"',
+    'class Legacy:',
+    '    def open(self, path, mode="r", metadata_errors=None): return f"legacy:{metadata_errors}"',
+    'print(json.dumps({"modern": worker.open_container(Modern(), "x"), "legacy": worker.open_container(Legacy(), "x")}))',
+  ].join('\n');
+  const result = JSON.parse(await command(process.env.EAC_PYTHON || process.env.PYTHON || 'python',
+    ['-X', 'utf8', '-B', '-c', source, script]));
+  assert.deepEqual(result, { modern: 'modern', legacy: 'legacy:ignore' });
+});
+
 test('SRT formats hour boundaries, millisecond carry, and Unicode without loading ASR', async () => {
   const script = fileURLToPath(new URL('../scripts/transcribe.py', import.meta.url));
   const source = [
@@ -114,6 +134,7 @@ test('real local tiny ASR transcribes synthesized English with word timestamps a
   skip: process.platform !== 'win32', timeout: 180_000,
 }, async (t) => {
   const capabilities = await transcriptCapabilities();
+  if (!capabilities.available) { t.skip(`No local faster-whisper model: ${capabilities.detail}`); return; }
   assert.equal(capabilities.available, true, capabilities.detail);
   assert.match(capabilities.detail, /tiny.*low quality/i);
   const directory = await workspace(t);
@@ -148,6 +169,38 @@ test('real local tiny ASR transcribes synthesized English with word timestamps a
   t.diagnostic(`Actual tiny ASR: ${result.segments.length} segments, ${words.length} words; ${result.segments[0].text}`);
 });
 
+test('the default model resolves inside the user data directory, never a developer machine path', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'eac-model-default-'));
+  try {
+    const previous = process.env.EAC_DATA_DIR;
+    process.env.EAC_DATA_DIR = directory;
+    try {
+      const capabilities = await transcriptCapabilities();
+      assert.equal(capabilities.available, false);
+      assert.equal(capabilities.modelPath, join(directory, 'models', 'faster-whisper-tiny'));
+      assert.doesNotMatch(capabilities.detail, /hf-cache/i);
+    } finally {
+      if (previous === undefined) delete process.env.EAC_DATA_DIR;
+      else process.env.EAC_DATA_DIR = previous;
+    }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test('EAC_WHISPER_MODEL_PATH still overrides the user data directory default', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'eac-model-override-'));
+  try {
+    const previous = process.env.EAC_WHISPER_MODEL_PATH;
+    process.env.EAC_WHISPER_MODEL_PATH = join(directory, 'custom model');
+    try {
+      const capabilities = await transcriptCapabilities();
+      assert.equal(capabilities.modelPath, join(directory, 'custom model'));
+    } finally {
+      if (previous === undefined) delete process.env.EAC_WHISPER_MODEL_PATH;
+      else process.env.EAC_WHISPER_MODEL_PATH = previous;
+    }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
 test('missing model and invalid input fail honestly without caption artifacts', { timeout: 60_000 }, async (t) => {
   const directory = await workspace(t);
   const input = join(directory, 'invalid audio.wav');
@@ -156,6 +209,9 @@ test('missing model and invalid input fail honestly without caption artifacts', 
   await assert.rejects(transcribeMedia({ path: input, outputDir, modelPath: join(directory, 'missing') }),
     /Local model directory does not exist/);
   assert.deepEqual(await readdir(outputDir), []);
+  // Everything below decodes real audio, which needs a working model on this machine.
+  const capabilities = await transcriptCapabilities();
+  if (!capabilities.available) { t.skip(`No local faster-whisper model: ${capabilities.detail}`); return; }
   await assert.rejects(transcribeMedia({ path: input, outputDir }), /InvalidDataError|Invalid data/i);
   assert.deepEqual(await readdir(outputDir), []);
   await assert.rejects(transcribeMedia({ path: input, outputDir, language: '--bad' }), /language/);
@@ -164,6 +220,8 @@ test('missing model and invalid input fail honestly without caption artifacts', 
 test('silence stays empty, video without audio fails, and long audio is rejected before ASR', {
   timeout: 60_000,
 }, async (t) => {
+  const capabilities = await transcriptCapabilities();
+  if (!capabilities.available) { t.skip(`No local faster-whisper model: ${capabilities.detail}`); return; }
   const directory = await workspace(t);
   const outputDir = join(directory, 'output');
   const silent = join(directory, 'silent.wav');

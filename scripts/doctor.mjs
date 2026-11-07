@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { ROOT, templates } from '../src/catalog.mjs';
 import { browserLaunchOptions } from '../src/browser.mjs';
+import { transcriptCapabilities } from '../src/transcript.mjs';
 import { chromium } from 'playwright';
 
 let browser;
@@ -13,6 +14,10 @@ catch (error) { browser = { ok: false, detail: error.message }; }
 const command = (name, args) => spawnSync(name, args, { encoding: 'utf8', windowsHide: true, timeout: 8000 });
 const filters = command('ffmpeg', ['-hide_banner', '-filters']);
 const lut3d = (filters.stdout || '').includes('lut3d');
+// Transcription is optional, so the check reports the resolved model directory instead of
+// failing the whole doctor run. Without it users only learned about the missing model from
+// the capabilities list inside eac_status.
+const transcript = await transcriptCapabilities().catch((error) => ({ available: false, detail: error.message, modelPath: null }));
 const state = await readFile(join(ROOT, '.eac', 'state.json'), 'utf8').then(JSON.parse).catch(() => ({ settings: {} }));
 const settings = state.settings || {};
 const keyCheck = (label, value, docs) => ({ name: label, ok: Boolean(value), detail: value ? '已配置' : `未配置 · ${docs}` });
@@ -31,6 +36,9 @@ const checks = [
   keyCheck('Jamendo Client ID', settings.jamendoClientId, 'devportal.jamendo.com 免费注册（CC 配乐）'),
   { name: '剪映草稿目录', ok: existsSync(draftsRoot), detail: draftsRoot || '未检测到（Windows 需安装剪映专业版）' },
   { name: 'Chromium browser', ...browser },
+  { name: '本地语音转录（可选）', ok: transcript.available, detail: transcript.available
+    ? `模型：${transcript.modelPath}`
+    : `${transcript.detail}；把 faster-whisper-tiny 放到 ${transcript.modelPath || '<数据目录>/models/faster-whisper-tiny'}，或用 EAC_WHISPER_MODEL_PATH 指定` },
   ...templates.map((template) => ({ name: template.name, ok: existsSync(join(ROOT, template.entry)), detail: template.status }))
 ];
 for (const check of checks) console.log(`${check.ok ? 'OK' : 'MISSING'}  ${check.name}: ${check.detail}`);

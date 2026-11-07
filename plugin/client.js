@@ -44,9 +44,11 @@ window.__ModuleLoader__.load({
       designDescription: '选择模板或设计体系，再描述你要创作的网站、幻灯片、文档或图片。', resize: '调整画布宽度',
     };
     const css = `
-      [data-composer-card]:has(.eac-composer-controls){height:auto!important;min-height:0!important;flex-grow:0!important;justify-content:flex-start!important}
-      [data-composer-card]:has(.eac-composer-controls) [data-input-scroll]{height:auto!important;min-height:0!important;flex:0 1 auto!important}
-      [data-composer-card]:has(.eac-composer-controls) [contenteditable][data-placeholder]{height:auto!important;min-height:52px!important;flex-grow:0!important}
+      /* Only this plugin's own elements are styled. Earlier versions also forced the host
+         composer card, its input scroll area and its contenteditable to auto height with
+         !important. Because other plugins (e.g. ds-bot) reuse the host composer, those
+         overrides collapsed their input to zero height and made it impossible to type.
+         The plugin must never resize a composer it does not own. */
       .eac-composer-controls{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:100%;font:inherit;color:inherit}
       .eac-composer-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:30px;max-width:210px;padding:4px 8px;border:0;border-radius:7px;background:transparent;color:var(--dsw-alias-label-secondary,inherit);font:inherit;font-size:13px;line-height:20px;cursor:pointer;white-space:nowrap}
       .eac-composer-button:hover{background:var(--dsw-alias-interactive-bg-hover,#80808012)}

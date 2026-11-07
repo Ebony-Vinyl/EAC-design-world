@@ -75,6 +75,8 @@ export default function TimelineEditor({ project, onSave, busy, presets = [], on
   const [notice, setNotice] = useState('');
   const [advanced, setAdvanced] = useState({});
   const [exportIntent, setExportIntent] = useState(false);
+  const [drag, setDrag] = useState(null);
+  const [selected, setSelected] = useState(null);
   useEffect(() => {
     if (!dirty) { setClips(structuredClone(project.clips || [])); setLook(structuredClone(project.look ?? null)); setBaseRevision(project.revision); }
   }, [project.revision, dirty]);
@@ -108,6 +110,50 @@ export default function TimelineEditor({ project, onSave, busy, presets = [], on
     }));
   };
   const total = Math.max(1, ...clips.map(clip => Number(clip.start) + Number(clip.duration)));
+  // Dragging a clip moves it in time; dragging its edges trims it. Both keep the clip inside
+  // [0, timeline] and honour the existing numeric fields, which stay authoritative for saving.
+  const beginDrag = (event, index, mode) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const track = event.currentTarget.closest('.timeline-track > div');
+    if (!track) return;
+    const width = track.getBoundingClientRect().width;
+    if (!width) return;
+    const clip = clips[index];
+    setSelected(index);
+    setDrag({ index, mode, x: event.clientX, width,
+      start: Number(clip.start), duration: Number(clip.duration), moved: false });
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const continueDrag = event => {
+    if (!drag) return;
+    const secondsPerPixel = total / drag.width;
+    const delta = (event.clientX - drag.x) * secondsPerPixel;
+    if (Math.abs(event.clientX - drag.x) < 2) return;
+    setDirty(true);
+    setClips(rows => rows.map((row, index) => {
+      if (index !== drag.index) return row;
+      const next = { ...row };
+      if (drag.mode === 'move') {
+        next.start = Math.max(0, Math.round((drag.start + delta) * 100) / 100);
+      } else if (drag.mode === 'trim-start') {
+        // Trimming the head moves the source in-point by the same amount, so the same
+        // footage stays under the cursor instead of sliding.
+        const shift = Math.min(Math.max(delta, -drag.start), drag.duration - 0.1);
+        next.start = Math.round((drag.start + shift) * 100) / 100;
+        next.duration = Math.round((drag.duration - shift) * 100) / 100;
+        next.sourceIn = Math.round((Number(row.sourceIn || 0) + shift) * 100) / 100;
+      } else {
+        next.duration = Math.max(0.1, Math.round((drag.duration + delta) * 100) / 100);
+      }
+      return next;
+    }));
+    setDrag(current => current ? { ...current, moved: true } : current);
+  };
+  const endDrag = event => {
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    setDrag(null);
+  };
   const add = event => {
     const asset = project.assets.find(item => item.id === event.target.value);
     if (!asset) return;
@@ -151,7 +197,15 @@ export default function TimelineEditor({ project, onSave, busy, presets = [], on
     </div>}
     {project.revision !== baseRevision && dirty && <p className="inline-error" role="alert">项目已被其他操作更新。当前未保存编排仍保留；请重新打开时间线以使用最新版本。</p>}
     <div className="timeline-ruler"><span>0s</span><span>{(total / 2).toFixed(1)}s</span><span>{total.toFixed(1)}s</span></div>
-    <div className="timeline-tracks">{[...new Set(clips.map(clip => Number(clip.track || 0)))].sort((a, b) => a - b).map(track => <div key={track} className="timeline-track"><span>轨 {track + 1}</span><div>{clips.map((clip, index) => Number(clip.track || 0) === track && <button key={clip.id || index} title={`${clip.path?.split(/[\\/]/).pop()} ${clip.start}s / ${clip.duration}s${clip.grading?.preset ? ` · ${clip.grading.preset}` : ''}`} style={{ left: `${Number(clip.start) / total * 100}%`, width: `${Number(clip.duration) / total * 100}%` }} onClick={() => document.getElementById(`clip-${index}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })}>{clip.kind === 'audio' ? <Volume2 size={12} /> : <Scissors size={12} />}<span>{clip.path?.split(/[\\/]/).pop()}</span></button>)}</div></div>)}</div>
+    <div className="timeline-tracks">{[...new Set(clips.map(clip => Number(clip.track || 0)))].sort((a, b) => a - b).map(track => <div key={track} className="timeline-track"><span>轨 {track + 1}</span><div onPointerMove={continueDrag} onPointerUp={endDrag} onPointerCancel={endDrag}>{clips.map((clip, index) => Number(clip.track || 0) === track && <button key={clip.id || index} className={`timeline-block ${selected === index ? 'selected' : ''} ${drag?.index === index ? 'dragging' : ''}`} title={`${clip.path?.split(/[\\/]/).pop()} ${clip.start}s / ${clip.duration}s${clip.grading?.preset ? ` · ${clip.grading.preset}` : ''}（拖动移动，拖两端裁剪）`} style={{ left: `${Number(clip.start) / total * 100}%`, width: `${Number(clip.duration) / total * 100}%` }}
+      onPointerDown={event => beginDrag(event, index, 'move')}
+      onClick={() => { setSelected(index); document.getElementById(`clip-${index}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }}>
+      <span className="timeline-handle timeline-handle-start" role="separator" aria-label={`裁剪片段 ${index + 1} 开头`} aria-orientation="vertical"
+        onPointerDown={event => beginDrag(event, index, 'trim-start')} />
+      {clip.kind === 'audio' ? <Volume2 size={12} /> : <Scissors size={12} />}<span>{clip.path?.split(/[\\/]/).pop()}</span>
+      <span className="timeline-handle timeline-handle-end" role="separator" aria-label={`裁剪片段 ${index + 1} 结尾`} aria-orientation="vertical"
+        onPointerDown={event => beginDrag(event, index, 'trim-end')} />
+    </button>)}</div></div>)}</div>
     <label className="timeline-add">添加项目素材<select aria-label="添加时间线素材" defaultValue="" onChange={add}><option value="">选择素材…</option>{project.assets.map(asset => <option key={asset.id} value={asset.id}>{asset.name || asset.path.split(/[\\/]/).pop()} · {asset.kind}</option>)}</select></label>
     <div className="timeline-clip-list">{clips.map((clip, index) => <article key={clip.id || index} id={`clip-${index}`} className="timeline-clip-editor"><header><strong>{String(index + 1).padStart(2, '0')} · {clip.path?.split(/[\\/]/).pop()}</strong><button className="icon-button" aria-label={`删除片段 ${index + 1}`} onClick={() => { setClips(rows => rows.filter((_, current) => current !== index)); setDirty(true); }}><Trash2 size={15} /></button></header><div className="timeline-fields">{[['start', '开始 / 秒', 0, 3600], ['sourceIn', '素材入点 / 秒', 0, 3600], ['duration', '保留时长 / 秒', 0.01, 3600], ['speed', '变速倍数', 0.25, 4], ['volume', '音量倍数', 0, 4], ['track', '轨道序号', 0, 100]].map(([key, label, min, max]) => <label key={key}>{label}<input type="number" aria-label={`片段 ${index + 1} ${label}`} min={min} max={max} step={key === 'track' ? 1 : 0.05} value={clip[key] ?? (key === 'volume' || key === 'speed' ? 1 : 0)} onChange={event => update(index, key, Number(event.target.value))} /></label>)}</div>
       {clip.kind !== 'audio' && <div className="grading-controls"><label>数字运镜<select aria-label={`片段 ${index + 1} 数字运镜`} value={clip.motion?.type || ''} disabled={busy}

@@ -46,6 +46,18 @@ def vad_support():
         return False, f"VAD unavailable; transcribing without VAD: {error}"
 
 
+def open_container(av, path):
+    """Open for decode across PyAV versions.
+
+    ``metadata_errors`` was removed in PyAV 19; passing it there raises TypeError.
+    Older releases still accept it, so the keyword is only used where supported.
+    """
+    try:
+        return av.open(str(path), mode="r", metadata_errors="ignore")
+    except TypeError:
+        return av.open(str(path), mode="r")
+
+
 def decode_bounded(path):
     import av
     import numpy as np
@@ -64,7 +76,7 @@ def decode_bounded(path):
                 raise ValueError(f"Audio exceeds the {MAX_SECONDS}-second transcription limit")
             buffer.write(frame.to_ndarray().tobytes())
 
-    with av.open(str(path), mode="r", metadata_errors="ignore") as container:
+    with open_container(av, path) as container:
         if not container.streams.audio:
             raise ValueError("Input has no audio stream")
         stream = container.streams.audio[0]

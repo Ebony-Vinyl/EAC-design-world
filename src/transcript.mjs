@@ -3,9 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rename, rm, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { ROOT } from './catalog.mjs';
 
 const SCRIPT = fileURLToPath(new URL('../scripts/transcribe.py', import.meta.url));
-const DEFAULT_MODEL = 'D:\\hf-cache\\hub\\models--Systran--faster-whisper-tiny\\snapshots\\d90ca5fe260221311c53c58e660288d3deb8d356';
+// The model lives inside the user data directory so a fresh install can drop it there
+// without knowing anything about this machine. EAC_WHISPER_MODEL_PATH overrides it.
+const MODEL_DIRECTORY = join('models', 'faster-whisper-tiny');
 const MAX_JSON_BYTES = 16 * 1024 * 1024;
 
 function abortError() {
@@ -24,7 +27,16 @@ function filePath(value, name) {
 }
 
 function selectedModel(modelPath) {
-  return filePath(modelPath ?? process.env.EAC_WHISPER_MODEL_PATH ?? DEFAULT_MODEL, 'modelPath');
+  if (modelPath !== undefined) return filePath(modelPath, 'modelPath');
+  // EAC_WHISPER_MODEL_PATH wins over the user data directory; both are real paths on every
+  // machine, unlike the author-specific absolute path this used to hardcode.
+  return filePath(process.env.EAC_WHISPER_MODEL_PATH || join(dataDirectory(), MODEL_DIRECTORY), 'modelPath');
+}
+
+// Mirrors Store's own default so the model location follows the same user data directory
+// as projects and outputs, including EAC_DATA_DIR overrides.
+function dataDirectory() {
+  return process.env.EAC_DATA_DIR || join(ROOT, '.eac');
 }
 
 function runPython(args, { signal, timeout = 900_000 } = {}) {

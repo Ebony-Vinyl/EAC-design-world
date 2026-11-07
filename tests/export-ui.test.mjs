@@ -256,6 +256,47 @@ test('custom grading without a preset is labelled as such and explicit zeros sur
   } finally { await context.close(); }
 });
 
+test('dragging a timeline block moves it and edge handles trim without breaking the numeric fields', { timeout: 120000 }, async () => {
+  const { context, page, errors } = await openPage();
+  try {
+    await page.goto(base, { waitUntil: 'domcontentloaded' });
+    await page.getByRole('tab', { name: '时间线编辑', exact: true }).click();
+    await page.getByRole('heading', { name: '多轨时间线', exact: true }).waitFor();
+    const block = page.locator('.timeline-block').first();
+    await block.waitFor();
+    const before = await block.boundingBox();
+    const startField = page.getByRole('spinbutton', { name: '片段 1 开始 / 秒', exact: true });
+    const durationField = page.getByRole('spinbutton', { name: '片段 1 保留时长 / 秒', exact: true });
+    assert.equal(await startField.inputValue(), '0');
+
+    // Drag the body to the right: the clip starts later, its duration is unchanged.
+    await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(before.x + before.width / 2 + 60, before.y + before.height / 2, { steps: 6 });
+    await page.mouse.up();
+    const movedStart = Number(await startField.inputValue());
+    assert.ok(movedStart > 0, `expected a positive start after dragging, got ${movedStart}`);
+    assert.equal(Number(await durationField.inputValue()), 2);
+
+    // Drag the trailing handle: the clip gets longer, the start stays put.
+    const handle = block.locator('.timeline-handle-end');
+    const handleBox = await handle.boundingBox();
+    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(handleBox.x + handleBox.width / 2 + 40, handleBox.y + handleBox.height / 2, { steps: 6 });
+    await page.mouse.up();
+    assert.equal(Number(await startField.inputValue()), movedStart);
+    assert.ok(Number(await durationField.inputValue()) > 2, 'trailing trim must lengthen the clip');
+
+    await page.getByRole('button', { name: '保存编排', exact: true }).click();
+    await page.getByText(/时间线已保存/).waitFor();
+    const saved = await engine.handle('project_get', { projectId: project.id });
+    assert.equal(saved.clips[0].start, movedStart);
+    assert.ok(saved.clips[0].duration > 2);
+    assert.deepEqual(errors, []);
+  } finally { await context.close(); }
+});
+
 test('saving camera LUT rejects a malformed cube without touching the revision', { timeout: 120000, skip: !colorWorkflowReady }, async () => {
   const broken = join(directory, 'broken.cube');
   await writeFile(broken, 'LUT_3D_SIZE 2\n0 0 0\n');

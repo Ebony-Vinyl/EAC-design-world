@@ -249,6 +249,21 @@ async function loadClient() {
   return module;
 }
 
+test('client never resizes a host composer it does not own', async () => {
+  // ds-bot and other plugins reuse the host composer. When this plugin forced
+  // [data-composer-card] / [data-input-scroll] / the contenteditable to auto height with
+  // !important, their input collapsed to zero height and could not be typed into.
+  const source = await readFile(new URL('../plugin/client.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /\[data-composer-card\][^{]*\{[^}]*!important/,
+    'the plugin must not restyle the host composer card');
+  assert.doesNotMatch(source, /\[data-input-scroll\][^{]*\{[^}]*!important/,
+    'the plugin must not restyle the host input scroll area');
+  assert.doesNotMatch(source, /\[contenteditable\]\[data-placeholder\][^{]*\{[^}]*!important/,
+    'the plugin must not restyle the host editor');
+  // The injected control keeps styling itself, so the feature still renders correctly.
+  assert.match(source, /\.eac-composer-controls\{/);
+});
+
 test('client uses genuine official slots and releases every registration', async () => {
   const module = await loadClient();
   const registrations = [];

@@ -1387,6 +1387,13 @@ svg { flex-shrink: 0; }
 }
 .timeline-track button:hover { background: var(--blue-soft-2); border-color: var(--blue); }
 .timeline-track button > span { overflow: hidden; text-overflow: ellipsis; }
+.timeline-track button.timeline-block { cursor: grab; touch-action: none; padding-left: 9px; padding-right: 9px; }
+.timeline-track button.timeline-block.selected { border-color: var(--blue); box-shadow: 0 0 0 2px var(--blue-soft-2); }
+.timeline-track button.timeline-block.dragging { cursor: grabbing; opacity: .88; }
+.timeline-handle { position: absolute; top: 0; bottom: 0; width: 7px; cursor: ew-resize; background: transparent; }
+.timeline-handle:hover, .timeline-handle:focus-visible { background: var(--blue); opacity: .5; }
+.timeline-handle-start { left: 0; }
+.timeline-handle-end { right: 0; }
 .timeline-add { max-width: 420px; margin: 24px 0 18px; }
 .timeline-clip-editor { padding: 15px 0; border-top: 1px solid var(--line); }
 .timeline-clip-editor header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }

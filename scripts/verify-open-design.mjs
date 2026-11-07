@@ -167,11 +167,16 @@ try {
   await page.goto(`${fixtureUrl}/tests/fixtures/composer.html?backend=${encodeURIComponent(app.url)}&nativeEditor=1`, { waitUntil: 'domcontentloaded' });
   const nativeInput = page.getByRole('textbox', { name: '原生文本输入' });
   await nativeInput.waitFor();
-  assert.ok((await nativeInput.boundingBox()).height <= 56);
-  assert.ok((await page.locator('[data-composer-card]').boundingBox()).height < 140);
+  // The fixture pins the host composer to 260px with a 180px editor. The plugin used to force
+  // these to auto height with !important, which collapsed any other plugin reusing the same
+  // host composer (ds-bot could not be typed into). The contract now is: a composer this
+  // plugin does not own keeps the size the host gave it.
+  assert.equal(Math.round((await nativeInput.boundingBox()).height), 180);
+  assert.equal(Math.round((await page.locator('[data-composer-card]').boundingBox()).height), 260);
+  assert.equal(await page.getByRole('button', { name: /创作模式/ }).count(), 1);
   await nativeInput.fill(Array.from({ length: 7 }, (_, i) => `第${i + 1}行`).join('\n'));
-  assert.ok((await nativeInput.boundingBox()).height > 120);
-  checks.push('Native contenteditable collapses stale fixed height for two lines and still grows for longer text');
+  assert.equal(Math.round((await nativeInput.boundingBox()).height), 180);
+  checks.push('Host composer keeps its own fixed height; the plugin never resizes a composer it does not own');
   await writeFile(join(directory, 'results.json'), JSON.stringify({ checks, errors }, null, 2));
   console.log(JSON.stringify({ checks, errors, directory }, null, 2));
 } finally {
