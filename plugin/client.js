@@ -388,7 +388,11 @@ window.__ModuleLoader__.load({
           if (mode === 'normal') setCanvasOpen(false);
           setFailed(null);
         };
-        const error = failed ? h('span', { className: 'eac-selection-error', role: 'alert' }, t('selectionFailed'), ' ',
+        // The composer also syncs an empty, normal-mode record on mount, so a failed sync only
+        // concerns the user when it actually lost a selection or a non-default mode; reporting the
+        // empty case as a lost selection would be a false alarm whenever the service is down.
+        const lostSelection = value => Boolean(value && (value.templateId || value.designSystemId || value.mode !== 'normal'));
+        const error = failed && lostSelection(failed.value) ? h('span', { className: 'eac-selection-error', role: 'alert' }, t('selectionFailed'), ' ',
           h('button', { type: 'button', onClick: () => synchronize(failed.value) }, t('addSelection'))) : null;
         const libraryTitle = selection.mode === 'design' ? t('designLibrary') : t('library');
         return h(React.Fragment, null,
