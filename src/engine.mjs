@@ -2,7 +2,7 @@
 // 'proper-lockfile' import would break existing installs until a manual npm install.
 import lockfile from '../vendor/eac-runtime/proper-lockfile.cjs';
 import { browserLaunchOptions } from './browser.mjs';
-import { mkdir, readFile, writeFile, realpath, stat } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, realpath, stat, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { resolve, join, extname, basename, relative, isAbsolute } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
@@ -127,17 +127,52 @@ export function designContextFor(record) {
   return lines.join('\n');
 }
 
+// A host that dies without warning — a crash, a forced restart, a power cut — leaves its lock
+// directory behind and can never clear it. proper-lockfile reclaims such a lock only once it is
+// `stale` (120s), which is far longer than a restart takes, so the next host would fail activation
+// and stay unusable for its entire run. Every holder therefore records its pid beside the lock: a
+// lock whose owner is gone can be taken over at once, while an unknown or living owner still
+// fails closed. (A recycled pid reads as living, which errs on the safe side.)
+const writerLockOptions = directory => ({
+  lockfilePath: join(directory, '.writer.lock'), stale: 120000, update: 15000, retries: 0,
+});
+async function lockOwnerIsAlive(directory) {
+  const owner = Number((await readFile(join(directory, '.writer.pid'), 'utf8').catch(() => '')).trim());
+  if (!Number.isInteger(owner) || owner <= 0) return true;
+  try { process.kill(owner, 0); return true; }
+  catch (error) { return error.code !== 'ESRCH'; }
+}
+async function acquireWriterLock(directory) {
+  const options = writerLockOptions(directory);
+  const pidPath = join(directory, '.writer.pid');
+  const claim = async () => {
+    const inner = await lockfile.lock(directory, options);
+    await writeFile(pidPath, String(process.pid), 'utf8').catch(() => {});
+    let released = false;
+    return async () => {
+      if (released) return;
+      released = true;
+      await rm(pidPath, { force: true }).catch(() => {});
+      await inner();
+    };
+  };
+  try {
+    return await claim();
+  } catch (error) {
+    if (error.code !== 'ELOCKED') throw error;
+    if (await lockOwnerIsAlive(directory)) throw new Error(`数据目录已被另一个 EAC 服务使用：${directory}`);
+    await rm(pidPath, { force: true }).catch(() => {});
+    await rm(join(directory, '.writer.lock'), { recursive: true, force: true });
+    try { return await claim(); }
+    catch { throw new Error(`数据目录已被另一个 EAC 服务使用：${directory}`); }
+  }
+}
+
 export async function createEngine({ dataDir, transcribeMedia: suppliedTranscriber } = {}) {
   const store = new Store(dataDir);
   await mkdir(store.root, { recursive: true });
   const directory = await realpath(store.root);
-  let release;
-  try {
-    release = await lockfile.lock(directory, { lockfilePath: join(directory, '.writer.lock'), stale: 120000, update: 15000, retries: 0 });
-  } catch (error) {
-    if (error.code === 'ELOCKED') throw new Error(`数据目录已被另一个 EAC 服务使用：${directory}`);
-    throw error;
-  }
+  const release = await acquireWriterLock(directory);
   let designStore;
   try {
     await store.init();
