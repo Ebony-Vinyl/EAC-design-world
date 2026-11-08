@@ -61,7 +61,15 @@ async function openSettings() {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(base, { waitUntil: 'domcontentloaded' });
-  await page.getByRole('button', { name: '设置', exact: true }).click();
+  // Vite transforms main.jsx on first request, so the workspace can take tens of seconds to
+  // hydrate when the suite is running in parallel. Clicking before the first /api/state round
+  // trip lands on the connection banner, not the nav. The template count only fills in once
+  // that state has arrived, so wait for it rather than racing the cold start.
+  await page.waitForFunction(() => {
+    const count = document.querySelector('.app-topnav .nav-count')?.textContent?.trim();
+    return Boolean(count) && count !== '0';
+  }, undefined, { timeout: 180000 });
+  await page.getByRole('button', { name: '设置', exact: true }).click({ timeout: 180000 });
   await page.getByRole('heading', { name: '输出与制作', exact: true }).waitFor();
   return { context, page, errors };
 }

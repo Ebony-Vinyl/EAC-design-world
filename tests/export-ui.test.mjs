@@ -108,7 +108,16 @@ async function saveTimeline(page) {
 
 async function openExportPanel(page) {
   await page.goto(base, { waitUntil: 'domcontentloaded' });
-  await page.locator('.app-topnav').getByRole('button', { name: /^制作流程/ }).click();
+  // Vite transforms main.jsx on first request, so the workspace can take tens of seconds to
+  // hydrate on a loaded machine. Clicking while the first /api/state round trip is still in
+  // flight lands on the connection banner instead of the nav, and Playwright then blocks on a
+  // renderer that is still busy. The template count only fills in once that state has arrived,
+  // so it is the real readiness signal; wait for it instead of racing the cold start.
+  await page.waitForFunction(() => {
+    const count = document.querySelector('.app-topnav .nav-count')?.textContent?.trim();
+    return Boolean(count) && count !== '0';
+  }, undefined, { timeout: 180000 });
+  await page.locator('.app-topnav').getByRole('button', { name: /^制作流程/ }).click({ timeout: 180000 });
   await page.getByRole('heading', { name: '导出续剪工程', exact: true }).waitFor();
   await page.getByRole('group', { name: '导出目标', exact: true }).waitFor();
 }
@@ -137,7 +146,10 @@ test('export panel exports only the selected targets and never double submits', 
     const exportedRevision = (await engine.handle('project_get', { projectId: project.id })).revision;
     await page.getByText(new RegExp(`导出已保存修订 r${exportedRevision}`)).waitFor();
     await page.getByRole('button', { name: '开始导出', exact: true }).dblclick();
-    await page.getByText(/导出完成 · 共 \d+ 个文件/).waitFor();
+    // The result card only appears once the 2.5 s /api/state poll picks the finished job up.
+    // The export itself takes ~200 ms, but under parallel suite load this Vite dev page needs
+    // far longer than the default 60 s to run that poll and re-render, so wait generously.
+    await page.getByText(/导出完成 · 共 \d+ 个文件/).waitFor({ timeout: 240000 });
     assert.equal(posts, 1, 'double click must submit a single export job');
 
     const job = engine.store.state.jobs.find((item) => item.type === 'export');
@@ -145,8 +157,8 @@ test('export panel exports only the selected targets and never double submits', 
     assert.equal(job.status, 'completed');
     assert.ok(job.result.files.length >= 3, 'export must produce real files');
     assert.equal(job.result.sourceRevision, exportedRevision, 'result reports the exported revision');
-    await page.getByText(new RegExp(`导出完成 · 共 \\d+ 个文件`)).waitFor();
-    await page.getByText(`修订 r${exportedRevision}`, { exact: true }).waitFor();
+    await page.getByText(new RegExp(`导出完成 · 共 \\d+ 个文件`)).waitFor({ timeout: 240000 });
+    await page.getByText(`修订 r${exportedRevision}`, { exact: true }).waitFor({ timeout: 240000 });
 
     const links = page.getByRole('link').filter({ hasText: /\.(xml|srt|json|meta|draft_content)$/ });
     assert.ok(await links.count() >= 2, 'result lists downloadable files');
@@ -421,8 +433,10 @@ test('dragging a timeline block moves it and edge handles trim without breaking 
     const before = await block.boundingBox();
     const startField = page.getByRole('spinbutton', { name: '片段 1 开始 / 秒', exact: true });
     const durationField = page.getByRole('spinbutton', { name: '片段 1 保留时长 / 秒', exact: true });
+    const sourceInField = page.getByRole('spinbutton', { name: '片段 1 素材入点 / 秒', exact: true });
     const initialStart = Number(await startField.inputValue());
     const initialDuration = Number(await durationField.inputValue());
+    const initialSourceIn = Number(await sourceInField.inputValue());
 
     // Drag the body to the right: the clip starts later, its duration is unchanged.
     await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
@@ -432,20 +446,54 @@ test('dragging a timeline block moves it and edge handles trim without breaking 
     const movedStart = Number(await startField.inputValue());
     assert.ok(movedStart > initialStart, `expected the clip to start later, got ${movedStart} (was ${initialStart})`);
     assert.equal(Number(await durationField.inputValue()), initialDuration);
+    assert.equal(Number(await sourceInField.inputValue()), initialSourceIn, 'moving must not change the source in-point');
+
+    // Dragging the head right must move start and sourceIn by the same amount once, not once
+    // per pointer event: continueDrag re-ran on every move, so reading the live row compounded
+    // the shift and sourceIn drifted away from start.
+    const startHandle = block.locator('.timeline-handle-start');
+    const startBox = await startHandle.boundingBox();
+    const beforeTrimStart = { start: Number(await startField.inputValue()), duration: Number(await durationField.inputValue()), sourceIn: Number(await sourceInField.inputValue()) };
+    await page.mouse.move(startBox.x + startBox.width / 2, startBox.y + startBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(startBox.x + startBox.width / 2 + 40, startBox.y + startBox.height / 2, { steps: 8 });
+    await page.mouse.up();
+    const trimmedStart = Number(await startField.inputValue());
+    const trimmedSourceIn = Number(await sourceInField.inputValue());
+    assert.ok(trimmedStart > beforeTrimStart.start, 'trimming the head must move the start later');
+    assert.ok(trimmedSourceIn > beforeTrimStart.sourceIn, 'trimming the head must advance the source in-point');
+    const startDelta = trimmedStart - beforeTrimStart.start;
+    const sourceDelta = trimmedSourceIn - beforeTrimStart.sourceIn;
+    assert.ok(Math.abs(startDelta - sourceDelta) < 0.02, `start and sourceIn must advance together, got ${startDelta} vs ${sourceDelta}`);
+    const durationDelta = beforeTrimStart.duration - Number(await durationField.inputValue());
+    assert.ok(Math.abs(durationDelta - startDelta) < 0.02, `trimming the head must shorten the clip by the same amount, got ${durationDelta} vs ${startDelta}`);
 
     // Drag the trailing handle: the clip gets longer, the start stays put.
     const handle = block.locator('.timeline-handle-end');
     const handleBox = await handle.boundingBox();
+    const beforeTrimEnd = Number(await durationField.inputValue());
     await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
     await page.mouse.down();
     await page.mouse.move(handleBox.x + handleBox.width / 2 + 40, handleBox.y + handleBox.height / 2, { steps: 6 });
     await page.mouse.up();
-    assert.equal(Number(await startField.inputValue()), movedStart);
-    assert.ok(Number(await durationField.inputValue()) > initialDuration, 'trailing trim must lengthen the clip');
+    assert.equal(Number(await startField.inputValue()), trimmedStart);
+    assert.ok(Number(await durationField.inputValue()) > beforeTrimEnd, 'trailing trim must lengthen the clip');
+
+    // A trailing trim cannot run past the end of the source: the service rejects that clip on
+    // save, so the drag has to stop at the material it actually has.
+    const assetDuration = (await engine.handle('project_get', { projectId: scratch.id })).assets[0].duration;
+    const farBox = await handle.boundingBox();
+    await page.mouse.move(farBox.x + farBox.width / 2, farBox.y + farBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(farBox.x + farBox.width / 2 + 3000, farBox.y + farBox.height / 2, { steps: 10 });
+    await page.mouse.up();
+    const clamped = Number(await durationField.inputValue());
+    assert.ok(clamped + Number(await sourceInField.inputValue()) <= assetDuration + 0.05,
+      `trailing trim must stop at the source length, got duration ${clamped} + sourceIn ${await sourceInField.inputValue()} > ${assetDuration}`);
 
     await saveTimeline(page);
     const saved = await engine.handle('project_get', { projectId: scratch.id });
-    assert.equal(saved.clips[0].start, movedStart);
+    assert.equal(saved.clips[0].start, trimmedStart);
     assert.ok(saved.clips[0].duration > initialDuration);
     assert.deepEqual(errors, []);
   } finally { await context.close(); }

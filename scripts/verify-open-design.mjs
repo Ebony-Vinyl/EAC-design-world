@@ -167,12 +167,19 @@ try {
   await page.goto(`${fixtureUrl}/tests/fixtures/composer.html?backend=${encodeURIComponent(app.url)}&nativeEditor=1`, { waitUntil: 'domcontentloaded' });
   const nativeInput = page.getByRole('textbox', { name: '原生文本输入' });
   await nativeInput.waitFor();
-  // The fixture pins the host composer to 260px with a 180px editor. The plugin used to force
-  // these to auto height with !important, which collapsed any other plugin reusing the same
-  // host composer (ds-bot could not be typed into). The contract now is: a composer this
-  // plugin does not own keeps the size the host gave it.
+  // The fixture pins the host composer to a 260px content box with a 180px editor. The plugin
+  // used to force these to auto height with !important, which collapsed any other plugin
+  // reusing the same host composer (ds-bot could not be typed into). The contract now is: a
+  // composer this plugin does not own keeps the size the host gave it. The card is content-box,
+  // so its border box is 260 + 8px padding + 1px border on each side.
+  const cardBox = await page.locator('[data-composer-card]').evaluate(card => {
+    const style = getComputedStyle(card);
+    const edge = parseFloat(style.paddingTop) + parseFloat(style.borderTopWidth);
+    return { contentHeight: parseFloat(style.height), expectedBorderBox: card.getBoundingClientRect().height, edge };
+  });
   assert.equal(Math.round((await nativeInput.boundingBox()).height), 180);
-  assert.equal(Math.round((await page.locator('[data-composer-card]').boundingBox()).height), 260);
+  assert.equal(cardBox.contentHeight, 260, 'the host content height must be untouched');
+  assert.equal(Math.round(cardBox.expectedBorderBox), Math.round(260 + cardBox.edge * 2));
   assert.equal(await page.getByRole('button', { name: /创作模式/ }).count(), 1);
   await nativeInput.fill(Array.from({ length: 7 }, (_, i) => `第${i + 1}行`).join('\n'));
   assert.equal(Math.round((await nativeInput.boundingBox()).height), 180);

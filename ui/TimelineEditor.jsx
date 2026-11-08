@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Check, ExternalLink, Palette, Plus, RotateCcw, Scissors, Trash2, Volume2 } from 'lucide-react';
 import { hasScalarOverride, removeScalarOverride, resolveGradingValues } from './grading-values.mjs';
 
@@ -9,6 +9,18 @@ const gradeFields = [
 
 const CUSTOM_GRADE = '__custom';
 const hasGradeFields = grading => Boolean(grading) && typeof grading === 'object' && Object.keys(grading).length > 0;
+// Longest timeline duration a clip may keep, mirroring the service's own check: the source
+// consumed is duration * speed, so the remaining source after the in-point bounds it. The asset
+// duration lives on the project, not on the clip. Images have no intrinsic length and a missing
+// asset leaves the drag unbounded, exactly as the numeric inputs already allow.
+function sourceLimitFor(clip, assets = []) {
+  if (clip.kind === 'image') return null;
+  const asset = assets.find(item => item.id === clip.assetId || item.path === clip.path);
+  const sourceDuration = Number(asset?.duration);
+  const speed = Number(clip.speed || 1);
+  if (!Number.isFinite(sourceDuration) || sourceDuration <= 0 || !Number.isFinite(speed) || speed <= 0) return null;
+  return Math.max(0.1, (sourceDuration - Number(clip.sourceIn || 0)) / speed);
+}
 const SOURCE_LABELS = {
   default: '默认值', 'look-preset': '项目预设', look: '项目 look',
   'clip-preset': '片段预设', clip: '片段覆盖',
@@ -77,6 +89,10 @@ export default function TimelineEditor({ project, onSave, busy, presets = [], on
   const [exportIntent, setExportIntent] = useState(false);
   const [drag, setDrag] = useState(null);
   const [selected, setSelected] = useState(null);
+  // A pointer gesture on a block ends with a click event too. Jumping the clip editor into view
+  // after a drag would scroll the page out from under the gesture, so the click is only honoured
+  // when the pointer never actually moved.
+  const dragged = useRef(false);
   useEffect(() => {
     if (!dirty) { setClips(structuredClone(project.clips || [])); setLook(structuredClone(project.look ?? null)); setBaseRevision(project.revision); }
   }, [project.revision, dirty]);
@@ -121,15 +137,24 @@ export default function TimelineEditor({ project, onSave, busy, presets = [], on
     if (!width) return;
     const clip = clips[index];
     setSelected(index);
-    setDrag({ index, mode, x: event.clientX, width,
-      start: Number(clip.start), duration: Number(clip.duration), moved: false });
+    dragged.current = false;
+    // Every gesture is computed from the values captured here, never from the row currently in
+    // state: `continueDrag` runs once per pointer move, so reading the live row would apply each
+    // step on top of the previous one and compound the edit.
+    setDrag({ index, mode, x: event.clientX, width, total,
+      start: Number(clip.start), duration: Number(clip.duration),
+      sourceIn: Number(clip.sourceIn || 0), sourceLimit: sourceLimitFor(clip, project.assets) });
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
   const continueDrag = event => {
     if (!drag) return;
-    const secondsPerPixel = total / drag.width;
+    // The timeline length is frozen at the gesture start: it is derived from the clips being
+    // edited, so reading it live would rescale the px→seconds mapping under the cursor and make
+    // the same pixel movement speed up as the clip grows.
+    const secondsPerPixel = drag.total / drag.width;
     const delta = (event.clientX - drag.x) * secondsPerPixel;
     if (Math.abs(event.clientX - drag.x) < 2) return;
+    dragged.current = true;
     setDirty(true);
     setClips(rows => rows.map((row, index) => {
       if (index !== drag.index) return row;
@@ -138,17 +163,20 @@ export default function TimelineEditor({ project, onSave, busy, presets = [], on
         next.start = Math.max(0, Math.round((drag.start + delta) * 100) / 100);
       } else if (drag.mode === 'trim-start') {
         // Trimming the head moves the source in-point by the same amount, so the same
-        // footage stays under the cursor instead of sliding.
-        const shift = Math.min(Math.max(delta, -drag.start), drag.duration - 0.1);
+        // footage stays under the cursor instead of sliding. It can only move right into the
+        // clip's own footage or left over footage the clip still has before its in-point.
+        const shift = Math.min(Math.max(delta, Math.max(-drag.start, -drag.sourceIn)), drag.duration - 0.1);
         next.start = Math.round((drag.start + shift) * 100) / 100;
         next.duration = Math.round((drag.duration - shift) * 100) / 100;
-        next.sourceIn = Math.round((Number(row.sourceIn || 0) + shift) * 100) / 100;
+        next.sourceIn = Math.round((drag.sourceIn + shift) * 100) / 100;
       } else {
-        next.duration = Math.max(0.1, Math.round((drag.duration + delta) * 100) / 100);
+        // A trailing trim cannot run past the end of the source material, which the service
+        // rejects on save as a clip longer than its asset.
+        const limit = drag.sourceLimit === null ? Infinity : Math.max(0.1, drag.sourceLimit);
+        next.duration = Math.min(limit, Math.max(0.1, Math.round((drag.duration + delta) * 100) / 100));
       }
       return next;
     }));
-    setDrag(current => current ? { ...current, moved: true } : current);
   };
   const endDrag = event => {
     event.currentTarget.releasePointerCapture?.(event.pointerId);
@@ -199,7 +227,7 @@ export default function TimelineEditor({ project, onSave, busy, presets = [], on
     <div className="timeline-ruler"><span>0s</span><span>{(total / 2).toFixed(1)}s</span><span>{total.toFixed(1)}s</span></div>
     <div className="timeline-tracks">{[...new Set(clips.map(clip => Number(clip.track || 0)))].sort((a, b) => a - b).map(track => <div key={track} className="timeline-track"><span>轨 {track + 1}</span><div onPointerMove={continueDrag} onPointerUp={endDrag} onPointerCancel={endDrag}>{clips.map((clip, index) => Number(clip.track || 0) === track && <button key={clip.id || index} className={`timeline-block ${selected === index ? 'selected' : ''} ${drag?.index === index ? 'dragging' : ''}`} title={`${clip.path?.split(/[\\/]/).pop()} ${clip.start}s / ${clip.duration}s${clip.grading?.preset ? ` · ${clip.grading.preset}` : ''}（拖动移动，拖两端裁剪）`} style={{ left: `${Number(clip.start) / total * 100}%`, width: `${Number(clip.duration) / total * 100}%` }}
       onPointerDown={event => beginDrag(event, index, 'move')}
-      onClick={() => { setSelected(index); document.getElementById(`clip-${index}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }}>
+      onClick={() => { if (dragged.current) return; setSelected(index); document.getElementById(`clip-${index}`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }}>
       <span className="timeline-handle timeline-handle-start" role="separator" aria-label={`裁剪片段 ${index + 1} 开头`} aria-orientation="vertical"
         onPointerDown={event => beginDrag(event, index, 'trim-start')} />
       {clip.kind === 'audio' ? <Volume2 size={12} /> : <Scissors size={12} />}<span>{clip.path?.split(/[\\/]/).pop()}</span>

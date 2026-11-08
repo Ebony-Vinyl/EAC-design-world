@@ -21,7 +21,7 @@ DeepSeek Harness 的本地视频制作与设计工作室
 
 EAC design world 为 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 提供原生创作模式、模板选择和右侧作品画布，同时拥有可独立运行的本地工作台。视频录制、配音、配乐、字幕、编码与检查产生真实文件；网站、幻灯片、SVG 和文档保留源文件及版本历史。
 
-当前版本为 **v0.6.0 开发预览版**。本版加入参数化调色、变速运镜、网络素材和人工续剪工程导出，并修复凭据状态输出、柔光偏色、预览一致性和导出时序等审查问题，详见 [发布说明](docs/release-v0.6.0.md)。保留 150 个 Shotcraft 镜头、设计库、签名更新与回滚、草稿恢复和隔离预览。独立 MCP 入口支持 macOS 与 Windows，自动发现 Chrome / Edge；旁白使用 macOS say 或 Windows SAPI，桌面录制支持 Windows gdigrab 与 macOS avfoundation。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
+当前版本为 **v0.6.1 开发预览版**。本版修正时间线拖拽的素材入点累积、越界与拖拽后滚动等缺陷，并沿用 0.6.0 的参数化调色、变速运镜、网络素材与人工续剪工程导出，详见 [发布说明](docs/release-v0.6.1.md)。保留 150 个 Shotcraft 镜头、设计库、签名更新与回滚、草稿恢复和隔离预览。独立 MCP 入口支持 macOS 与 Windows，自动发现 Chrome / Edge；旁白使用 macOS say 或 Windows SAPI，桌面录制支持 Windows gdigrab 与 macOS avfoundation。模板数量代表可检索内容，不代表每个模板均可离线直接渲染。
 
 <p align="center"><b>以下两条宣传片均为 deepseek harness + EAC design world + deepseek v4.1 flash（非 1017）一轮出的结果</b></p>
 
@@ -106,9 +106,9 @@ npm run motion:verify
 
 | 文件 | 用途 |
 | --- | --- |
-| `eac-design-world-v0.6.0-plugin.zip` | 插件源码、预构建 Web UI、Shotcraft 镜头视频与源码、设计体系、封面、安装脚本及许可说明；不包含 Node 依赖 |
-| `eac-design-world-v0.6.0-media.zip` | 可选大媒体包：MG 原始预览视频、字体、渲染素材及宣传片素材 |
-| `eac-design-world-v0.6.0-update.zip` | 维护中心使用的签名本地更新包，解压后选择其中 `manifest.json` |
+| `eac-design-world-v0.6.1-plugin.zip` | 插件源码、预构建 Web UI、Shotcraft 镜头视频与源码、设计体系、封面、安装脚本及许可说明；不包含 Node 依赖 |
+| `eac-design-world-v0.6.1-media.zip` | 可选大媒体包：MG 原始预览视频、字体、渲染素材及宣传片素材 |
+| `eac-design-world-v0.6.1-update.zip` | 维护中心使用的签名本地更新包，解压后选择其中 `manifest.json` |
 | `SHA256SUMS.txt` | 发布产物的 SHA-256 校验值 |
 | GitHub 自动生成的 Source code | 与仓库提交对应的源码快照，不含预构建 `dist` 和可选大媒体 |
 
@@ -143,7 +143,7 @@ node scripts/install-harness.mjs
 也可用 npm 或 pnpm 直接安装 GitHub Release 中的同版本 `.tgz`，再运行包内安装器：
 
 ```powershell
-npm install https://github.com/Ebony-Vinyl/EAC-design-world/releases/download/v0.6.0/eac-design-world-0.6.0.tgz
+npm install https://github.com/Ebony-Vinyl/EAC-design-world/releases/download/v0.6.1/eac-design-world-0.6.1.tgz
 node node_modules/eac-design-world/scripts/install-harness.mjs --dry-run
 node node_modules/eac-design-world/scripts/install-harness.mjs
 ```

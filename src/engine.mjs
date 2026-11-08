@@ -188,25 +188,6 @@ export async function createEngine({ dataDir, transcribeMedia: suppliedTranscrib
   const getMedia = async () => media ||= await import('./media/index.mjs');
   const capabilityCache = new Map();
 
-  /** Platform-specific Chromium executables. Playwright falls back to its own
-   * bundled Chromium on every platform, so a missing system browser is not fatal. */
-  function browserCandidates() {
-    if (process.platform === 'darwin') return [
-      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-      '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
-      '/Applications/Chromium.app/Contents/MacOS/Chromium'
-    ];
-    if (process.platform === 'linux') return [
-      '/usr/bin/google-chrome',
-      '/usr/bin/chromium',
-      '/usr/bin/chromium-browser'
-    ];
-    return [
-      'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-      'C:/Program Files/Google/Chrome/Application/chrome.exe'
-    ];
-  }
-
   async function capabilities() {
     if (!capabilityCache.has('ffmpeg')) {
       for (const name of ['ffmpeg', 'ffprobe']) {
