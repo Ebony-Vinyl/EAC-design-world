@@ -13,7 +13,7 @@ const IDENTITY = 'LUT_3D_SIZE 2\n0 0 0\n1 0 0\n0 1 0\n1 1 0\n0 0 1\n1 0 1\n0 1 1
 async function withTemp(fn) {
   const directory = await mkdtemp(join(tmpdir(), 'eac-color-'));
   try { return await fn(directory); }
-  finally { await rm(directory, { recursive: true, force: true }); }
+  finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 }
 
 function project(overrides = {}) {

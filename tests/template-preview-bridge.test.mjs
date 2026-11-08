@@ -80,6 +80,6 @@ test('vendor preview injection preserves sandbox headers, normal responses and H
   } finally {
     await app.close();
     await engine.close();
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });

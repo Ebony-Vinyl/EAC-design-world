@@ -12,7 +12,7 @@ async function setup(fn) {
   const directory = await mkdtemp(join(tmpdir(), 'eac-landscape-'));
   const engine = await createEngine({ dataDir: directory });
   try { return await fn(engine, directory); }
-  finally { await engine.close(); await rm(directory, { recursive: true, force: true }); }
+  finally { await engine.close(); await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 }
 async function fixture(args, path) {
   const child = spawn('ffmpeg', ['-hide_banner', '-y', '-loglevel', 'error', ...args, path], { windowsHide: true });
@@ -56,7 +56,7 @@ test('renderTimeline bakes grading into the output pixels', async () => {
     // A warm grade on neutral gray must raise red and lower blue measurably.
     assert.ok(warmFrame.r > plainFrame.r + 4, `expected red to rise: ${plainFrame.r} -> ${warmFrame.r}`);
     assert.ok(warmFrame.b < plainFrame.b - 2, `expected blue to drop: ${plainFrame.b} -> ${warmFrame.b}`);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 function rawFrameSync(buffer) {
@@ -73,7 +73,7 @@ test('renderTimeline rejects out-of-range grading parameters', async () => {
     await grayClip(clip);
     const project = { width: 96, height: 64, fps: 12, clips: [{ path: clip, kind: 'video', start: 0, sourceIn: 0, duration: 1, volume: 0, track: 0, grading: { exposure: 5 } }] };
     await assert.rejects(renderTimeline({ project, outputPath: join(directory, 'out.mp4') }), /exposure|调色|参数/i);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('gradePreview emits a real comparison sheet with guardrail stats', async () => {
@@ -100,7 +100,7 @@ test('gradePreview emits a real comparison sheet with guardrail stats', async ()
     assert.ok(Array.isArray(result.warnings));
     const plain = await gradePreview({ project: { ...project, clips: [{ ...project.clips[0], grading: null }] }, outputPath: join(directory, 'plain.png'), framesPerClip: 1 });
     assert.equal(plain.gradedApplied, false);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('timeline_update persists look and per-clip grading and rejects invalid values', () => setup(async (engine, dir) => {

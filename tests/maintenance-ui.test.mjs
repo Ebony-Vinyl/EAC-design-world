@@ -51,6 +51,6 @@ test('maintenance UI reports versions, persists acknowledgements and detects fai
     await page.screenshot({ path: 'artifacts/maintenance-qa/maintenance-320px.png', fullPage: true });
     assert.deepEqual(errors, []);
   } finally {
-    await browser?.close(); await app.close(); await engine.close(); await rm(directory, { recursive: true, force: true });
+    await browser?.close(); await app.close(); await engine.close(); await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });

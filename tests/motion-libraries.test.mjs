@@ -18,7 +18,7 @@ async function fixture(run) {
   await mkdir(join(source, '.git'), { recursive: true });
   await writeFile(join(source, '.git/private'), 'do not copy');
   try { await run({ root, source, destinationRoot }); }
-  finally { await rm(root, { recursive: true, force: true }); }
+  finally { await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 }
 
 test('optional imports require an explicit license acknowledgement', () => fixture(async args => {

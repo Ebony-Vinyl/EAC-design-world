@@ -42,5 +42,5 @@ test('maintenance HTTP guards origins and reports real asynchronous reload outco
     const ack = await (await fetch(`${app.url}/api/maintenance`)).json();
     assert.equal(ack.announcements.unread, 0);
     assert.equal((await request(`${app.url}/api/maintenance/unknown`)).status, 404);
-  } finally { await app.close(); await engine.close(); await rm(dataDir, { recursive: true, force: true }); }
+  } finally { await app.close(); await engine.close(); await rm(dataDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });

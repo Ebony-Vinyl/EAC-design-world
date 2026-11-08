@@ -91,7 +91,7 @@ function commonsPage({
 
 async function temporaryOutput(t, name = 'stock.bin') {
   const directory = await mkdtemp(join(tmpdir(), 'eac-providers-'));
-  t.after(() => rm(directory, { recursive: true, force: true }));
+  t.after(() => rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
   return join(directory, name);
 }
 

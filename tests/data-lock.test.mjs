@@ -33,7 +33,7 @@ test('a second process cannot recover or overwrite an active store; an owner tha
   } finally {
     if (child.exitCode === null && child.signalCode === null) { const exit = once(child, 'exit'); child.kill(); await exit; }
     await reopened?.close();
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 
@@ -48,7 +48,7 @@ test('a lock whose recorded owner is gone is taken over without waiting for it t
     await engine.close();
     await assert.rejects(stat(join(directory, '.writer.lock')), { code: 'ENOENT' });
     await assert.rejects(stat(join(directory, '.writer.pid')), { code: 'ENOENT' });
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('a lock with no recorded owner still fails closed', async () => {
@@ -56,7 +56,7 @@ test('a lock with no recorded owner still fails closed', async () => {
   try {
     await mkdir(join(directory, '.writer.lock'), { recursive: true });
     await assert.rejects(createEngine({ dataDir: directory }), /数据目录已被/);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('failed initialization releases the lock for a repaired state file', async () => {
@@ -67,5 +67,5 @@ test('failed initialization releases the lock for a repaired state file', async 
     await rm(join(directory, 'state.json'));
     const engine = await createEngine({ dataDir: directory });
     await engine.close();
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });

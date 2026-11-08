@@ -130,7 +130,7 @@ test('editor retains drafts, ignores stale reads and keeps dialogs keyboard acce
     await browser?.close();
     await app.close();
     await engine.close();
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 
@@ -156,6 +156,6 @@ test('output HTML is sandboxed and cannot mutate the workspace API', { timeout: 
     assert.equal((await engine.handle('design_state')).projects.length, 0);
   } finally {
     await browser?.close(); await app.close(); await engine.close();
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });

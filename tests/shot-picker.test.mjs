@@ -131,6 +131,6 @@ test('real Shotcraft picker supports bounded video playback, filters, persistent
       assert.deepEqual(missing, []);
     } finally {
       await browser?.close(); await app.close(); await engine.close();
-      await rm(directory, { recursive: true, force: true });
+      await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     }
   });

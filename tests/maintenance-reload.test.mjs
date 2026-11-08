@@ -73,7 +73,7 @@ export function apply(ctx, config) {
   await writeFile(pluginFile, source('1.0.0', false));
   t.after(() => {
     assert.match(root.slice(tmpdir().length + 1), /^eac-reload-/);
-    return rm(root, { recursive: true, force: true });
+    return rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
   return { pkg, pluginFile, source, packageUrl: `${pathToFileURL(pkg).href}/`, entryUrl: pathToFileURL(pluginFile).href };
 }
@@ -331,7 +331,7 @@ test('real kernel: replacement start failure restores the previous version', { s
 
 test('watchPackage fires on source edits but ignores state, output, deps and vendor trees', async (t) => {
   const dir = await mkdtemp(join(tmpdir(), 'eac-watch-'));
-  t.after(() => rm(dir, { recursive: true, force: true }));
+  t.after(() => rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
   for (const sub of ['src', 'node_modules/dep', '.eac', 'artifacts', 'runtime', 'release', 'vendor', '.git']) {
     await mkdir(join(dir, sub), { recursive: true });
   }
@@ -419,7 +419,7 @@ test('real kernel: the actual EAC host activates, serves, and hot-reloads in pla
       await current.await();
     }
     await ctx.root?.fiber?.dispose?.();
-    await rm(dataDir, { recursive: true, force: true });
+    await rm(dataDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
   await ctx.plugin(Loader, { baseUrl: packageUrl }).await();
 

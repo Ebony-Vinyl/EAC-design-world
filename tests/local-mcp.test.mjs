@@ -80,7 +80,7 @@ test('real stdio clients start and reuse the workspace, import Shotcraft by ID, 
         await new Promise(done => setTimeout(done, 50));
       }
     }
-    await rm(dataDir, { recursive: true, force: true });
+    await rm(dataDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 
@@ -94,7 +94,7 @@ test('macOS say produces audible speech and rejects missing voices', { skip: pro
     assert.ok(media.audio.peakDb > -60);
     await assert.rejects(synthesizeVoice({ text: 'test', outputPath: path, voice: 'EAC nonexistent voice' }), /未安装/);
     await assert.rejects(synthesizeVoice({ text: 'test', outputPath: path, signal: AbortSignal.abort() }), /aborted/);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('Windows SAPI remains usable through the shared media implementation', { skip: process.platform !== 'win32', timeout: 60000 }, async () => {
@@ -106,5 +106,5 @@ test('Windows SAPI remains usable through the shared media implementation', { sk
     assert.ok(media.duration > 0.5);
     assert.ok(media.audio.peakDb > -60);
     await assert.rejects(synthesizeVoice({ text: 'test', outputPath: path, signal: AbortSignal.abort() }), /aborted/);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });

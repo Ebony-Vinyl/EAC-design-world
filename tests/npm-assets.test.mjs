@@ -18,7 +18,7 @@ async function fixture(run) {
     const sha256 = createHash('sha256').update(bytes).digest('hex');
     const map = assets => writeFile(join(root, 'npm-asset-map.json'), JSON.stringify({ version: 1, packageVersion: '0.4.0', assets }));
     await run({ root, bytes, sha256, map });
-  } finally { await rm(root, { recursive: true, force: true }); }
+  } finally { await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 }
 
 test('npm assets restore exact bytes without downloading and preserve later customizations', () => fixture(async ({ root, bytes, sha256, map }) => {
@@ -71,5 +71,5 @@ test('npm assets refuse to write through a directory junction outside the packag
     await map([{ from: 'original.bin', to: 'vendor/escape/missing/copy.bin', sha256 }]);
     assert.throws(() => restoreNpmAssets(root), /directory escapes package/);
     await assert.rejects(readFile(join(outside, 'missing/copy.bin')), /ENOENT/);
-  } finally { await rm(outside, { recursive: true, force: true }); }
+  } finally { await rm(outside, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 }));

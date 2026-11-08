@@ -40,7 +40,7 @@ function fakeFetch(routes, { status = {} } = {}) {
 async function withTemp(fn) {
   const dir = await mkdtemp(join(tmpdir(), 'eac-feed-'))
   try { return await fn(dir) }
-  finally { await rm(dir, { recursive: true, force: true }) }
+  finally { await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) }
 }
 
 test('bustCdnCache only stamps jsDelivr URLs', () => {

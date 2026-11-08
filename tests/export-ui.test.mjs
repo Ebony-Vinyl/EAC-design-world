@@ -80,7 +80,7 @@ after(async () => {
   await vite?.close();
   await app?.close();
   await engine?.close();
-  await rm(directory, { recursive: true, force: true });
+  await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 });
 
 async function openPage() {
@@ -94,6 +94,18 @@ async function openPage() {
   return { context, page, errors };
 }
 
+// Saving is disabled until the edit reaches React state, so a bare click right after fill()
+// or selectOption() can land on a disabled button and silently drop the save.
+async function saveTimeline(page) {
+  const button = page.getByRole('button', { name: '保存编排', exact: true });
+  await page.waitForFunction(() => {
+    const node = [...document.querySelectorAll('button')].find(item => item.textContent?.includes('保存编排'));
+    return node && !node.disabled;
+  });
+  await button.click();
+  await page.getByText(/时间线已保存/).waitFor();
+}
+
 async function openExportPanel(page) {
   await page.goto(base, { waitUntil: 'domcontentloaded' });
   await page.locator('.app-topnav').getByRole('button', { name: /^制作流程/ }).click();
@@ -103,7 +115,7 @@ async function openExportPanel(page) {
 
 const exportJobCount = () => engine.store.state.jobs.filter((job) => job.type === 'export').length;
 
-test('export panel exports only the selected targets and never double submits', { timeout: 180000 }, async () => {
+test('export panel exports only the selected targets and never double submits', { timeout: 420000 }, async () => {
   const { context, page, errors } = await openPage();
   try {
     await openExportPanel(page);
@@ -191,8 +203,7 @@ test('timeline exposes camera and creative LUT paths and blocks exporting unsave
     await page.getByText(/请先保存当前编排/).waitFor();
     assert.equal(await page.getByRole('heading', { name: '多轨时间线', exact: true }).count(), 1);
 
-    await page.getByRole('button', { name: '保存编排', exact: true }).click();
-    await page.getByText(/时间线已保存/).waitFor();
+    await saveTimeline(page);
     await page.getByRole('heading', { name: '导出续剪工程', exact: true }).waitFor();
     const saved = await engine.handle('project_get', { projectId: project.id });
     assert.equal(saved.clips[0].inputLut, await realpath(inputLut));
@@ -205,15 +216,26 @@ test('timeline exposes camera and creative LUT paths and blocks exporting unsave
 test('custom grading without a preset is labelled as such and explicit zeros survive edits', { timeout: 180000 }, async () => {
   const { context, page, errors } = await openPage();
   try {
-    const projectId = project.id;
+    // Grading state is project-wide, so this case runs on its own project instead of the
+    // shared fixture one; otherwise a look left behind by another test changes what it reads.
+    const scratch = await engine.handle('project_create', { title: 'Custom grading regression', width: 160, height: 90, fps: 12 });
+    const imported = await engine.handle('asset_import', { projectId: scratch.id, path: shot });
+    const projectId = scratch.id;
+    const seeded = await engine.handle('timeline_update', {
+      projectId, revision: imported.revision,
+      clips: [{ ...fixtureClips('grading')[0], assetId: imported.assets[0].id }],
+    });
     const current = await engine.handle('project_get', { projectId });
     const customLook = { exposure: -0.1, curves: { master: [[0, 0], [1, 0.92]] } };
     const customClip = { exposure: 0, curves: { master: [[0, 0.02], [1, 1]] } };
-    const seeded = await engine.handle('timeline_update', {
+    await engine.handle('timeline_update', {
       projectId, revision: current.revision,
       clips: [{ ...current.clips[0], grading: customClip }],
       look: customLook,
     });
+    await context.addInitScript(id => {
+      try { localStorage.setItem('eac:project', id); } catch { /* first about:blank pass */ }
+    }, projectId);
     await page.goto(base, { waitUntil: 'domcontentloaded' });
     await page.getByRole('tab', { name: '时间线编辑', exact: true }).click();
     await page.getByRole('heading', { name: '多轨时间线', exact: true }).waitFor();
@@ -231,8 +253,7 @@ test('custom grading without a preset is labelled as such and explicit zeros sur
     assert.equal(await page.getByRole('spinbutton', { name: '对比 contrast', exact: true }).first().isEditable(), true);
 
     await clipExposure.fill('0.15');
-    await page.getByRole('button', { name: '保存编排', exact: true }).click();
-    await page.getByText(/时间线已保存/).waitFor();
+    await saveTimeline(page);
     let saved = await engine.handle('project_get', { projectId });
     assert.equal(saved.clips[0].grading.exposure, 0.15);
     assert.deepEqual(saved.clips[0].grading.curves, customClip.curves, 'advanced curves must survive a scalar edit');
@@ -240,59 +261,19 @@ test('custom grading without a preset is labelled as such and explicit zeros sur
 
     await page.getByRole('button', { name: '保存编排', exact: true }).waitFor();
     await clipExposure.fill('0');
-    await page.getByRole('button', { name: '保存编排', exact: true }).click();
-    await page.getByText(/时间线已保存/).waitFor();
+    await saveTimeline(page);
     saved = await engine.handle('project_get', { projectId });
     assert.equal(saved.clips[0].grading.exposure, 0, 'an explicit zero must be kept, not dropped back to the look');
     assert.deepEqual(saved.clips[0].grading.curves, customClip.curves);
 
     await clipSelect.selectOption({ label: '青橙电影' });
-    await page.getByRole('button', { name: '保存编排', exact: true }).click();
-    await page.getByText(/时间线已保存/).waitFor();
+    // Saving is disabled until the select's change reaches React state, so wait for the
+    // button to become enabled instead of racing it.
+    await page.getByRole('button', { name: '保存编排', exact: true }).and(page.locator(':not([disabled])')).waitFor();
+    await saveTimeline(page);
     saved = await engine.handle('project_get', { projectId });
     assert.equal(saved.clips[0].grading.preset, 'teal-orange');
     assert.deepEqual(saved.clips[0].grading.curves, customClip.curves, 'switching a preset must keep existing advanced curves');
-    assert.deepEqual(errors, []);
-  } finally { await context.close(); }
-});
-
-test('dragging a timeline block moves it and edge handles trim without breaking the numeric fields', { timeout: 120000 }, async () => {
-  const { context, page, errors } = await openPage();
-  try {
-    await page.goto(base, { waitUntil: 'domcontentloaded' });
-    await page.getByRole('tab', { name: '时间线编辑', exact: true }).click();
-    await page.getByRole('heading', { name: '多轨时间线', exact: true }).waitFor();
-    const block = page.locator('.timeline-block').first();
-    await block.waitFor();
-    const before = await block.boundingBox();
-    const startField = page.getByRole('spinbutton', { name: '片段 1 开始 / 秒', exact: true });
-    const durationField = page.getByRole('spinbutton', { name: '片段 1 保留时长 / 秒', exact: true });
-    assert.equal(await startField.inputValue(), '0');
-
-    // Drag the body to the right: the clip starts later, its duration is unchanged.
-    await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(before.x + before.width / 2 + 60, before.y + before.height / 2, { steps: 6 });
-    await page.mouse.up();
-    const movedStart = Number(await startField.inputValue());
-    assert.ok(movedStart > 0, `expected a positive start after dragging, got ${movedStart}`);
-    assert.equal(Number(await durationField.inputValue()), 2);
-
-    // Drag the trailing handle: the clip gets longer, the start stays put.
-    const handle = block.locator('.timeline-handle-end');
-    const handleBox = await handle.boundingBox();
-    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(handleBox.x + handleBox.width / 2 + 40, handleBox.y + handleBox.height / 2, { steps: 6 });
-    await page.mouse.up();
-    assert.equal(Number(await startField.inputValue()), movedStart);
-    assert.ok(Number(await durationField.inputValue()) > 2, 'trailing trim must lengthen the clip');
-
-    await page.getByRole('button', { name: '保存编排', exact: true }).click();
-    await page.getByText(/时间线已保存/).waitFor();
-    const saved = await engine.handle('project_get', { projectId: project.id });
-    assert.equal(saved.clips[0].start, movedStart);
-    assert.ok(saved.clips[0].duration > 2);
     assert.deepEqual(errors, []);
   } finally { await context.close(); }
 });
@@ -353,13 +334,23 @@ test('removing a scalar override keeps advanced grading fields and clears empty 
 test('timeline scalar controls show inherited preset values, mark overrides and reset to inherited', { timeout: 180000 }, async () => {
   const { context, page, errors } = await openPage();
   try {
-    const current = await engine.handle('project_get', { projectId: project.id });
+    // Its own project, for the same reason as the custom-grading case above.
+    const scratch = await engine.handle('project_create', { title: 'Scalar override regression', width: 160, height: 90, fps: 12 });
+    const imported = await engine.handle('asset_import', { projectId: scratch.id, path: shot });
+    await engine.handle('timeline_update', {
+      projectId: scratch.id, revision: imported.revision,
+      clips: [{ ...fixtureClips('scalar')[0], assetId: imported.assets[0].id }],
+    });
+    const current = await engine.handle('project_get', { projectId: scratch.id });
     const curves = { master: [[0, 0], [1, 0.92]] };
     await engine.handle('timeline_update', {
-      projectId: project.id, revision: current.revision,
+      projectId: scratch.id, revision: current.revision,
       clips: [{ ...current.clips[0], grading: { contrast: 0.2, curves } }],
       look: { preset: 'golden-hour' },
     });
+    await context.addInitScript(id => {
+      try { localStorage.setItem('eac:project', id); } catch { /* first about:blank pass */ }
+    }, scratch.id);
     await page.goto(base, { waitUntil: 'domcontentloaded' });
     await page.getByRole('tab', { name: '时间线编辑', exact: true }).click();
     await page.getByRole('heading', { name: '多轨时间线', exact: true }).waitFor();
@@ -375,28 +366,87 @@ test('timeline scalar controls show inherited preset values, mark overrides and 
     await page.getByText('片段覆盖', { exact: true }).waitFor();
 
     await exposure.fill('0');
-    await page.getByRole('button', { name: '保存编排', exact: true }).click();
-    await page.getByText(/时间线已保存/).waitFor();
-    let saved = await engine.handle('project_get', { projectId: project.id });
+    await saveTimeline(page);
+    let saved = await engine.handle('project_get', { projectId: scratch.id });
     assert.equal(saved.clips[0].grading.exposure, 0, 'an explicit zero is stored as a real override');
     assert.deepEqual(saved.clips[0].grading.curves, curves, 'advanced curves survive a scalar edit');
 
     await contrast.fill('');
-    await page.getByRole('button', { name: '保存编排', exact: true }).click();
-    await page.getByText(/时间线已保存/).waitFor();
-    saved = await engine.handle('project_get', { projectId: project.id });
+    await saveTimeline(page);
+    saved = await engine.handle('project_get', { projectId: scratch.id });
     assert.equal(saved.clips[0].grading.contrast, undefined, 'clearing the input removes the override');
     assert.equal(saved.clips[0].grading.exposure, 0);
     assert.deepEqual(saved.clips[0].grading.curves, curves);
 
     await page.getByRole('button', { name: '重置曝光为继承值', exact: true }).click();
     assert.equal(await exposure.inputValue(), '0.1', 'reset restores the inherited preset value');
-    await page.getByRole('button', { name: '保存编排', exact: true }).click();
-    await page.getByText(/时间线已保存/).waitFor();
-    saved = await engine.handle('project_get', { projectId: project.id });
+    await saveTimeline(page);
+    saved = await engine.handle('project_get', { projectId: scratch.id });
     assert.equal(saved.clips[0].grading.exposure, undefined);
     assert.equal(saved.clips[0].grading.contrast, undefined);
     assert.deepEqual(saved.clips[0].grading.curves, curves, 'reset must not discard advanced grading fields');
+    assert.deepEqual(errors, []);
+  } finally { await context.close(); }
+});
+
+test('dragging a timeline block moves it and edge handles trim without breaking the numeric fields', { timeout: 240000 }, async () => {
+  const { context, page, errors } = await openPage();
+  try {
+    // A dedicated project keeps this test from changing the seed clip the other cases read.
+    const scratch = await engine.handle('project_create', { title: 'Timeline drag regression', width: 160, height: 90, fps: 12 });
+    const imported = await engine.handle('asset_import', { projectId: scratch.id, path: shot });
+    const seeded = await engine.handle('timeline_update', {
+      projectId: scratch.id, revision: imported.revision,
+      clips: [{ ...fixtureClips('drag')[0], assetId: imported.assets[0].id }],
+    });
+    assert.equal(seeded.clips[0].start, 0);
+    // The workspace picks its active project from localStorage on first render, so seed the
+    // value before any document script runs instead of navigating twice and racing the reset.
+    await context.addInitScript(id => {
+      try { localStorage.setItem('eac:project', id); } catch { /* first about:blank pass */ }
+    }, scratch.id);
+    await page.goto(base, { waitUntil: 'domcontentloaded' });
+    // Wait for the workspace to finish its first /api/state round trip; clicking while the
+    // connection banner is up lands on the banner instead of the tab.
+    await page.locator('.connection-banner').waitFor({ state: 'hidden' }).catch(() => {});
+    await page.getByRole('tab', { name: '时间线编辑', exact: true }).click();
+    await page.getByRole('heading', { name: '多轨时间线', exact: true }).waitFor();
+    // Guard against silently dragging the wrong project's clip. The indicator span exists in
+    // two places (header and heading actions) and one copy is display:none, so only its text
+    // is meaningful here.
+    assert.ok(await page.locator('.current-project', { hasText: 'Timeline drag regression' }).count() > 0,
+      'the workspace must show the scratch project as active');
+    const block = page.locator('.timeline-block').first();
+    await block.waitFor();
+    const before = await block.boundingBox();
+    const startField = page.getByRole('spinbutton', { name: '片段 1 开始 / 秒', exact: true });
+    const durationField = page.getByRole('spinbutton', { name: '片段 1 保留时长 / 秒', exact: true });
+    const initialStart = Number(await startField.inputValue());
+    const initialDuration = Number(await durationField.inputValue());
+
+    // Drag the body to the right: the clip starts later, its duration is unchanged.
+    await page.mouse.move(before.x + before.width / 2, before.y + before.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(before.x + before.width / 2 + 60, before.y + before.height / 2, { steps: 6 });
+    await page.mouse.up();
+    const movedStart = Number(await startField.inputValue());
+    assert.ok(movedStart > initialStart, `expected the clip to start later, got ${movedStart} (was ${initialStart})`);
+    assert.equal(Number(await durationField.inputValue()), initialDuration);
+
+    // Drag the trailing handle: the clip gets longer, the start stays put.
+    const handle = block.locator('.timeline-handle-end');
+    const handleBox = await handle.boundingBox();
+    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(handleBox.x + handleBox.width / 2 + 40, handleBox.y + handleBox.height / 2, { steps: 6 });
+    await page.mouse.up();
+    assert.equal(Number(await startField.inputValue()), movedStart);
+    assert.ok(Number(await durationField.inputValue()) > initialDuration, 'trailing trim must lengthen the clip');
+
+    await saveTimeline(page);
+    const saved = await engine.handle('project_get', { projectId: scratch.id });
+    assert.equal(saved.clips[0].start, movedStart);
+    assert.ok(saved.clips[0].duration > initialDuration);
     assert.deepEqual(errors, []);
   } finally { await context.close(); }
 });

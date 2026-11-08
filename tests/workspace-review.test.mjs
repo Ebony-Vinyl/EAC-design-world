@@ -63,7 +63,7 @@ test('editor and deck srcdoc block outbound fetch while retaining scripts and lo
     await browser?.close();
     await new Promise(done => { collector.close(done); collector.closeAllConnections(); });
     await app.close(); await engine.close();
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 

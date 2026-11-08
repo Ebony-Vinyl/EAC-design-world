@@ -83,6 +83,6 @@ test('optional templates preview and retain dynamic assets after design project 
     await browser?.close();
     await app.close();
     await engine.close();
-    await rm(dataDir, { recursive: true, force: true });
+    await rm(dataDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });

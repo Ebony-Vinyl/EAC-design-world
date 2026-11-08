@@ -180,7 +180,7 @@ test('detail player scales opaque sources, controls deterministic playback, fall
     await browser?.close();
     await app.close();
     await engine.close();
-    await rm(directory, { recursive: true, force: true });
-    await rm(fixtureDirectory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    await rm(fixtureDirectory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });

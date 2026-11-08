@@ -35,7 +35,7 @@ async function withEngine(fn) {
   const directory = await mkdtemp(join(tmpdir(), 'eac-plugin-json-'));
   const engine = await createEngine({ dataDir: directory });
   try { return await fn(engine, directory); }
-  finally { await engine.close(); await rm(directory, { recursive: true, force: true }); }
+  finally { await engine.close(); await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 }
 
 function toolFor(engine, name) {

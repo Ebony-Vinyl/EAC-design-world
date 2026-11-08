@@ -49,7 +49,7 @@ https://github.com/user-attachments/assets/ca081273-1061-4656-a1b7-41d50af0aec7
 | 找到合适的视觉风格 | 152 套设计体系与 517 个 OpenDesign 模板条目，另有原有 17 个视频选项；按类型搜索、分类和分页 |
 | 浏览与挑选动效镜头 | Shotcraft 本地快照含 150 个镜头、10 类动效、59 个精选；可见视频预览、选片单、名单复制与下载、导入项目素材 |
 | 录下真实产品 | Edge / Chrome 网页操作录制；Windows gdigrab 或 macOS avfoundation 桌面录制；原素材不被改写 |
-| 编排实际镜头 | 多轨时间线，调整开始时间、素材入点、时长、音量和轨道；带修订号保存 |
+| 编排实际镜头 | 多轨时间线；拖动片段移动、拖两端裁剪，也可直接输入开始时间、素材入点、时长、音量和轨道；带修订号保存 |
 | 找网络风景素材与配乐 | `stock_search`/`stock-download`：Pexels、Pixabay（免费 API Key）、维基共享 Commons（免 Key）风景视频与 Jamendo CC 配乐；作者与许可随素材持久化 |
 | 参数化调色与迭代 | 曲线（主/RGB）、HSL 二级、色相曲线、分区轮、静态局部蒙版与相机输入 LUT；全局色彩调整可导出 `.cube`，空间蒙版在原生渲染生效、续剪时需重建；`grade-preview` 对比帧、`scopes` 示波器与 `color_workflow` 调色版本/曝光匹配建议辅助 AI 迭代 |
 | 卡点变速与运镜 | `beats` 节拍分析驱动音乐卡点剪辑；`clip.speed` 变速、`clip.motion` 数字运镜（推拉摇移）、片尾淡出/锐化/暗角；大时间线自动分块多 Pass 渲染防内存溢出 |

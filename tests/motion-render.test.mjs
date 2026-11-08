@@ -26,5 +26,5 @@ test('custom seekable films resolve motion assets on the render server without a
     assert.deepEqual(result.missingAssets, []);
     assert.equal(result.qa.ok, true);
     await assert.rejects(renderTemplate({ templateId: template.id, htmlPath: template.entry, outputPath: join(directory, 'raw.mp4') }), /原始实时交互/);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });

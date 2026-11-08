@@ -13,7 +13,7 @@ async function fixture(run) {
   await mkdir(dataDir);
   await writeFile(join(install, 'package.json'), '{"name":"eac-design-world","version":"0.5.0","main":"./plugin/host.mjs"}');
   try { await run({ directory, install, dataDir }); }
-  finally { await rm(directory, { recursive: true, force: true }); }
+  finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 }
 
 test('offline update requires the old service to be explicitly stopped before any write', () => fixture(async ({ install, dataDir }) => {

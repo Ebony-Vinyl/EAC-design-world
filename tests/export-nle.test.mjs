@@ -487,7 +487,7 @@ test('runExport exports per-window LUTs named grade<clip>w<window>.cube', async 
     const windowCube = await readFile(join(directory, 'lut', 'grade0w0.cube'), 'utf8');
     assert.match(windowCube, /LUT_3D_SIZE 5/);
   } finally {
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 
@@ -576,7 +576,7 @@ test('runExport writes the complete delivery set with absolute existing paths', 
       assert.ok(result.notes.some((note) => /LUT/.test(note)), 'skipped LUTs are explained in notes');
     }
   } finally {
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 
@@ -601,10 +601,10 @@ test('runExport honors a single target and an explicit empty target list', async
       assert.equal(all.files.length, expected);
       assert.ok(all.draftFolder);
     } finally {
-      await rm(second, { recursive: true, force: true });
+      await rm(second, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     }
   } finally {
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 
@@ -618,7 +618,7 @@ test('runExport skips SRT without captions and explains why', async () => {
     assert.ok(result.files.some((path) => path.endsWith('manifest.json')));
     assert.ok(!(await readdir(directory)).includes('srt'));
   } finally {
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 
@@ -637,7 +637,7 @@ test('runExport rejects unknown targets and pre-aborted signals', async () => {
     );
     assert.deepEqual(await readdir(directory), []);
   } finally {
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 
@@ -665,7 +665,7 @@ test('runExport tolerates invalid grading and keeps other LUT targets', async ()
     assert.ok(result.files.some((path) => path.endsWith('README.txt')));
     for (const path of result.files) assert.equal((await stat(path)).isFile(), true);
   } finally {
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 
@@ -685,7 +685,7 @@ test('runExport writes only the requested jianying draft files', async () => {
       ['draft_content.json', 'draft_meta_info.json']);
     for (const path of result.files) assert.ok((await stat(path)).size > 0);
   } finally {
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 
@@ -846,7 +846,7 @@ test('runExport copies camera input and creative LUTs and documents the applicat
     assert.equal(manifest.capabilities.speed.premiereXml, 'timeremap-filter');
     assert.ok(manifest.media.some((entry) => entry.path === resolve(video) && entry.exists === true));
   } finally {
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 
@@ -887,7 +887,7 @@ test('runExport writes a one-click handoff ZIP containing every delivered file',
       if (error?.code !== 'ERR_MODULE_NOT_FOUND' && error?.code !== 'MODULE_NOT_FOUND') throw error;
     }
   } finally {
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 
@@ -920,7 +920,7 @@ test('runExport rejects missing media, missing LUT files and an empty timeline b
     await assert.rejects(runExport({ project: missingLut, outputDir: output, targets: ['lut'] }), /丢失|不存在|missing/i);
     assert.deepEqual(await readdir(directory), ['clip.mp4'], 'nothing is written before validation passes');
   } finally {
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 
@@ -935,7 +935,7 @@ test('runExport accepts a settings.draftName so hosts can avoid overwriting a hu
     const meta = JSON.parse(await readFile(join(result.draftFolder, 'draft_meta_info.json'), 'utf8'));
     assert.equal(meta.draft_name, 'EAC job-42');
   } finally {
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 

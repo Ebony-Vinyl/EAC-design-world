@@ -16,7 +16,7 @@ async function installation(run) {
   const linked = join(modules, 'eac-design-world');
   await symlink(root, linked, process.platform === 'win32' ? 'junction' : 'dir');
   try { await run({ directory, linked }); }
-  finally { await rm(directory, { recursive: true, force: true }); }
+  finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 }
 
 async function starts(entry, directory, extra = []) {

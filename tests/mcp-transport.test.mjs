@@ -58,7 +58,7 @@ test('real stdio MCP imports a Shotcraft templateId through the HTTP server', { 
     await client.close().catch(() => {});
     await app.close();
     await engine.close();
-    await rm(dataDir, { recursive: true, force: true });
+    await rm(dataDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });
 
@@ -82,6 +82,6 @@ test('HTTP assets endpoint accepts templateId without a path', async () => {
   } finally {
     await app.close();
     await engine.close();
-    await rm(dataDir, { recursive: true, force: true });
+    await rm(dataDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });

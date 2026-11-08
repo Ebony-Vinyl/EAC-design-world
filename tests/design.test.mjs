@@ -14,7 +14,7 @@ async function setup(fn) {
   const directory = await mkdtemp(join(tmpdir(), 'eac-design-'));
   const engine = await createEngine({ dataDir: directory });
   try { return await fn(engine, directory); }
-  finally { await engine.close(); await rm(directory, { recursive: true, force: true }); }
+  finally { await engine.close(); await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 }
 async function withServer(fn) {
   return setup(async (engine, dir) => {
@@ -279,7 +279,7 @@ test('imported OpenDesign HTML/SVG is served sandboxed but legacy templates stay
       assert.equal(legacy.status, 200);
       assert.equal(legacy.headers.get('content-security-policy'), null);
     } finally {
-      if (created) await rm(odDir, { recursive: true, force: true });
+      if (created) await rm(odDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
       else await rm(sample, { force: true });
     }
   });
@@ -305,5 +305,5 @@ test('design projects survive engine restart through the local store', async () 
     assert.equal(state.projects[0].artifacts[0].name, 'hero.svg');
     assert.equal((await second.designStore.readContent(artifact.id)).content, '<svg/>');
     await second.close();
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });

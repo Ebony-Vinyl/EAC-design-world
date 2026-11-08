@@ -49,7 +49,7 @@ test('renderTimeline rejects invalid speed values', async () => {
     for (const speed of [0.2, 5, 'fast', null]) {
       await rejected({ width: 96, height: 64, fps: 12, clips: [dummyClip({ speed })] }, directory);
     }
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('renderTimeline rejects invalid motion', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-motion-invalid-'));
@@ -57,7 +57,7 @@ test('renderTimeline rejects invalid motion', async () => {
     for (const motion of [{ type: 'spin' }, { type: 'zoom-in', amount: 1.5 }, { type: 'zoom-in', amount: 'x' }, 'zoom-in']) {
       await rejected({ width: 96, height: 64, fps: 12, clips: [dummyClip({ motion })] }, directory);
     }
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('renderTimeline rejects invalid power windows', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-window-invalid-'));
@@ -75,7 +75,7 @@ test('renderTimeline rejects invalid power windows', async () => {
     for (const windows of cases) {
       await rejected({ width: 96, height: 64, fps: 12, clips: [dummyClip({ windows })] }, directory);
     }
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('renderTimeline rejects invalid project polish controls', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-polish-invalid-'));
@@ -83,7 +83,7 @@ test('renderTimeline rejects invalid project polish controls', async () => {
     for (const extra of [{ fadeIn: 6 }, { fadeOut: 5.5 }, { musicStart: -1 }, { sharpen: 3 }, { vignette: 1.5 }]) {
       await rejected({ width: 96, height: 64, fps: 12, clips: [dummyClip()], ...extra }, directory);
     }
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('speed ramps change rendered duration', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-speed-render-'));
@@ -104,7 +104,7 @@ test('speed ramps change rendered duration', async () => {
     await assert.rejects(renderTimeline({ project: { width: 96, height: 64, fps: 12, clips: [
       { path: clip, kind: 'video', start: 1, sourceIn: 1.5, duration: 1, volume: 0, track: 0, speed: 2 }] },
       outputPath: join(directory, 'overrun.mp4') }), /exceeds source duration/);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('zoom-in motion renders a decodable clip', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-motion-render-'));
@@ -121,7 +121,7 @@ test('zoom-in motion renders a decodable clip', async () => {
     assert.equal(media.height, 90);
     const check = await qualityCheck({ path: out, expectedDuration: 2 });
     assert.equal(check.ok, true, check.errors.join('; '));
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('pan motion renders a decodable clip', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-pan-render-'));
@@ -135,7 +135,7 @@ test('pan motion renders a decodable clip', async () => {
     await renderTimeline({ project, outputPath: out });
     const check = await qualityCheck({ path: out, expectedDuration: 2 });
     assert.equal(check.ok, true, check.errors.join('; '));
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('circle power window brightens only its region', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-window-render-'));
@@ -157,7 +157,7 @@ test('circle power window brightens only its region', async () => {
     const corner = pixelAt(frame, 160, 5, 5);
     assert.ok(center.r > 240, `expected the window center clipped bright, got ${center.r}`);
     assert.ok(Math.abs(corner.r - 64) < 12, `expected the corner untouched at ~64, got ${corner.r}`);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('chained rect and linear windows render', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-windows-chain-'));
@@ -174,7 +174,7 @@ test('chained rect and linear windows render', async () => {
     await renderTimeline({ project, outputPath: out });
     const check = await qualityCheck({ path: out, expectedDuration: 1 });
     assert.equal(check.ok, true, check.errors.join('; '));
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('fadeIn, fadeOut, musicStart, sharpen and vignette smoke render', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-polish-render-'));
@@ -194,7 +194,7 @@ test('fadeIn, fadeOut, musicStart, sharpen and vignette smoke render', async () 
     assert.ok(Math.abs(media.duration - 1.5) <= 0.2, `duration ${media.duration}s != 1.5s`);
     const check = await qualityCheck({ path: out, expectedDuration: 1.5 });
     assert.equal(check.ok, true, check.errors.join('; '));
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('createScopes writes a waveform/vectorscope sheet', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-scopes-'));
@@ -210,7 +210,7 @@ test('createScopes writes a waveform/vectorscope sheet', async () => {
     assert.ok(size > 10000, `scopes png too small: ${size} bytes`);
     await assert.rejects(createScopes({ path: clip, outputPath: join(directory, 'scopes.jpg') }), TypeError);
     await assert.rejects(createScopes({ path: join(directory, 'missing.mp4'), outputPath: out }));
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('gradePreview samples speed ramps and skips night grades', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-night-preview-'));
@@ -234,7 +234,7 @@ test('gradePreview samples speed ramps and skips night grades', async () => {
       project: nightProject({ exposure: -0.5 }), outputPath: join(directory, 'night.png'), framesPerClip: 1 });
     assert.equal(night.frames[0].mergedExposure, -0.5);
     assert.ok(!night.warnings.some((warning) => warning.includes('偏暗')), 'intentional night grade must not trip 偏暗');
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 // --- Regression tests for the camera-input LUT, window/LUT interaction, preview parity
 // and high-precision (16-bit) grade chain. Added before the implementation; the assertions
@@ -278,7 +278,7 @@ test('clip.lut survives when the clip also has power windows', async () => {
     assert.ok(corner.r > 88, `expected the look LUT red gain outside the window, got ${corner.r}`);
     assert.ok(Math.abs(corner.g - 64) < 12, `expected green untouched outside the window, got ${corner.g}`);
     assert.ok(center.r > 240, `expected the window center clipped bright, got ${center.r}`);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('gradePreview applies power windows exactly like the render', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-window-preview-'));
@@ -305,7 +305,7 @@ test('gradePreview applies power windows exactly like the render', async () => {
     const rendered = pixelAt(frame, 160, 80, 45);
     assert.ok(Math.abs(rendered.r - center.r) < 40,
       `preview center ${center.r} should match render center ${rendered.r}`);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('clip.inputLut is applied before clip.lut and the parameter grade', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-inputlut-order-'));
@@ -328,7 +328,7 @@ test('clip.inputLut is applied before clip.lut and the parameter grade', async (
     // The reverse order would leave red near 0.2 * 255 = 51 instead of 255.
     assert.ok(pixel.r > 240, `expected red driven to full by the LUT order, got ${pixel.r}`);
     assert.ok(pixel.g > 100 && pixel.g < 130, `expected green offset to ~115, got ${pixel.g}`);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('clip.inputLut and clip.lut are validated as local .cube files', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-inputlut-invalid-'));
@@ -338,7 +338,7 @@ test('clip.inputLut and clip.lut are validated as local .cube files', async () =
         await rejected({ width: 96, height: 64, fps: 12, clips: [dummyClip({ [key]: value })] }, directory);
       }
     }
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('gradePreview frames carry a stable clipId next to clipIndex', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-preview-clipid-'));
@@ -353,7 +353,7 @@ test('gradePreview frames carry a stable clipId next to clipIndex', async () => 
     assert.equal(preview.frames[1].clipId, '1', 'clips without an id fall back to their stable index');
     assert.equal(preview.frames[0].clipIndex, 0);
     assert.equal(preview.frames[1].clipIndex, 1);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 test('grading a 10-bit source keeps more than 8-bit input precision', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'eac-10bit-grade-'));
@@ -373,5 +373,5 @@ test('grading a 10-bit source keeps more than 8-bit input precision', async () =
     for (let x = 0; x < 256; x++) levels.add(pixelAt(frame, 256, x, 8).r);
     assert.ok(levels.size >= 60,
       `expected a smooth 16-bit-graded ramp (>=60 levels), got ${levels.size} levels`);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });

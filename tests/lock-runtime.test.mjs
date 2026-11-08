@@ -21,6 +21,6 @@ test('the shipped lock runtime works without installing any new dependency', asy
     release = null;
   } finally {
     await release?.();
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });

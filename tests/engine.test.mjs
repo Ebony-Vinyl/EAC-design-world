@@ -13,7 +13,7 @@ async function setup(fn, options = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'eac-engine-'));
   const engine = await createEngine({ dataDir: directory, ...options });
   try { return await fn(engine, directory); }
-  finally { await engine.close(); await rm(directory, { recursive: true, force: true }); }
+  finally { await engine.close(); await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 }
 async function fixture(path) {
   const child = spawn('ffmpeg', ['-hide_banner', '-y', '-loglevel', 'error', '-f', 'lavfi',

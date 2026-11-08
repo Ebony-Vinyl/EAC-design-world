@@ -32,6 +32,6 @@ test('live motion recording drives real pointer and wheel events', { timeout: 12
     await assert.rejects(recordBrowser({ url: 'data:text/html,test', outputDir, actions: [{ type: 'move', x: 0, y: 0, steps: 10000 }] }), /steps/);
   } finally {
     await new Promise(done => { server.close(done); server.closeAllConnections(); });
-    await rm(outputDir, { recursive: true, force: true });
+    await rm(outputDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });

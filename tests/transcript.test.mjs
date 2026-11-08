@@ -11,7 +11,7 @@ import { generateKeepRanges, transcribeMedia, transcriptCapabilities } from '../
 
 async function workspace(t) {
   const directory = await mkdtemp(join(tmpdir(), "eac \u4e2d\u6587 ' transcript "));
-  t.after(() => rm(directory, { recursive: true, force: true }));
+  t.after(() => rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }));
   return directory;
 }
 
@@ -183,7 +183,7 @@ test('the default model resolves inside the user data directory, never a develop
       if (previous === undefined) delete process.env.EAC_DATA_DIR;
       else process.env.EAC_DATA_DIR = previous;
     }
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('EAC_WHISPER_MODEL_PATH still overrides the user data directory default', async () => {
@@ -198,7 +198,7 @@ test('EAC_WHISPER_MODEL_PATH still overrides the user data directory default', a
       if (previous === undefined) delete process.env.EAC_WHISPER_MODEL_PATH;
       else process.env.EAC_WHISPER_MODEL_PATH = previous;
     }
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('missing model and invalid input fail honestly without caption artifacts', { timeout: 60_000 }, async (t) => {

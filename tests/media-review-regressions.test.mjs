@@ -93,7 +93,7 @@ test('glow blends in RGB so a neutral gray stays neutral', async () => {
     assert.ok(spread <= 3, `glow tinted a neutral gray: rgb(${pixel.r},${pixel.g},${pixel.b})`);
     // RGB screen of 128 with its own blur at 0.24 opacity lands near 143, clearly above the input.
     assert.ok(pixel.r >= 132 && pixel.r <= 155, `unexpected RGB glow level ${pixel.r}`);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('gradePreview shares the project aspect and tile size between both columns', async () => {
@@ -121,7 +121,7 @@ test('gradePreview shares the project aspect and tile size between both columns'
       assert.equal(sheet.height, cellHeight * 2 + 18, `${size}: sheet height must use one shared cell size`);
       assert.ok(cellWidth <= 480 && cellHeight <= 270, `${size}: preview cells must stay bounded`);
     }
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('gradePreview applies motion at the sampled time with identical framing on both sides', async () => {
@@ -152,7 +152,7 @@ test('gradePreview applies motion at the sampled time with identical framing on 
     // Without motion (or at t=0) it would sit near x=130/163 instead.
     assert.ok(Math.abs(original - 103) <= 12,
       `preview did not apply the sampled motion phase: stripe at ${original}, expected ~103`);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('gradePreview motion framing matches the rendered film at the same time', async () => {
@@ -179,7 +179,7 @@ test('gradePreview motion framing matches the rendered film at the same time', a
     // The preview cell is 3x the project width, so the same normalized framing scales by 3.
     assert.ok(Math.abs(previewOriginal - rendered * 3) <= 8,
       `preview framing ${previewOriginal} does not match the render ${rendered} x3 = ${rendered * 3}`);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('gradePreview applies pan motion to still images on both sides', async () => {
@@ -204,7 +204,7 @@ test('gradePreview applies pan motion to still images on both sides', async () =
     // with no motion it would be near x=130.
     assert.ok(Math.abs(original - 163) <= 12,
       `image preview skipped motion: stripe at ${original}, expected ~163`);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('guardrails compare paired frames so an existing highlight cannot hide a new one', async () => {
@@ -230,7 +230,7 @@ test('guardrails compare paired frames so an existing highlight cannot hide a ne
       `fixture B should newly clip ~5%, got ${b.graded.highlightClip} - ${b.original.highlightClip}`);
     assert.ok(preview.warnings.some((warning) => warning.includes('高光') && warning.includes('新增')),
       `expected a paired highlight warning, got ${JSON.stringify(preview.warnings)}`);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('guardrails compare paired frames so an existing shadow crush cannot hide a new one', async () => {
@@ -251,7 +251,7 @@ test('guardrails compare paired frames so an existing shadow crush cannot hide a
       `fixture B should newly crush ~5%, got ${b.graded.shadowCrush} - ${b.original.shadowCrush}`);
     assert.ok(preview.warnings.some((warning) => warning.includes('暗部') && warning.includes('新增')),
       `expected a paired shadow warning, got ${JSON.stringify(preview.warnings)}`);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('gradePreview creates the output parent directory', async () => {
@@ -266,5 +266,5 @@ test('gradePreview creates the output parent directory', async () => {
     const preview = await gradePreview({ project, outputPath: out, framesPerClip: 1 });
     assert.equal(preview.path, out);
     assert.ok((await stat(out)).size > 1000);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });

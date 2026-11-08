@@ -39,7 +39,7 @@ test('real HTML deck exports PDF, PNG and a two-slide PowerPoint with explicit i
       }
     }
     assert.equal((await engine.designStore.readContent(artifact.id)).revision, 1);
-  } finally { await app.close(); await engine.close(); await rm(directory, { recursive: true, force: true }); }
+  } finally { await app.close(); await engine.close(); await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('export resolves relative vendor assets and blocks requests to the API', { timeout: 45000 }, async () => {
@@ -64,6 +64,6 @@ test('export resolves relative vendor assets and blocks requests to the API', { 
     assert.deepEqual(requests, ['/vendor/relative.svg']);
   } finally {
     await new Promise(resolve => { server.close(resolve); server.closeAllConnections(); });
-    await engine.close(); await rm(directory, { recursive: true, force: true });
+    await engine.close(); await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });

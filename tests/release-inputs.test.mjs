@@ -25,5 +25,5 @@ test('release defaults keep media outside output and preflight failures create n
     assert.equal(existsSync(output), false);
     await mkdir(output);
     await assert.rejects(releaseInputs(input), /Refusing to overwrite/);
-  } finally { await rm(root, { recursive: true, force: true }); }
+  } finally { await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });

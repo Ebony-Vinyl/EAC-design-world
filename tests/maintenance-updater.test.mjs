@@ -91,7 +91,9 @@ async function writeManifest(dir, options) {
 async function withTemp(fn) {
   const dir = await mkdtemp(join(tmpdir(), 'eac-maintenance-'))
   try { return await fn(dir) }
-  finally { await rm(dir, { recursive: true, force: true }) }
+  // Windows can still hold a handle on a just-written file (Defender, the search indexer),
+  // so a recursive remove right after the test occasionally fails with ENOTEMPTY/EPERM.
+  finally { await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }) }
 }
 
 test('version parsing and comparison follow semver precedence', () => {
@@ -479,7 +481,7 @@ test('listPackageFiles refuses a package containing a non-excluded junction', as
     await mkdir(join(dir, 'vendor'), { recursive: true })
     await symlink(outside, join(dir, 'vendor', 'motion-web'), 'junction')
     assert.doesNotThrow(() => listPackageFiles(dir))
-    await rm(outside, { recursive: true, force: true })
+    await rm(outside, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 })
   })
 })
 
@@ -498,7 +500,7 @@ test('restoreBackup refuses to write through a junction in the package', async (
     // The restore must refuse rather than write sub/keep.js through the junction.
     assert.throws(() => restoreBackup(backup, pkg), /rollback incomplete|symlink or junction/)
     assert.ok(!existsSync(join(outside, 'keep.js')))
-    await rm(outside, { recursive: true, force: true })
+    await rm(outside, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 })
   })
 })
 

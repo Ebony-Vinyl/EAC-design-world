@@ -439,7 +439,7 @@ test('color handoff maps a shared external LUT and inherited look for every clip
     for (const clip of manifest.color.clips) assert.equal(clip.baseLut, 'lut/look.cube');
     assert.deepEqual(manifest.color.clips[1].inputLut, manifest.color.clips[0].inputLut);
     assert.equal(manifest.color.clips[1].inputLut.exported, 'lut/input/clip-0-source.cube');
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('issue 12: LUT handoff documents independent branches and preserves window mappings', async () => {
@@ -508,6 +508,6 @@ test('issue 12: LUT handoff documents independent branches and preserves window 
     assert.equal(manifest.capabilities.audioGain.premiereXml, 'audiolevels-linear-gain');
     assert.equal(manifest.capabilities.musicLoop.premiereXml, 'split-clipitems');
   } finally {
-    await rm(directory, { recursive: true, force: true });
+    await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 });

@@ -19,7 +19,7 @@ async function setup(fn, source = 'testsrc2=s=160x90:r=12:d=2') {
     await engine.handle('asset_import', { projectId: project.id, path });
     const planned = await engine.handle('timeline_plan', { projectId: project.id, duration: 1 });
     return await fn({ engine, dir, planned });
-  } finally { await engine.close(); await rm(dir, { recursive: true, force: true }); }
+  } finally { await engine.close(); await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 }
 
 test('timeline validates camera and creative LUT files before saving any changes', () => setup(async ({ engine, dir, planned }) => {

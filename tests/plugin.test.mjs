@@ -396,7 +396,7 @@ async function profileFixture(t) {
   t.after(() => {
     assert.equal(dirname(profile), resolve(tmpdir()));
     assert.match(profile.slice(dirname(profile).length + 1), /^eac-plugin-profile-/);
-    return rm(profile, { recursive: true, force: true });
+    return rm(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
   await mkdir(join(profile, 'node_modules'));
   const manifest = { name: 'fixture', private: true, dependencies: { retained: 'link:D:/retained' },

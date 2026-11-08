@@ -10,7 +10,7 @@ async function withEngine(run) {
   const dataDir = await mkdtemp(join(tmpdir(), 'eac-motion-integration-'));
   const engine = await createEngine({ dataDir });
   try { await run(engine); }
-  finally { await engine.close(); await rm(dataDir, { recursive: true, force: true }); }
+  finally { await engine.close(); await rm(dataDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 }
 
 test('template catalog includes optional local motion sources at lookup time', async () => {

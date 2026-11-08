@@ -11,7 +11,7 @@ async function setup(run) {
   await writeFile(join(root, 'package.json'), JSON.stringify({ name: 'eac-design-world', version: '0.3.0' }));
   const engine = await createEngine({ dataDir: join(root, 'data') });
   try { await run({ root, engine }); }
-  finally { await engine.close(); await rm(root, { recursive: true, force: true }); }
+  finally { await engine.close(); await rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 }
 const finished = async maintenance => {
   for (let i = 0; i < 150; i++) {

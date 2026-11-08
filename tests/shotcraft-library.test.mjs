@@ -24,7 +24,7 @@ async function withEngine(run) {
   const directory = await mkdtemp(join(tmpdir(), 'eac-shotcraft-'));
   const engine = await createEngine({ dataDir: directory });
   try { await run(engine, directory); }
-  finally { await engine.close(); await rm(directory, { recursive: true, force: true }); }
+  finally { await engine.close(); await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 }
 
 test('Shotcraft imports all local styles, Chinese metadata and actual portable media', () => {
@@ -205,7 +205,7 @@ test('paths reject traversal and escaping junctions, missing imports stay empty'
     await writeFile(join(outside, 'secret.txt'), 'outside');
     await symlink(outside, join(vendor, 'escape'), process.platform === 'win32' ? 'junction' : 'dir');
     assert.equal(resolveShotcraftPath(`${SHOTCRAFT_ROOT}/escape/secret.txt`, { root: directory }), null);
-  } finally { await rm(directory, { recursive: true, force: true }); }
+  } finally { await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });
 
 test('picker JSON is parsed without execution and importer refuses unsafe or existing input', async () => {
@@ -222,5 +222,5 @@ test('picker JSON is parsed without execution and importer refuses unsafe or exi
   try {
     await assert.rejects(importShotcraft({ sourceRoot: ROOT, pickerPath: join(ROOT, 'README.md'), destinationRoot }), /Apache-2.0 LICENSE/);
     assert.equal(existsSync(join(destinationRoot, SHOTCRAFT_ROOT)), false);
-  } finally { await rm(destinationRoot, { recursive: true, force: true }); }
+  } finally { await rm(destinationRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 });

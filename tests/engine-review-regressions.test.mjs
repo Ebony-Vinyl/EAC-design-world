@@ -14,7 +14,7 @@ async function setup(fn) {
   const dir = await mkdtemp(join(tmpdir(), 'eac-review-'));
   const engine = await createEngine({ dataDir: dir });
   try { return await fn(engine, dir); }
-  finally { await engine.close(); await rm(dir, { recursive: true, force: true }); }
+  finally { await engine.close(); await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 }); }
 }
 
 // A tiny real media fixture keeps the flow realistic without any provider network calls.

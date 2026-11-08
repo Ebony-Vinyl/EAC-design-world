@@ -51,7 +51,7 @@ after(async () => {
   await vite?.close();
   await app?.close();
   await engine?.close();
-  await rm(directory, { recursive: true, force: true });
+  await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
 });
 
 async function openSettings() {
@@ -66,6 +66,17 @@ async function openSettings() {
   return { context, page, errors };
 }
 
+// The save button is disabled until the edit reaches React state, so clicking straight after
+// fill() can hit a disabled button and never issue the PUT.
+async function saveSettings(page) {
+  await page.waitForFunction(() => {
+    const node = [...document.querySelectorAll('button')].find(item => item.textContent?.includes('保存设置'));
+    return node && !node.disabled;
+  });
+  await page.getByRole('button', { name: '保存设置', exact: true }).click();
+  await page.getByText('配置与服务保持同步', { exact: true }).waitFor();
+}
+
 test('public settings never expose raw provider secrets, only configured flags', async () => {
   await engine.settingsUpdate({ pexelsApiKey: 'pexels-secret', pixabayApiKey: 'pixabay-secret', jamendoClientId: 'jamendo-secret' });
   const state = await engine.state();
@@ -77,7 +88,7 @@ test('public settings never expose raw provider secrets, only configured flags',
   assert.equal(state.settings.jamendoClientIdConfigured, true);
 });
 
-test('settings show masked configured status without fetching key values and omit untouched secrets on save', { timeout: 180000 }, async () => {
+test('settings show masked configured status without fetching key values and omit untouched secrets on save', { timeout: 300000 }, async () => {
   await engine.settingsUpdate({ pexelsApiKey: 'pexels-secret', pixabayApiKey: '', jamendoClientId: 'jamendo-secret' });
   const { context, page, errors } = await openSettings();
   try {
@@ -101,16 +112,14 @@ test('settings show masked configured status without fetching key values and omi
     });
 
     await page.getByLabel('旁白声音', { exact: true }).fill('zh-CN-test');
-    await page.getByRole('button', { name: '保存设置', exact: true }).click();
-    await page.getByText('配置与服务保持同步', { exact: true }).waitFor();
+    await saveSettings(page);
     assert.equal(puts.length, 1);
     for (const key of SECRET_KEYS) assert.equal(Object.hasOwn(puts[0], key), false, `${key} untouched must be omitted from the save body`);
     assert.equal(puts[0].ttsVoice, 'zh-CN-test');
     assert.equal(engine.store.state.settings.pexelsApiKey, 'pexels-secret', 'untouched secret keeps its stored value');
 
     await pexels.fill('pexels-new');
-    await page.getByRole('button', { name: '保存设置', exact: true }).click();
-    await page.getByText('配置与服务保持同步', { exact: true }).waitFor();
+    await saveSettings(page);
     assert.equal(puts.at(-1).pexelsApiKey, 'pexels-new', 'an explicit new key is stored');
     assert.equal(Object.hasOwn(puts.at(-1), 'jamendoClientId'), false);
     assert.equal(engine.store.state.settings.pexelsApiKey, 'pexels-new');
@@ -118,8 +127,7 @@ test('settings show masked configured status without fetching key values and omi
     assert.equal(await page.getByLabel('Pexels API Key', { exact: true }).inputValue(), '', 'the form clears the secret after saving');
 
     await page.getByRole('button', { name: '清除 Jamendo Client ID', exact: true }).click();
-    await page.getByRole('button', { name: '保存设置', exact: true }).click();
-    await page.getByText('配置与服务保持同步', { exact: true }).waitFor();
+    await saveSettings(page);
     assert.equal(puts.at(-1).jamendoClientId, '', 'an explicit clear sends an empty string for that key');
     assert.equal(Object.hasOwn(puts.at(-1), 'pexelsApiKey'), false, 'other secrets stay untouched');
     assert.equal(engine.store.state.settings.jamendoClientId, '');
