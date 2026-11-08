@@ -67,14 +67,20 @@ async function openSettings() {
 }
 
 // The save button is disabled until the edit reaches React state, so clicking straight after
-// fill() can hit a disabled button and never issue the PUT.
+// fill() can hit a disabled button and never issue the PUT. The "in sync" label only returns
+// after the follow-up /api/state refresh, which is slow enough on a loaded machine that the
+// default 60 s page timeout can expire; wait on the state itself instead.
 async function saveSettings(page) {
   await page.waitForFunction(() => {
     const node = [...document.querySelectorAll('button')].find(item => item.textContent?.includes('保存设置'));
     return node && !node.disabled;
   });
   await page.getByRole('button', { name: '保存设置', exact: true }).click();
-  await page.getByText('配置与服务保持同步', { exact: true }).waitFor();
+  await page.waitForFunction(() => {
+    const node = [...document.querySelectorAll('button')].find(item => item.textContent?.includes('保存设置'));
+    return node && node.disabled;
+  });
+  await page.getByText('配置与服务保持同步', { exact: true }).waitFor({ timeout: 180000 });
 }
 
 test('public settings never expose raw provider secrets, only configured flags', async () => {
