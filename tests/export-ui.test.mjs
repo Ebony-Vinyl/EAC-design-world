@@ -1,14 +1,12 @@
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { mkdtemp, rm, writeFile, realpath } from 'node:fs/promises';
-import { createServer as createNetServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { after, before, test } from 'node:test';
 import { chromium } from 'playwright';
-import { createServer } from 'vite';
 import { createEngine } from '../src/engine.mjs';
 import { startServer } from '../src/server.mjs';
 import { removeScalarOverride, resolveGradingValues } from '../ui/grading-values.mjs';
@@ -20,7 +18,6 @@ const colorWorkflowReady = existsSync(join(ROOT, 'src', 'color-workflow.mjs'));
 let directory;
 let engine;
 let app;
-let vite;
 let browser;
 let base;
 let project;
@@ -30,14 +27,6 @@ let creativeLut;
 
 function fixtureClips(id) {
   return [{ id: `${id}-clip`, assetId: `${id}-asset`, path: shot, kind: 'video', start: 0, duration: 2, sourceIn: 0, volume: 1, track: 0 }];
-}
-
-async function freePort() {
-  const server = createNetServer();
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const { port } = server.address();
-  await new Promise((resolve) => server.close(resolve));
-  return port;
 }
 
 before(async () => {
@@ -62,22 +51,15 @@ before(async () => {
     captions: [{ start: 0.2, end: 1.2, text: '续剪字幕' }],
   });
   app = await startServer({ engine, port: 0 });
-  const port = await freePort();
-  vite = await createServer({
-    root: ROOT, logLevel: 'silent',
-    server: {
-      port, strictPort: true, hmr: false,
-      proxy: { '/api': { target: app.url, changeOrigin: true, headers: { origin: app.url } } },
-    },
-  });
-  await vite.listen();
-  base = `http://127.0.0.1:${port}/`;
+  // The service serves the built UI from dist, which is how the product actually runs. Going
+  // through Vite's dev server instead made every load pay a 30-60 s transform of main.jsx and
+  // pushed these cases past their waits.
+  base = `${app.url}/`;
   browser = await chromium.launch({ headless: true, ...(process.env.EAC_BROWSER ? { executablePath: process.env.EAC_BROWSER } : process.platform === 'win32' ? { channel: 'msedge' } : {}) });
 });
 
 after(async () => {
   await browser?.close();
-  await vite?.close();
   await app?.close();
   await engine?.close();
   await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });

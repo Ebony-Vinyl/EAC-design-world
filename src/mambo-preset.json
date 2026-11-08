@@ -1,0 +1,166 @@
+{
+  "id": "mambo-gpt-sovits-v1",
+  "profile": {
+    "schema_version": 1,
+    "voice_id": "mambo-gpt-sovits-v1",
+    "selection": "user_confirmed_sample",
+    "approved_sample": {
+      "path": "voice-anchor/mambo-chinese-gpt-sovits.wav",
+      "sha256": "756caf96a90e4f2465cad9d6739d501ab2135d001a66d4d21e582d5d836c411d",
+      "bytes": 377644
+    },
+    "engine": {
+      "name": "GPT-SoVITS",
+      "version": "v2",
+      "git_revision": "d7c2210da8c013e81a94bfc7b811a477c99fd506",
+      "device": "cpu",
+      "is_half": false,
+      "torch_num_threads": 4
+    },
+    "models_and_frontend": [
+      {
+        "path": "gpt-model/manbo-e10.ckpt",
+        "sha256": "426ac73fe84a8597f60254fe915830f0c3e2412ee41df9d09899911b08911df4",
+        "bytes": 155309216
+      },
+      {
+        "path": "gpt-model/manbo_e8_s168.pth",
+        "sha256": "80668f169f2c12912adcbbaf5476591b1bff2e35a7f72bc05822baaec1b88073",
+        "bytes": 84998275
+      },
+      {
+        "path": "gpt-model/refer.wav",
+        "sha256": "8e9c9363e3abc02486012b3c889dc73540aebf044019de4426266c19099658c3",
+        "bytes": 497006
+      },
+      {
+        "path": "runtime/GPT-SoVITS/GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large/pytorch_model.bin",
+        "sha256": "e53a693acc59ace251d143d068096ae0d7b79e4b1b503fa84c9dcf576448c1d8",
+        "bytes": 651225145
+      },
+      {
+        "path": "runtime/GPT-SoVITS/GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large/config.json",
+        "sha256": "3d57de2fd7e80d0e5c8ff194f0bbb6baa10df7e43fc262a0cc71298a78b0a3e5",
+        "bytes": 963
+      },
+      {
+        "path": "runtime/GPT-SoVITS/GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large/tokenizer.json",
+        "sha256": "173796956820ea27bd14f76bf28162607ff4254807e2948253eb5b46f5bb643b",
+        "bytes": 268962
+      },
+      {
+        "path": "runtime/GPT-SoVITS/GPT_SoVITS/pretrained_models/chinese-hubert-base/pytorch_model.bin",
+        "sha256": "24164f129c66499d1346e2aa55f183250c223161ec2770c0da3d3b08cf432d3c",
+        "bytes": 188811417
+      },
+      {
+        "path": "runtime/GPT-SoVITS/GPT_SoVITS/pretrained_models/chinese-hubert-base/config.json",
+        "sha256": "c3e5060a1277e0f078cc6be9da4528a605dba6ece93018981fe2c820e5c7b103",
+        "bytes": 1449
+      },
+      {
+        "path": "runtime/GPT-SoVITS/GPT_SoVITS/pretrained_models/chinese-hubert-base/preprocessor_config.json",
+        "sha256": "dcd684124d06722947939d41ea6ae58dbf10968c60a11a29f23ddc602c64a29b",
+        "bytes": 212
+      },
+      {
+        "path": "runtime/GPT-SoVITS/GPT_SoVITS/text/chinese2.py",
+        "sha256": "3f4c6a650f982e281f434233d89596d99662d277b487cb643ced24d2b9c6158d",
+        "bytes": 10686
+      }
+    ],
+    "reference": {
+      "audio": "gpt-model/refer.wav",
+      "text": "大家好，欢迎来到我的频道，今天给大家分享一个有趣的内容",
+      "language": "all_zh"
+    },
+    "inference": {
+      "text_lang": "all_zh",
+      "top_k": 5,
+      "top_p": 1,
+      "temperature": 1,
+      "text_split_method": "cut0",
+      "batch_size": 1,
+      "speed_factor": 1.0,
+      "split_bucket": false,
+      "return_fragment": false,
+      "fragment_interval": 0.3,
+      "seed": 1234,
+      "parallel_infer": false,
+      "repetition_penalty": 1.35,
+      "is_g2pw": false
+    }
+  },
+  "assets": [
+    {
+      "id": "engine",
+      "filename": "engine.zip",
+      "label": "语音运行引擎",
+      "url": "https://codeload.github.com/RVC-Boss/GPT-SoVITS/zip/d7c2210da8c013e81a94bfc7b811a477c99fd506",
+      "bytes": 6682177,
+      "sha256": "2351004d1eb6d992ffd781c3f6174107f1a7dfd75459d42d88f95022837c9657"
+    },
+    {
+      "id": "voice",
+      "filename": "mambo.zip",
+      "label": "曼波音色模型",
+      "url": "https://github.com/Tsukimisaka/MamboTTS/releases/download/v1.2.1/MamboTTS-v1.2.1-full.zip",
+      "bytes": 223155406,
+      "sha256": "8c4e67356a34a347628deeb99680db16ab5daf8f3321cf6e4cd97ebbcdd8bbe3"
+    },
+    {
+      "id": "chinese-hubert-base/pytorch_model.bin",
+      "filename": "chinese-hubert-base-pytorch_model.bin",
+      "label": "中文语音编码模型",
+      "url": "https://huggingface.co/lj1995/GPT-SoVITS/resolve/8f8857563c040d542de108a2c18b0425abd6c9c5/chinese-hubert-base/pytorch_model.bin",
+      "bytes": 188811417,
+      "sha256": "24164f129c66499d1346e2aa55f183250c223161ec2770c0da3d3b08cf432d3c",
+      "target": "runtime/GPT-SoVITS/GPT_SoVITS/pretrained_models/chinese-hubert-base/pytorch_model.bin"
+    },
+    {
+      "id": "chinese-hubert-base/config.json",
+      "filename": "chinese-hubert-base-config.json",
+      "label": "中文语音编码模型",
+      "url": "https://huggingface.co/lj1995/GPT-SoVITS/resolve/8f8857563c040d542de108a2c18b0425abd6c9c5/chinese-hubert-base/config.json",
+      "bytes": 1449,
+      "sha256": "c3e5060a1277e0f078cc6be9da4528a605dba6ece93018981fe2c820e5c7b103",
+      "target": "runtime/GPT-SoVITS/GPT_SoVITS/pretrained_models/chinese-hubert-base/config.json"
+    },
+    {
+      "id": "chinese-hubert-base/preprocessor_config.json",
+      "filename": "chinese-hubert-base-preprocessor_config.json",
+      "label": "中文语音编码模型",
+      "url": "https://huggingface.co/lj1995/GPT-SoVITS/resolve/8f8857563c040d542de108a2c18b0425abd6c9c5/chinese-hubert-base/preprocessor_config.json",
+      "bytes": 212,
+      "sha256": "dcd684124d06722947939d41ea6ae58dbf10968c60a11a29f23ddc602c64a29b",
+      "target": "runtime/GPT-SoVITS/GPT_SoVITS/pretrained_models/chinese-hubert-base/preprocessor_config.json"
+    },
+    {
+      "id": "chinese-roberta-wwm-ext-large/pytorch_model.bin",
+      "filename": "chinese-roberta-wwm-ext-large-pytorch_model.bin",
+      "label": "中文文本模型",
+      "url": "https://huggingface.co/lj1995/GPT-SoVITS/resolve/8f8857563c040d542de108a2c18b0425abd6c9c5/chinese-roberta-wwm-ext-large/pytorch_model.bin",
+      "bytes": 651225145,
+      "sha256": "e53a693acc59ace251d143d068096ae0d7b79e4b1b503fa84c9dcf576448c1d8",
+      "target": "runtime/GPT-SoVITS/GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large/pytorch_model.bin"
+    },
+    {
+      "id": "chinese-roberta-wwm-ext-large/config.json",
+      "filename": "chinese-roberta-wwm-ext-large-config.json",
+      "label": "中文文本模型",
+      "url": "https://huggingface.co/lj1995/GPT-SoVITS/resolve/8f8857563c040d542de108a2c18b0425abd6c9c5/chinese-roberta-wwm-ext-large/config.json",
+      "bytes": 963,
+      "sha256": "3d57de2fd7e80d0e5c8ff194f0bbb6baa10df7e43fc262a0cc71298a78b0a3e5",
+      "target": "runtime/GPT-SoVITS/GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large/config.json"
+    },
+    {
+      "id": "chinese-roberta-wwm-ext-large/tokenizer.json",
+      "filename": "chinese-roberta-wwm-ext-large-tokenizer.json",
+      "label": "中文文本模型",
+      "url": "https://huggingface.co/lj1995/GPT-SoVITS/resolve/8f8857563c040d542de108a2c18b0425abd6c9c5/chinese-roberta-wwm-ext-large/tokenizer.json",
+      "bytes": 268962,
+      "sha256": "173796956820ea27bd14f76bf28162607ff4254807e2948253eb5b46f5bb643b",
+      "target": "runtime/GPT-SoVITS/GPT_SoVITS/pretrained_models/chinese-roberta-wwm-ext-large/tokenizer.json"
+    }
+  ]
+}

@@ -3,12 +3,10 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rename, rm, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ROOT } from './catalog.mjs';
+import { localDataDirectory } from './local-runtime.mjs';
+import { probeMedia } from './media/index.mjs';
 
 const SCRIPT = fileURLToPath(new URL('../scripts/transcribe.py', import.meta.url));
-// The model lives inside the user data directory so a fresh install can drop it there
-// without knowing anything about this machine. EAC_WHISPER_MODEL_PATH overrides it.
-const MODEL_DIRECTORY = join('models', 'faster-whisper-tiny');
 const MAX_JSON_BYTES = 16 * 1024 * 1024;
 
 function abortError() {
@@ -26,17 +24,11 @@ function filePath(value, name) {
   return resolve(value);
 }
 
-function selectedModel(modelPath) {
-  if (modelPath !== undefined) return filePath(modelPath, 'modelPath');
-  // EAC_WHISPER_MODEL_PATH wins over the user data directory; both are real paths on every
-  // machine, unlike the author-specific absolute path this used to hardcode.
-  return filePath(process.env.EAC_WHISPER_MODEL_PATH || join(dataDirectory(), MODEL_DIRECTORY), 'modelPath');
-}
-
-// Mirrors Store's own default so the model location follows the same user data directory
-// as projects and outputs, including EAC_DATA_DIR overrides.
-function dataDirectory() {
-  return process.env.EAC_DATA_DIR || join(ROOT, '.eac');
+// Upstream resolves the default through localDataDirectory(), which follows each platform's
+// real user data directory (and EAC_DATA_DIR); that supersedes the earlier ROOT/.eac default.
+export function transcriptModelPath(modelPath) {
+  return filePath(modelPath ?? process.env.EAC_WHISPER_MODEL_PATH
+    ?? join(localDataDirectory(), 'models', 'faster-whisper-tiny'), 'modelPath');
 }
 
 function runPython(args, { signal, timeout = 900_000 } = {}) {
@@ -113,7 +105,7 @@ function runPython(args, { signal, timeout = 900_000 } = {}) {
 export async function transcriptCapabilities() {
   let modelPath;
   try {
-    modelPath = selectedModel();
+    modelPath = transcriptModelPath();
     const result = await runPython(['--capabilities', '--model-path', modelPath], { timeout: 30_000 });
     return { available: result.available === true, detail: result.detail, modelPath };
   } catch (error) {
@@ -122,11 +114,11 @@ export async function transcriptCapabilities() {
 }
 
 /** Local ASR; at most 30 minutes of decoded audio and 15 minutes of worker time. */
-export async function transcribeMedia({ path, outputDir, modelPath, language, signal } = {}) {
+export async function transcribeMedia({ path, outputDir, modelPath, language, signal } = {}, { runWorker = runPython } = {}) {
   checkAbort(signal);
   path = filePath(path, 'path');
   outputDir = filePath(outputDir, 'outputDir');
-  modelPath = selectedModel(modelPath);
+  modelPath = transcriptModelPath(modelPath);
   if (language !== undefined && (typeof language !== 'string' || !/^[a-z]{2,3}$/.test(language))) {
     throw new TypeError('language must be a two or three letter lowercase Whisper language code');
   }
@@ -136,6 +128,12 @@ export async function transcribeMedia({ path, outputDir, modelPath, language, si
   }
   checkAbort(signal);
   await mkdir(outputDir, { recursive: true });
+  // Reject invalid/oversized media without loading Python dependencies or ASR weights.
+  // The worker also enforces the limit on decoded samples, including misleading metadata.
+  const media = await probeMedia(path, { signal });
+  if (!media.hasAudio) throw new Error('Input has no audio stream');
+  if (media.duration > 1800) throw new Error('Audio exceeds the 1800-second transcription limit');
+  checkAbort(signal);
   const temporary = await mkdtemp(join(outputDir, '.eac-transcript-'));
   const stem = `transcript-${randomUUID()}`;
   const srtPath = join(outputDir, `${stem}.srt`);
@@ -146,7 +144,7 @@ export async function transcribeMedia({ path, outputDir, modelPath, language, si
   try {
     const args = ['--input', path, '--output-dir', temporary, '--model-path', modelPath];
     if (language !== undefined) args.push('--language', language);
-    await runPython(args, { signal });
+    await runWorker(args, { signal });
     checkAbort(signal);
     const stagedJson = join(temporary, 'transcript.json');
     if ((await stat(stagedJson)).size > MAX_JSON_BYTES) throw new Error('Transcript exceeds 16 MiB');

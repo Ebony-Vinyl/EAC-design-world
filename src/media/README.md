@@ -5,9 +5,9 @@ capture additionally requires root-installed `playwright`, plus Edge on Windows
 or a system Chromium on macOS/Linux (Playwright bundled Chromium otherwise).
 `EAC_BROWSER` / `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` selects an installed
 Chromium executable explicitly. Desktop capture needs Windows (gdigrab) or
-macOS (avfoundation) with Screen Recording permission; voice needs Windows
-(SAPI) or macOS (`say`) with installed system voices. Missing providers and
-media throw; no placeholder output.
+macOS (avfoundation) with Screen Recording permission. System voice uses macOS
+say, installed Windows System.Speech SAPI voices, or the local GPT-SoVITS Mambo
+Chinese voice. Missing providers and media throw; no placeholder output.
 
 Exports from `src/media/index.mjs`:
 
@@ -45,6 +45,9 @@ Exports from `src/media/index.mjs`:
   voice uses the OS default. Rate is an integer -10..10, default 0; macOS maps
   it onto a words-per-minute range around the 175 wpm default.
   WAV is generated then converted by FFmpeg to the requested audio extension.
+  `voice: "mambo-zh"` selects a locally configured, pinned GPT-SoVITS v2 voice
+  on any supported Python platform. Missing configuration or changed model hashes
+  fail explicitly. See [local voice setup](../../docs/local-mambo-voice.md).
 - `composeMusic({ outputPath, duration, bpm?, seed?, signal? })`: original stereo music
   synthesized locally with drums, bass, minor chords and a seeded melody.
   Deterministic PCM for the same arguments; WAV is lossless, other audio

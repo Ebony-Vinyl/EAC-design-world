@@ -10,6 +10,7 @@ import { VERSION } from './version.mjs';
 import { createMaintenance } from './maintenance.mjs';
 import { RELEASE_PUBLIC_KEY } from './maintenance-key.mjs';
 import { injectPreviewBridge, previewConfig } from './template-preview-bridge.mjs';
+import { createAudioTemplates } from './audio-templates.mjs';
 
 const mime = {
   '.html': 'text/html; charset=utf-8', '.htm': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -128,8 +129,8 @@ async function serveFile(request, response, file, { download = false } = {}) {
   }
 }
 
-export async function startServer({ engine: suppliedEngine, port = Number(process.env.EAC_PORT || 4173), dev = false, maintenanceOptions = {} } = {}) {
-  let engine, maintenance, vite;
+export async function startServer({ engine: suppliedEngine, port = Number(process.env.EAC_PORT || 4173), dev = false, maintenanceOptions = {}, audioTemplateOptions = {} } = {}) {
+  let engine, maintenance, vite, audioTemplates;
   let resolveReady, rejectReady;
   const ready = new Promise((accept, reject) => { resolveReady = accept; rejectReady = reject; });
   ready.catch(() => {});
@@ -148,6 +149,26 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
           return json(response, 403, { error: '跨来源请求被拒绝' });
         }
         if (url.pathname === '/api/health') return json(response, 200, { ok: true, name: 'EAC design world', version: VERSION, pid: process.pid, instanceId: maintenance.status().instanceId });
+        if (url.pathname === '/api/audio-templates' && request.method === 'GET') return json(response, 200, await audioTemplates.catalog(engine.store.state.settings.ttsVoice));
+        const audioMatch = /^\/api\/audio-templates\/(default|mambo-zh)\/(install|cancel|select|preview|sample)$/.exec(url.pathname);
+        if (audioMatch) {
+          const [, id, action] = audioMatch;
+          if (action === 'sample' && ['GET', 'HEAD'].includes(request.method)) {
+            const path = await audioTemplates.samplePath(id);
+            if (!path) return json(response, 404, { error: '试听尚未生成' });
+            return serveFile(request, response, path);
+          }
+          if (request.method !== 'POST') return json(response, 405, { error: '请求方法不支持' });
+          await body(request);
+          if (action === 'select') {
+            await audioTemplates.assertAvailable(id);
+            await engine.settingsUpdate({ ttsVoice: id === 'default' ? '' : id });
+          } else if (action === 'install' && id === 'mambo-zh') await audioTemplates.install();
+          else if (action === 'cancel' && id === 'mambo-zh') audioTemplates.cancel();
+          else if (action === 'preview') await audioTemplates.preview(id);
+          else return json(response, 404, { error: '音频模板操作不存在' });
+          return json(response, action === 'select' ? 200 : 202, await audioTemplates.catalog(engine.store.state.settings.ttsVoice));
+        }
         if (url.pathname === '/api/maintenance' && request.method === 'GET') return json(response, 200, maintenance.status());
         if (url.pathname.startsWith('/api/maintenance/') && ['POST', 'PUT'].includes(request.method)) {
           const input = await body(request);
@@ -280,21 +301,24 @@ export async function startServer({ engine: suppliedEngine, port = Number(proces
   origin = `http://127.0.0.1:${actualPort}`;
   try {
     engine = suppliedEngine || await createEngine();
+    audioTemplates = createAudioTemplates(audioTemplateOptions);
     maintenance = createMaintenance({ engine, manifestPublicKey: RELEASE_PUBLIC_KEY, ...maintenanceOptions });
     vite = dev ? await (await import('vite')).createServer({ root: ROOT, server: { middlewareMode: true }, appType: 'spa' }) : null;
     resolveReady();
   } catch (error) {
     rejectReady(error);
     await maintenance?.close();
+    await audioTemplates?.close();
     await vite?.close();
     if (!suppliedEngine) await engine?.close();
     await new Promise(done => { server.close(done); server.closeAllConnections(); });
     throw error;
   }
   return {
-    port: actualPort, url: origin, engine, maintenance,
+    port: actualPort, url: origin, engine, maintenance, audioTemplates,
     async close() {
       await maintenance.close();
+      await audioTemplates.close();
       await new Promise((done) => { server.close(done); server.closeAllConnections(); });
       await vite?.close();
       if (!suppliedEngine) await engine.close();

@@ -1,54 +1,34 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
-import { createServer as createNetServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { after, before, test } from 'node:test';
 import { chromium } from 'playwright';
-import { createServer } from 'vite';
 import { createEngine } from '../src/engine.mjs';
 import { startServer } from '../src/server.mjs';
 
-const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SECRET_KEYS = ['pexelsApiKey', 'pixabayApiKey', 'jamendoClientId'];
 
 let directory;
 let engine;
 let app;
-let vite;
 let browser;
 let base;
-
-async function freePort() {
-  const server = createNetServer();
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const { port } = server.address();
-  await new Promise((resolve) => server.close(resolve));
-  return port;
-}
 
 before(async () => {
   directory = await mkdtemp(join(tmpdir(), 'eac-settings-secrets-'));
   engine = await createEngine({ dataDir: directory });
   await engine.settingsUpdate({ outputRoot: join(directory, 'outputs'), jianyingDraftRoot: join(directory, 'drafts') });
+  // The service serves the built UI from dist, which is how the product actually runs. Going
+  // through Vite's dev server instead made every load pay a 30-60 s transform of main.jsx and
+  // pushed the saves in this file past their timeouts.
   app = await startServer({ engine, port: 0 });
-  const port = await freePort();
-  vite = await createServer({
-    root: ROOT, logLevel: 'silent',
-    server: {
-      port, strictPort: true, hmr: false,
-      proxy: { '/api': { target: app.url, changeOrigin: true, headers: { origin: app.url } } },
-    },
-  });
-  await vite.listen();
-  base = `http://127.0.0.1:${port}/`;
+  base = `${app.url}/`;
   browser = await chromium.launch({ headless: true, ...(process.env.EAC_BROWSER ? { executablePath: process.env.EAC_BROWSER } : process.platform === 'win32' ? { channel: 'msedge' } : {}) });
 });
 
 after(async () => {
   await browser?.close();
-  await vite?.close();
   await app?.close();
   await engine?.close();
   await rm(directory, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
@@ -88,7 +68,9 @@ async function saveSettings(page) {
     const node = [...document.querySelectorAll('button')].find(item => item.textContent?.includes('保存设置'));
     return node && node.disabled;
   });
-  await page.getByText('配置与服务保持同步', { exact: true }).waitFor({ timeout: 180000 });
+  // This suite runs the unbundled sources through Vite, whose first transform can take over a
+  // minute on a loaded machine, so every wait here has to survive that cold start.
+  await page.getByText('配置与服务保持同步', { exact: true }).waitFor({ timeout: 240000 });
 }
 
 test('public settings never expose raw provider secrets, only configured flags', async () => {
@@ -102,7 +84,7 @@ test('public settings never expose raw provider secrets, only configured flags',
   assert.equal(state.settings.jamendoClientIdConfigured, true);
 });
 
-test('settings show masked configured status without fetching key values and omit untouched secrets on save', { timeout: 300000 }, async () => {
+test('settings show masked configured status without fetching key values and omit untouched secrets on save', { timeout: 600000 }, async () => {
   await engine.settingsUpdate({ pexelsApiKey: 'pexels-secret', pixabayApiKey: '', jamendoClientId: 'jamendo-secret' });
   const { context, page, errors } = await openSettings();
   try {
